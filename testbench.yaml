@@ -1,0 +1,40 @@
+laravel: '@testbench'
+
+providers:
+  - Waguilar\FilamentDashboards\FilamentDashboardsServiceProvider
+  - Workbench\App\Providers\Filament\DemoPanelProvider
+
+migrations:
+  - workbench/database/migrations
+
+seeders:
+  - Workbench\Database\Seeders\DatabaseSeeder
+
+env:
+  - APP_KEY=base64:Zm9yLXRoZS13b3JrYmVuY2gtZGVtby1vbmx5LTEyMzQ=
+  - APP_DEBUG=true
+  - SESSION_DRIVER=file
+
+workbench:
+  start: '/demo'
+  install: true
+  health: false
+  discovers:
+    web: true
+    api: false
+    commands: false
+    components: false
+    factories: true
+    views: false
+  build:
+    - asset-publish
+    - filament:assets
+    - create-sqlite-db
+    - db-wipe
+    - migrate-fresh
+  assets:
+    - laravel-assets
+  sync:
+    - from: storage
+      to: workbench/storage
+      reverse: true

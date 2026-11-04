@@ -1,0 +1,12 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 10
+    phpVersion:
+        min: 80200
+        max: 80499
+    paths:
+        - src
+        - workbench/app
+    tmpDir: build/phpstan

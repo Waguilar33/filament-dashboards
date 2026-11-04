@@ -1,0 +1,91 @@
+{
+    "name": "waguilar33/filament-dashboards",
+    "description": "Custom, shareable dashboards for Filament built from the panel's widgets.",
+    "keywords": [
+        "waguilar33",
+        "laravel",
+        "filamentphp",
+        "filament",
+        "filament-plugin",
+        "filament-dashboards",
+        "dashboard",
+        "widgets"
+    ],
+    "homepage": "https://github.com/Waguilar33/filament-dashboards",
+    "type": "library",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "William Aguilar",
+            "email": "waa2398@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^5.10.2",
+        "illuminate/support": "^11.47 || ^12.0.1 || ^13.32",
+        "livewire/livewire": "^4.4.8",
+        "spatie/laravel-package-tools": "^1.92"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.24",
+        "orchestra/testbench": "^9.16 || ^10.0 || ^11.3",
+        "pestphp/pest": "^3.8 || ^4.4.5 || ^5.3",
+        "spatie/laravel-permission": "^6.0 || ^7.0"
+    },
+    "suggest": {
+        "waguilar33/filament-guardian": "Manage who can add each dashboard widget and who can create dashboards from the role screen, and share dashboards with whole roles."
+    },
+    "autoload": {
+        "psr-4": {
+            "Waguilar\\FilamentDashboards\\": "src/",
+            "Waguilar\\FilamentDashboards\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Waguilar\\FilamentDashboards\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Waguilar\\FilamentDashboards\\FilamentDashboardsServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench serve --ansi"
+        ],
+        "test": "vendor/bin/pest",
+        "analyse": "vendor/bin/phpstan analyse",
+        "format": "vendor/bin/pint",
+        "lint": [
+            "@php vendor/bin/pint --ansi",
+            "@php vendor/bin/phpstan analyse --verbose --ansi"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

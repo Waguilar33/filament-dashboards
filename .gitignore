@@ -1,0 +1,9 @@
+/vendor
+/node_modules
+/dist
+.phpunit.result.cache
+.DS_Store
+composer.lock
+/build
+/workbench/storage
+.phpunit.cache
