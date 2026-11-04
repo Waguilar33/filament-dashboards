@@ -82,10 +82,19 @@ What each action does: what starts it, what it checks, what it writes, and which
 
 | Step | What |
 |---|---|
-| Starts | Set as home on any dashboard the user can see, except the one already their home (the action is hidden there). |
+| Starts | Set as home on any dashboard the user can see, except their current home (FD17). |
 | Checks | The user can see it (FD10). |
 | Writes | The user's one home for this panel and tenant. |
 | Shows | The panel's home page (FDP2). |
+
+## DF11 Remove as home
+
+| Step | What |
+|---|---|
+| Starts | Remove as home on the user's current home dashboard (FD17). |
+| Checks | The dashboard is the user's home for this panel and tenant. |
+| Writes | Deletes the user's home for this panel and tenant. |
+| Shows | The panel's normal dashboard on the home page (FD10, FDP2). |
 
 ## DF7 Sync system dashboards
 

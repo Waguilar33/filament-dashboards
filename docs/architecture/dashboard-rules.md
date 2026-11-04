@@ -23,6 +23,7 @@
 | FD14 | The repository is private and released as `v1.0.0-beta.N`. | Owner, 2026-11-03 and 2026-11-04. |
 | FD15 | The builder offers only data sources the app registers, each with its own query limited to what the user may see. It never discovers models by itself. | Raised 2026-11-03 with the stage list; not objected. A discovered model would count every tenant's records and skip the app's permissions. |
 | FD16 | System dashboards are classes registered with the plugin and copied into the database by `dashboards:sync`, run on deploy (no owner, panel-wide, no tenant). | Owner agreed 2026-11-04 (was FDP1). Defined in code so they cannot drift or be deleted; copied so the list, home page, sharing and clone treat every dashboard alike. |
+| FD17 | Set as home shows only on dashboards that are not the user's home; the home dashboard offers Remove as home instead, which brings back the panel's normal dashboard. | Owner, 2026-11-04: "Shouldn't 'Set Home' disappear once you have set it as home?"; on Remove as home: "go ahead". |
 
 ## Superseded
 

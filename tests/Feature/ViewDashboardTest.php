@@ -170,6 +170,23 @@ it('hides set as home on the user home dashboard only', function (): void {
     viewAs($me, $other)->assertActionVisible('setHome');
 });
 
+it('removes the home from the home dashboard only', function (): void {
+    $me = user();
+    $home = dashboard($me);
+    $other = dashboard($me, ['slug' => 'other']);
+
+    viewAs($me, $home)->assertActionHidden('removeHome')
+        ->callAction('setHome')
+        ->assertActionVisible('removeHome');
+    viewAs($me, $other)->assertActionHidden('removeHome');
+    viewAs($me, $home)->callAction('removeHome')
+        ->assertNotified()
+        ->assertActionHidden('removeHome')
+        ->assertActionVisible('setHome');
+
+    expect(DashboardHome::query()->exists())->toBeFalse();
+});
+
 it('updates the settings and follows a changed slug', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);

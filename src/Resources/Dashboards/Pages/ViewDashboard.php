@@ -26,6 +26,7 @@ use Livewire\Attributes\Url;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\CloneDashboard;
 use Waguilar\FilamentDashboards\Actions\FindHomeDashboard;
+use Waguilar\FilamentDashboards\Actions\RemoveHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
@@ -116,6 +117,7 @@ class ViewDashboard extends Page
                 $this->settingsAction(),
                 $this->cloneAction(),
                 $this->setHomeAction(),
+                $this->removeHomeAction(),
                 $this->deleteAction(),
             ]),
         ];
@@ -325,12 +327,29 @@ class ViewDashboard extends Page
     {
         return Action::make('setHome')
             ->label(__('filament-dashboards::dashboards.actions.set_home'))
-            ->hidden(fn (): bool => app(FindHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())?->is($this->getDashboard()) === true)
+            ->hidden(fn (): bool => $this->isHome())
             ->action(function (): void {
                 app(SetHomeDashboard::class)->handle($this->getDashboard(), DashboardResource::user(), Filament::getTenant());
 
                 Notification::make()->success()->title(__('filament-dashboards::dashboards.notifications.home_set'))->send();
             });
+    }
+
+    protected function removeHomeAction(): Action
+    {
+        return Action::make('removeHome')
+            ->label(__('filament-dashboards::dashboards.actions.remove_home'))
+            ->visible(fn (): bool => $this->isHome())
+            ->action(function (): void {
+                app(RemoveHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant());
+
+                Notification::make()->success()->title(__('filament-dashboards::dashboards.notifications.home_removed'))->send();
+            });
+    }
+
+    protected function isHome(): bool
+    {
+        return app(FindHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())?->is($this->getDashboard()) === true;
     }
 
     protected function deleteAction(): DeleteAction

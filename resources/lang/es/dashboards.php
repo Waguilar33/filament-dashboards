@@ -55,6 +55,7 @@ return [
         'settings' => 'Configurar',
         'clone' => 'Clonar',
         'set_home' => 'Usar como inicio',
+        'remove_home' => 'Quitar como inicio',
         'delete' => 'Eliminar',
         'edit_layout' => 'Editar diseño',
         'done' => 'Listo',
@@ -163,6 +164,7 @@ return [
     ],
     'notifications' => [
         'home_set' => 'Este escritorio ahora es tu página de inicio.',
+        'home_removed' => 'Tu página de inicio vuelve a ser el escritorio predeterminado.',
         'read_only' => 'Puedes ver este escritorio. Clónalo para tener tu propia copia.',
     ],
     'empty' => [

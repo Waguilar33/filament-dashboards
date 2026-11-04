@@ -55,6 +55,7 @@ return [
         'settings' => 'Settings',
         'clone' => 'Clone',
         'set_home' => 'Set as home',
+        'remove_home' => 'Remove as home',
         'delete' => 'Delete',
         'edit_layout' => 'Edit layout',
         'done' => 'Done',
@@ -163,6 +164,7 @@ return [
     ],
     'notifications' => [
         'home_set' => 'This dashboard is now your home page.',
+        'home_removed' => 'Your home page is back to the default dashboard.',
         'read_only' => 'You can view this dashboard. Clone it to make your own copy.',
     ],
     'empty' => [

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Waguilar\FilamentDashboards\Actions\FindHomeDashboard;
+use Waguilar\FilamentDashboards\Actions\RemoveHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
 
@@ -42,4 +43,23 @@ it('removes the home when its dashboard is deleted', function (): void {
     $dashboard->delete();
 
     expect(app(FindHomeDashboard::class)->handle($me, 'demo', null))->toBeNull();
+});
+
+it('removes only the user home of that panel and tenant', function (): void {
+    $me = user();
+    $teammate = user();
+    $dashboard = dashboard($me);
+    share($dashboard, $teammate, ShareLevel::Read);
+    app(SetHomeDashboard::class)->handle($dashboard, $me, null);
+    app(SetHomeDashboard::class)->handle($dashboard, $teammate, null);
+
+    app(RemoveHomeDashboard::class)->handle($me, 'admin', null);
+    app(RemoveHomeDashboard::class)->handle($me, 'demo', user());
+
+    expect(app(FindHomeDashboard::class)->handle($me, 'demo', null)?->id)->toBe($dashboard->id);
+
+    app(RemoveHomeDashboard::class)->handle($me, 'demo', null);
+
+    expect(app(FindHomeDashboard::class)->handle($me, 'demo', null))->toBeNull()
+        ->and(app(FindHomeDashboard::class)->handle($teammate, 'demo', null)?->id)->toBe($dashboard->id);
 });
