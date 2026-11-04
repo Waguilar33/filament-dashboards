@@ -22,6 +22,7 @@
 | FD13 | Stages: 1 core, 2 drag-and-resize, 3 the "New widget" builder. Each ends with a beta tag. | Owner, 2026-11-03: builder and drag-and-resize are needed. |
 | FD14 | The repository is private and released as `v1.0.0-beta.N`. | Owner, 2026-11-03 and 2026-11-04. |
 | FD15 | The builder offers only data sources the app registers, each with its own query limited to what the user may see. It never discovers models by itself. | Raised 2026-11-03 with the stage list; not objected. A discovered model would count every tenant's records and skip the app's permissions. |
+| FD16 | System dashboards are classes registered with the plugin and copied into the database by `dashboards:sync`, run on deploy (no owner, panel-wide, no tenant). | Owner agreed 2026-11-04 (was FDP1). Defined in code so they cannot drift or be deleted; copied so the list, home page, sharing and clone treat every dashboard alike. |
 
 ## Superseded
 
@@ -40,7 +41,6 @@ None yet.
 
 | # | Proposal | Reason |
 |---|---|---|
-| FDP1 | System dashboards are classes registered with the plugin, mirrored into the database by a `dashboards:sync` command (no owner, panel-wide, no tenant). | Defined in code so they cannot drift or be deleted; mirrored so listing, home page and clone treat every dashboard alike. |
 | FDP2 | The plugin's home page extends Filament's `Dashboard`: it shows the user's home dashboard, else the panel's widgets minus dashboard widgets. | Keeps dashboard widgets off the default dashboard (Facts) and gives FD10 a place. |
 | FDP3 | Widgets on a dashboard store x, y, width and height on a 12-column grid from stage 1. Stage 1 orders them and uses the width as span. | Stage 2's drag-and-resize then needs no data change. |
 | FDP4 | Dashboards, items, shares and homes carry the panel id; dashboards carry an optional tenant that follows Filament's tenancy. | `/admin` and `/portal` dashboards never mix; in Sortivo a dashboard belongs to one company. |

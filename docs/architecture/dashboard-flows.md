@@ -4,7 +4,7 @@ What each action does: what starts it, what it checks, what it writes, and which
 
 **How to use it.** When an action is built or changed, its section changes in the same commit. When something looks wrong, find the action and check each line.
 
-**Status:** Draft, 2026-11-04, stage 1.
+**Status:** Draft, 2026-11-04, stage 1. Data layer built 2026-11-04 (access rules, clone, home, sync); screens pending.
 
 ## DF1 Offer widgets (Insert widget)
 
@@ -65,6 +65,6 @@ What each action does: what starts it, what it checks, what it writes, and which
 | Step | What |
 |---|---|
 | Starts | `dashboards:sync`, run on deploy. |
-| Checks | The system dashboard classes registered with the plugin (FDP1). |
+| Checks | The system dashboard classes registered with the plugin (FD16). |
 | Writes | Creates or updates each one and its items; removes system dashboards no longer registered. |
 | Shows | Every user's list, read-only (FD8). |
