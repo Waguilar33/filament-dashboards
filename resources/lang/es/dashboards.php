@@ -61,6 +61,9 @@ return [
         'remove' => 'Quitar',
         'move_up' => 'Subir',
         'move_down' => 'Bajar',
+        'drag' => 'Arrastra para mover',
+        'previous' => 'Anterior',
+        'next' => 'Siguiente',
         'resize' => 'Cambiar ancho',
     ],
     'modals' => [
@@ -77,6 +80,12 @@ return [
             'heading' => 'Clonar escritorio',
             'description' => 'Crea una copia editable de este escritorio que solo tú puedes ver.',
             'name' => 'Copia de :name',
+        ],
+    ],
+    'picker' => [
+        'quick' => [
+            'heading' => 'Widgets listos',
+            'description' => 'Widgets ya armados que puedes agregar con un clic.',
         ],
     ],
     'notifications' => [

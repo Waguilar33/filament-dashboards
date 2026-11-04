@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Livewire;
@@ -103,7 +102,7 @@ it('adds a widget at the end with its default size', function (): void {
     viewAs($owner, $dashboard)->callAction('addWidget', data: ['widget' => 'orders-overview'])->assertHasNoActionErrors();
 
     expect($dashboard->items()->latest('id')->first()?->only(['widget', 'x', 'y', 'w', 'h']))
-        ->toBe(['widget' => 'orders-overview', 'x' => 0, 'y' => 1, 'w' => 6, 'h' => 4]);
+        ->toBe(['widget' => 'orders-overview', 'x' => 0, 'y' => 4, 'w' => 6, 'h' => 4]);
 });
 
 it('replaces who the dashboard is shared with', function (): void {
@@ -194,23 +193,48 @@ it('toggles layout editing', function (): void {
         ->assertSet('isEditingLayout', false);
 });
 
-it('moves, resizes and removes widgets while editing the layout', function (): void {
+it('saves the layout from the grid, keeping widgets inside it', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);
     $first = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 2]);
-    $second = $dashboard->items()->create(['widget' => 'signups-chart', 'x' => 0, 'y' => 1, 'w' => 6, 'h' => 4]);
+    $second = $dashboard->items()->create(['widget' => 'signups-chart', 'x' => 0, 'y' => 2, 'w' => 6, 'h' => 4]);
+    $foreign = dashboard(user(), ['slug' => 'foreign'])->items()->create(['widget' => 'signups-chart', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
 
-    $page = viewAs($owner, $dashboard)->set('isEditingLayout', true);
+    viewAs($owner, $dashboard)->call('saveDashboardLayout', [
+        ['id' => $first->id, 'x' => 6, 'y' => 0, 'w' => 6, 'h' => 3],
+        ['id' => $second->id, 'x' => 10, 'y' => -2, 'w' => 40, 'h' => 99],
+        ['id' => $foreign->id, 'x' => 3, 'y' => 3, 'w' => 3, 'h' => 3],
+        'junk',
+    ]);
 
-    $page->callAction(TestAction::make("moveUp{$second->id}")->schemaComponent("dashboard-item-{$second->id}-actions"));
-    expect($dashboard->items()->orderBy('y')->pluck('id')->all())->toBe([$second->id, $first->id]);
-
-    $page->callAction(TestAction::make("resize{$first->id}")->schemaComponent("dashboard-item-{$first->id}-actions"), data: ['w' => 4]);
-    expect($first->refresh()->w)->toBe(4);
-
-    $page->callAction(TestAction::make("remove{$first->id}")->schemaComponent("dashboard-item-{$first->id}-actions"));
-    expect($dashboard->items()->pluck('id')->all())->toBe([$second->id]);
+    expect($first->refresh()->only(['x', 'y', 'w', 'h']))->toBe(['x' => 6, 'y' => 0, 'w' => 6, 'h' => 3])
+        ->and($second->refresh()->only(['x', 'y', 'w', 'h']))->toBe(['x' => 0, 'y' => 0, 'w' => 12, 'h' => 24])
+        ->and($foreign->refresh()->only(['x', 'y', 'w', 'h']))->toBe(['x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
 });
+
+it('removes a widget from the dashboard', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 2]);
+
+    viewAs($owner, $dashboard)->call('removeDashboardItem', $item->id);
+
+    expect($dashboard->items()->count())->toBe(0);
+});
+
+it('refuses layout changes from someone who cannot edit', function (string $method, mixed $argument): void {
+    $dashboard = dashboard(user());
+    $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 2]);
+    $reader = user();
+    share($dashboard, $reader, ShareLevel::Read);
+
+    viewAs($reader, $dashboard)->call($method, $argument === 'item' ? $item->id : [['id' => $item->id, 'x' => 3]])->assertForbidden();
+
+    expect($item->refresh()->x)->toBe(0);
+})->with([
+    'layout' => ['saveDashboardLayout', 'layout'],
+    'remove' => ['removeDashboardItem', 'item'],
+]);
 
 it('offers the users the app chooses to share with', function (): void {
     $owner = user();
@@ -222,4 +246,12 @@ it('offers the users the app chooses to share with', function (): void {
     viewAs($owner, $dashboard)
         ->callAction('share', data: ['shares' => [['shareable_type' => $other->getMorphClass(), 'shareable_id' => (string) $other->getKey(), 'level' => 'read']]])
         ->assertHasActionErrors(['shares.0.shareable_id']);
+});
+
+it('refuses a widget the user is not offered', function (): void {
+    $owner = user();
+
+    viewAs($owner, dashboard($owner))
+        ->callAction('addWidget', data: ['widget' => 'hidden-widget'])
+        ->assertHasActionErrors(['widget']);
 });

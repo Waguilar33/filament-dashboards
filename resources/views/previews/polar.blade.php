@@ -1,0 +1,1 @@
+<svg viewBox="0 0 120 70" fill="currentColor"><path d="M60 35V5a30 30 0 0 1 30 30z" opacity=".9"/><path d="M60 35h20a20 20 0 0 1-20 20z" opacity=".6"/><path d="M60 35v25a25 25 0 0 1-25-25z" opacity=".45"/><path d="M60 35H45a15 15 0 0 1 15-15z" opacity=".3"/></svg>

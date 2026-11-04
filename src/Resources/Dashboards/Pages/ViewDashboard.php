@@ -10,7 +10,6 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -21,15 +20,20 @@ use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
+use Filament\Widgets\ChartWidget;
+use Filament\Widgets\StatsOverviewWidget;
+use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\CloneDashboard;
+use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardShares;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardShare;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
@@ -72,6 +76,23 @@ class ViewDashboard extends Page
         ));
     }
 
+    /**
+     * @param  array<mixed>  $layout
+     */
+    public function saveDashboardLayout(array $layout): void
+    {
+        abort_unless($this->canEdit(), 403);
+
+        app(SaveDashboardLayout::class)->handle($this->getDashboard(), $layout);
+    }
+
+    public function removeDashboardItem(int $item): void
+    {
+        abort_unless($this->canEdit(), 403);
+
+        $this->getDashboard()->items()->whereKey($item)->delete();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -97,12 +118,28 @@ class ViewDashboard extends Page
             ->slideOver()
             ->modalHeading(__('filament-dashboards::dashboards.modals.add_widget.heading'))
             ->modalDescription(__('filament-dashboards::dashboards.modals.add_widget.description'))
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
+            ->modalWidth(Width::SevenExtraLarge)
             ->schema([
-                Radio::make('widget')
+                WidgetPicker::make('widget')
                     ->hiddenLabel()
-                    ->options(array_map(fn (string $widget): string => $widget::dashboardLabel(), $widgets))
-                    ->descriptions(array_filter(array_map(fn (string $widget): ?string => $widget::dashboardDescription(), $widgets)))
-                    ->required(),
+                    ->required()
+                    ->sections([[
+                        'heading' => __('filament-dashboards::dashboards.picker.quick.heading'),
+                        'description' => __('filament-dashboards::dashboards.picker.quick.description'),
+                        'carousel' => true,
+                        'options' => array_map(fn (string $widget): array => [
+                            'label' => $widget::dashboardLabel(),
+                            'description' => $widget::dashboardDescription(),
+                            'preview' => $widget::dashboardPreview(),
+                            'kind' => match (true) {
+                                is_subclass_of($widget, StatsOverviewWidget::class) => 'stats',
+                                is_subclass_of($widget, ChartWidget::class) => 'line',
+                                is_subclass_of($widget, TableWidget::class) => 'table',
+                                default => 'widget',
+                            },
+                        ], $widgets),
+                    ]]),
             ])
             ->action(fn (array $data) => app(AddDashboardWidget::class)->handle($this->getDashboard(), $widgets[Arr::string($data, 'widget')]));
     }

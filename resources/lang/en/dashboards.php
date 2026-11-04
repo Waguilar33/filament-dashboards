@@ -61,6 +61,9 @@ return [
         'remove' => 'Remove',
         'move_up' => 'Move up',
         'move_down' => 'Move down',
+        'drag' => 'Drag to move',
+        'previous' => 'Previous',
+        'next' => 'Next',
         'resize' => 'Resize',
     ],
     'modals' => [
@@ -77,6 +80,12 @@ return [
             'heading' => 'Clone dashboard',
             'description' => 'Make an editable copy of this dashboard that only you can see.',
             'name' => 'Copy of :name',
+        ],
+    ],
+    'picker' => [
+        'quick' => [
+            'heading' => 'Quick widgets',
+            'description' => 'Ready-made widgets you can add in one click.',
         ],
     ],
     'notifications' => [

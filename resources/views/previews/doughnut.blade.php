@@ -1,0 +1,1 @@
+<svg viewBox="0 0 120 70" fill="none" stroke="currentColor" stroke-width="12"><circle cx="60" cy="35" r="22" stroke-dasharray="50 200" opacity=".9"/><circle cx="60" cy="35" r="22" stroke-dasharray="40 200" stroke-dashoffset="-52" opacity=".6"/><circle cx="60" cy="35" r="22" stroke-dasharray="44 200" stroke-dashoffset="-94" opacity=".35"/></svg>

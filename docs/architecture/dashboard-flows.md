@@ -13,7 +13,16 @@ What each action does: what starts it, what it checks, what it writes, and which
 | Starts | Insert widget, on a dashboard the user can edit. |
 | Checks | Panel widgets that implement `DashboardWidget` (FD2); each one's `canView()` and `authorizeWidgetsUsing()` (FD3). |
 | Writes | A dashboard item: widget key, position and size (FDP3). |
-| Shows | Add widget (a list in stage 1, FDP10); the dashboard grid. |
+| Shows | Add widget's card carousel (FDP10); the dashboard grid. |
+
+## DF8 Arrange widgets (Edit layout)
+
+| Step | What |
+|---|---|
+| Starts | Edit layout, then dragging a widget's handle or its corner; or the trash button on a widget. |
+| Checks | Owner or Edit share, checked again on the server (FD6). Only items of this dashboard; position and size kept inside the 12-column grid. Nothing saved on narrow screens (FDP13). |
+| Writes | x, y, w, h of every item when a drag or resize ends (FDP12); remove deletes the item. |
+| Shows | The dashboard grid, for everyone who can see it. |
 
 ## DF2 Create a dashboard
 

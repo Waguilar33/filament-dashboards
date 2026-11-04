@@ -20,7 +20,7 @@ class AddDashboardWidget
         return $dashboard->items()->create([
             'widget' => $widget::dashboardKey(),
             'x' => 0,
-            'y' => $dashboard->items()->count(),
+            'y' => $dashboard->items()->get(['y', 'h'])->max(fn (DashboardItem $item): int => $item->y + $item->h) ?? 0,
             'w' => $size['w'],
             'h' => $size['h'],
         ]);

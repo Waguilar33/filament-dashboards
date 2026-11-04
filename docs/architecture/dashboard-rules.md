@@ -1,6 +1,6 @@
 # Dashboard Rules
 
-**Status:** Stage 1 built 2026-11-04, not released.
+**Status:** Stage 1 released as v1.0.0-beta.1 and stage 2 as v1.0.0-beta.2 (2026-11-04, on branch `feat/stage-1-core`).
 **Last updated:** 2026-11-04
 
 ## Agreed rules
@@ -49,8 +49,10 @@ None yet.
 | FDP7 | Supports Filament 5 only; CI runs a small matrix. | Sortivo is on Filament 5; the repository is private and Actions minutes are billed. |
 | FDP8 | Table names are configurable, defaulting to `custom_dashboards`, `custom_dashboard_items`, `custom_dashboard_shares`, `custom_dashboard_homes`. | Avoid clashing with an app's own `dashboards` table. |
 | FDP9 | An app policy for the dashboard model decides only who sees the dashboards list (`viewAny`) and who creates (`create`). View, edit, share and delete always follow FD6 and FD7. | A generated policy (Guardian's `Update:Dashboard`) would otherwise let a role edit or delete dashboards it does not own. |
-| FDP10 | Stage 1 picks a widget from a list (label and description); the card picker with previews arrives with stage 2's asset build. | Cards with previews need the plugin's own stylesheet, which stage 2 adds for drag-and-resize anyway. |
+| FDP10 | Add widget shows cards (preview, name, description) in a carousel, like the reference demo. A widget's `dashboardPreview()` image wins; otherwise a drawing by kind (stats, chart, table, other). | Matches the screenshots the owner shared. |
 | FDP11 | Spanish screens call a dashboard "Escritorio", Filament's own word for its dashboard page. | One term on screen for the same thing. |
+| FDP12 | In Edit layout, widgets are dragged by a handle and resized by their corner (Gridstack.js). Height follows the widget's content; width is what the user sets. The layout is saved when a drag or resize ends. | A widget's own content decides how tall it must be; a fixed height either clips charts or leaves gaps. |
+| FDP13 | Below 1024 px wide every widget stacks in one column, and changes made there are not saved. | Saving a one-column arrangement would overwrite the desktop layout. |
 
 ## Open decisions
 
