@@ -4,6 +4,7 @@
 
 <div
     wire:key="dashboard-grid-{{ $signature }}"
+    wire:ignore
     x-load
     x-load-src="{{ FilamentAsset::getAlpineComponentSrc('dashboard-grid', 'waguilar33/filament-dashboards') }}"
     x-data="dashboardGrid({ editable: @js($editable) })"
