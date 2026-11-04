@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Workbench\App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Workbench\Database\Factories\UserFactory;
 
-final class User extends Authenticatable
+final class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable;
@@ -30,5 +32,10 @@ final class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
     }
 }

@@ -4,7 +4,7 @@ What each action does: what starts it, what it checks, what it writes, and which
 
 **How to use it.** When an action is built or changed, its section changes in the same commit. When something looks wrong, find the action and check each line.
 
-**Status:** Draft, 2026-11-04, stage 1. Data layer built 2026-11-04 (access rules, clone, home, sync); screens pending.
+**Status:** Draft, 2026-11-04, stage 1. Built 2026-11-04: data layer and screens. Layout editing (move, resize, remove) is part of DF1's screen.
 
 ## DF1 Offer widgets (Insert widget)
 
@@ -13,7 +13,7 @@ What each action does: what starts it, what it checks, what it writes, and which
 | Starts | Insert widget, on a dashboard the user can edit. |
 | Checks | Panel widgets that implement `DashboardWidget` (FD2); each one's `canView()` and `authorizeWidgetsUsing()` (FD3). |
 | Writes | A dashboard item: widget key, position and size (FDP3). |
-| Shows | The quick-widgets carousel; the dashboard grid. |
+| Shows | Add widget (a list in stage 1, FDP10); the dashboard grid. |
 
 ## DF2 Create a dashboard
 

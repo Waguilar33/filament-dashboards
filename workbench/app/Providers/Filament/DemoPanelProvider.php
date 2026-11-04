@@ -16,6 +16,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Pages\Home;
+use Workbench\App\Dashboards\OverviewDashboard;
 
 final class DemoPanelProvider extends PanelProvider
 {
@@ -26,8 +28,9 @@ final class DemoPanelProvider extends PanelProvider
             ->id('demo')
             ->path('demo')
             ->login()
+            ->pages([Home::class])
             ->discoverWidgets(in: __DIR__.'/../../Filament/Widgets', for: 'Workbench\\App\\Filament\\Widgets')
-            ->plugin(FilamentDashboardsPlugin::make())
+            ->plugin(FilamentDashboardsPlugin::make()->systemDashboards([OverviewDashboard::class]))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

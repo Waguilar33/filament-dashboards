@@ -50,6 +50,11 @@ class Dashboard extends Model
         return config('filament-dashboards.tables.dashboards');
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     /**
      * @return HasMany<DashboardItem, $this>
      */

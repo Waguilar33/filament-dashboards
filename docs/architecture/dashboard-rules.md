@@ -1,6 +1,6 @@
 # Dashboard Rules
 
-**Status:** In design; stage 1 being built.
+**Status:** Stage 1 built 2026-11-04, not released.
 **Last updated:** 2026-11-04
 
 ## Agreed rules
@@ -48,6 +48,9 @@ None yet.
 | FDP6 | Coded widgets (PHP widget classes) are not owned, shared or cloned on their own; only builder widgets are (FD12). | A coded widget has no settings to copy. |
 | FDP7 | Supports Filament 5 only; CI runs a small matrix. | Sortivo is on Filament 5; the repository is private and Actions minutes are billed. |
 | FDP8 | Table names are configurable, defaulting to `custom_dashboards`, `custom_dashboard_items`, `custom_dashboard_shares`, `custom_dashboard_homes`. | Avoid clashing with an app's own `dashboards` table. |
+| FDP9 | An app policy for the dashboard model decides only who sees the dashboards list (`viewAny`) and who creates (`create`). View, edit, share and delete always follow FD6 and FD7. | A generated policy (Guardian's `Update:Dashboard`) would otherwise let a role edit or delete dashboards it does not own. |
+| FDP10 | Stage 1 picks a widget from a list (label and description); the card picker with previews arrives with stage 2's asset build. | Cards with previews need the plugin's own stylesheet, which stage 2 adds for drag-and-resize anyway. |
+| FDP11 | Spanish screens call a dashboard "Escritorio", Filament's own word for its dashboard page. | One term on screen for the same thing. |
 
 ## Open decisions
 
