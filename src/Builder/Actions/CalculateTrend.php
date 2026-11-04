@@ -63,7 +63,7 @@ class CalculateTrend
 
                 return [
                     'bucket' => $grouping->start(CarbonImmutable::parse($when))->format('Y-m-d'),
-                    'value' => $this->parseNumber->handle($value),
+                    'value' => $numberField === null ? 1 : $numberField->fromStored($this->parseNumber->handle($value)),
                 ];
             })
             ->filter()

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateBreakdown;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\Tests\Fixtures\CentsOrdersSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\Record;
 use Waguilar\FilamentDashboards\Tests\Fixtures\RecordsSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\WebOrdersSource;
@@ -102,3 +103,8 @@ it('rejects an unknown group field and a metric without its number field', funct
     'sum without field' => ['channel', Metric::Sum, null],
     'sum on text' => ['channel', Metric::Sum, 'customer'],
 ])->throws(InvalidArgumentException::class);
+
+it('divides a scaled number field after aggregating', function (): void {
+    expect(breakdown('channel', Metric::Sum, 'total', source: new CentsOrdersSource)['values'])->toEqual([10, 6, 0.5])
+        ->and(breakdown('channel', source: new CentsOrdersSource)['values'])->toEqual([3, 1, 1]);
+});

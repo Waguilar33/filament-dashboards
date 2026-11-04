@@ -47,6 +47,19 @@ class BuilderWidget extends Model
     }
 
     /**
+     * @return list<string>
+     */
+    public function sourceKeys(): array
+    {
+        $parts = is_array($this->config['cards'] ?? null) ? $this->config['cards'] : [$this->config];
+
+        return array_values(array_unique(array_filter(
+            array_map(fn (mixed $part): mixed => is_array($part) ? ($part['source'] ?? null) : null, $parts),
+            is_string(...),
+        )));
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

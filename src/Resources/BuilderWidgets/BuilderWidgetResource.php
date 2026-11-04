@@ -51,7 +51,7 @@ class BuilderWidgetResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return FilamentDashboardsPlugin::get()->getDataSources() !== [];
+        return FilamentDashboardsPlugin::get()->getDataSourcesFor(DashboardResource::user(), Filament::getTenant()) !== [];
     }
 
     /**

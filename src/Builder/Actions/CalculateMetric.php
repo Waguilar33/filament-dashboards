@@ -25,12 +25,14 @@ class CalculateMetric
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters);
         $column = $numberField === null ? '*' : $query->qualifyColumn($numberField->name);
 
-        return $this->parseNumber->handle(match ($metric) {
+        $value = $this->parseNumber->handle(match ($metric) {
             Metric::Count => $query->count(),
             Metric::Sum => $query->sum($column),
             Metric::Average => $query->avg($column),
             Metric::Min => $query->min($column),
             Metric::Max => $query->max($column),
         });
+
+        return $numberField?->fromStored($value) ?? $value;
     }
 }

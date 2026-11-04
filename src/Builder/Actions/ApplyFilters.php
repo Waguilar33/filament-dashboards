@@ -62,6 +62,10 @@ class ApplyFilters
 
         $value = $this->coerce($field->type, $rule['value'] ?? null);
 
+        if (is_int($value) || is_float($value)) {
+            $value = $field->toStored($value);
+        }
+
         return $value === null ? null : ['field' => $field, 'operator' => $operator, 'value' => $value];
     }
 

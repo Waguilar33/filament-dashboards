@@ -62,7 +62,9 @@ class CalculateBreakdown
                 ->map(fn (array $row): string => blank($row[$group->name]) ? trans('filament-dashboards::builder.empty') : $group->valueLabel($row[$group->name]))
                 ->all()),
             'values' => array_values($rows
-                ->map(fn (array $row): int|float => $this->parseNumber->handle($row['aggregate']))
+                ->map(fn (array $row): int|float => $numberField === null
+                    ? $this->parseNumber->handle($row['aggregate'])
+                    : $numberField->fromStored($this->parseNumber->handle($row['aggregate'])))
                 ->all()),
         ];
     }

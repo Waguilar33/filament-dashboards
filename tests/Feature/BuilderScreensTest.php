@@ -3,16 +3,22 @@
 declare(strict_types=1);
 
 use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Actions\BuildFilters;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Pages\ListBuilderWidgets;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ViewDashboard;
+use Waguilar\FilamentDashboards\Tests\Fixtures\GatedOrdersSource;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
+use Workbench\App\DataSources\OrdersSource;
 use Workbench\Database\Factories\DemoOrderFactory;
 
 beforeEach(function (): void {
@@ -238,4 +244,62 @@ it('saves filters built in the form', function (): void {
     $rules = BuilderWidget::query()->sole()->config['cards'][0]['filters'][0]['rules'];
 
     expect(array_column($rules, 'field'))->toBe(['channel', 'paid', 'ordered_at']);
+});
+
+function gateOrders(Model $allowed): void
+{
+    FilamentDashboardsPlugin::get()->dataSources([OrdersSource::class, GatedOrdersSource::class]);
+    Gate::define('view-orders', fn (Model $user): bool => $user->is($allowed));
+}
+
+it('offers only the data sources the user may view', function (): void {
+    $allowed = user();
+    gateOrders($allowed);
+
+    expect(array_keys(FilamentDashboardsPlugin::get()->getDataSourcesFor($allowed, null)))->toBe(['orders', 'gated-orders'])
+        ->and(array_keys(FilamentDashboardsPlugin::get()->getDataSourcesFor(user(), null)))->toBe(['orders']);
+});
+
+it('calculates nothing from a source the viewer may not view', function (): void {
+    demoOrders();
+    $allowed = user();
+    gateOrders($allowed);
+    $config = ['cards' => [['source' => 'gated-orders', 'metric' => 'count', 'label' => 'Gated count']]];
+
+    $this->actingAs(user());
+    Livewire::test(BuilderStatsWidget::class, ['previewType' => 'stats', 'previewConfig' => $config])->assertDontSee('Gated count');
+
+    $this->actingAs($allowed);
+    Livewire::test(BuilderStatsWidget::class, ['previewType' => 'stats', 'previewConfig' => $config])->assertSee('Gated count');
+});
+
+it('refuses saved widgets built on a source the user may not view', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    gateOrders(user());
+    $gated = builderWidget($owner, ['config' => ['cards' => [['source' => 'orders', 'metric' => 'count'], ['source' => 'gated-orders', 'metric' => 'count']]]]);
+    $open = builderWidget($owner);
+    $this->actingAs($owner);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->callAction('addWidget', data: ['widget' => $gated->dashboardKey()])
+        ->assertHasActionErrors(['widget']);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->callAction('addWidget', data: ['widget' => $open->dashboardKey()])
+        ->assertHasNoActionErrors();
+});
+
+it('hides the builder when the user may view no source', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    FilamentDashboardsPlugin::get()->dataSources([GatedOrdersSource::class]);
+    Gate::define('view-orders', fn (): bool => false);
+    $this->actingAs($owner);
+
+    expect(BuilderWidgetResource::shouldRegisterNavigation())->toBeFalse();
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->callAction('addWidget', data: ['widget' => 'new:pie'])
+        ->assertHasActionErrors(['widget']);
 });

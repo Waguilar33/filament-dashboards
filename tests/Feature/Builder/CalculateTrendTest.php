@@ -7,6 +7,7 @@ use Waguilar\FilamentDashboards\Builder\Actions\CalculateTrend;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
+use Waguilar\FilamentDashboards\Tests\Fixtures\CentsOrdersSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\WebOrdersSource;
 use Workbench\App\DataSources\OrdersSource;
 use Workbench\App\Models\DemoOrder;
@@ -125,3 +126,11 @@ it('rejects a date field that is not a date field of the source', function (stri
 it('rejects a metric that needs a number field', function (): void {
     trend(TimeGrouping::Day, '2026-03-01', '2026-03-02', Metric::Sum, 'customer');
 })->throws(InvalidArgumentException::class);
+
+it('divides a scaled number field per bucket', function (): void {
+    order('2026-03-01 10:00:00', 10);
+    order('2026-03-01 11:00:00', 35);
+
+    expect(trend(TimeGrouping::Day, '2026-03-01', '2026-03-02', Metric::Sum, 'total', source: new CentsOrdersSource)['values'])->toEqual([4.5, 0])
+        ->and(trend(TimeGrouping::Day, '2026-03-01', '2026-03-02', source: new CentsOrdersSource)['values'])->toEqual([2, 0]);
+});

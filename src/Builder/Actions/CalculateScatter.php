@@ -44,8 +44,8 @@ class CalculateScatter
             ->get([$xColumn, $yColumn])
             ->map(fn (object $row): array => (array) $row)
             ->map(fn (array $row): array => [
-                'x' => $this->parseNumber->handle($row[$x->name]),
-                'y' => $this->parseNumber->handle($row[$y->name]),
+                'x' => $x->fromStored($this->parseNumber->handle($row[$x->name])),
+                'y' => $y->fromStored($this->parseNumber->handle($row[$y->name])),
             ])
             ->all());
     }

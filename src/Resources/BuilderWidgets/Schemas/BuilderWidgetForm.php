@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas;
 
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -22,6 +23,7 @@ use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
 use Waguilar\FilamentDashboards\Builder\Field;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
@@ -174,7 +176,7 @@ class BuilderWidgetForm
             ->options(function (): array {
                 $options = [];
 
-                foreach (FilamentDashboardsPlugin::get()->getDataSources() as $key => $source) {
+                foreach (FilamentDashboardsPlugin::get()->getDataSourcesFor(DashboardResource::user(), Filament::getTenant()) as $key => $source) {
                     $options[$source->group() ?? __('filament-dashboards::dashboards.builder.fields.source')][$key] = $source->label();
                 }
 
@@ -257,7 +259,7 @@ class BuilderWidgetForm
 
     protected static function source(mixed $key): ?DataSource
     {
-        return is_string($key) ? (FilamentDashboardsPlugin::get()->getDataSources()[$key] ?? null) : null;
+        return is_string($key) ? (FilamentDashboardsPlugin::get()->getDataSourcesFor(DashboardResource::user(), Filament::getTenant())[$key] ?? null) : null;
     }
 
     protected static function field(?DataSource $source, mixed $name): ?Field

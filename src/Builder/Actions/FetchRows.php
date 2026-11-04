@@ -54,9 +54,12 @@ class FetchRows
             ->map(fn (object $row): array => (array) $row)
             ->map(fn (array $row): array => $selected
                 ->mapWithKeys(fn (Field $field): array => [
-                    $field->name => $row[$field->name] !== null && in_array($field->type, [FieldType::Choice, FieldType::Boolean], true)
-                        ? $field->valueLabel($row[$field->name])
-                        : $row[$field->name],
+                    $field->name => match (true) {
+                        $row[$field->name] === null => null,
+                        in_array($field->type, [FieldType::Choice, FieldType::Boolean], true) => $field->valueLabel($row[$field->name]),
+                        $field->type === FieldType::Number && is_numeric($row[$field->name]) => $field->fromStored($row[$field->name] + 0),
+                        default => $row[$field->name],
+                    },
                 ])
                 ->all())
             ->all());

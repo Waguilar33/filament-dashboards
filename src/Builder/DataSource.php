@@ -18,6 +18,11 @@ abstract class DataSource
         return null;
     }
 
+    public function canView(Model $user, ?Model $tenant): bool
+    {
+        return true;
+    }
+
     /**
      * @return Builder<covariant Model>
      */

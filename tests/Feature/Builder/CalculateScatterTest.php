@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateScatter;
 use Waguilar\FilamentDashboards\Builder\DataSource;
+use Waguilar\FilamentDashboards\Tests\Fixtures\CentsOrdersSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\Record;
 use Waguilar\FilamentDashboards\Tests\Fixtures\RecordsSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\WebOrdersSource;
@@ -69,3 +70,11 @@ it('rejects fields that are not number fields of the source', function (string $
     'unknown y' => ['total', 'secret'],
     'date y' => ['total', 'ordered_at'],
 ])->throws(InvalidArgumentException::class);
+
+it('divides a scaled number field', function (): void {
+    expect(scatter(source: new CentsOrdersSource))->toEqual([
+        ['x' => 1, 'y' => 1],
+        ['x' => 2, 'y' => 2.55],
+        ['x' => 3, 'y' => 4],
+    ]);
+});

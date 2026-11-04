@@ -16,6 +16,7 @@ final readonly class Field
         public string $label,
         public FieldType $type,
         public array $options = [],
+        public int|float $divisor = 1,
     ) {}
 
     public static function number(string $name, string $label): self
@@ -44,6 +45,21 @@ final readonly class Field
     public static function choice(string $name, string $label, array $options): self
     {
         return new self($name, $label, FieldType::Choice, $options);
+    }
+
+    public function divideBy(int|float $divisor): self
+    {
+        return new self($this->name, $this->label, $this->type, $this->options, $divisor);
+    }
+
+    public function fromStored(int|float $value): int|float
+    {
+        return $this->divisor == 1 ? $value : $value / $this->divisor;
+    }
+
+    public function toStored(int|float $value): int|float
+    {
+        return $this->divisor == 1 ? $value : round($value * $this->divisor, 10);
     }
 
     public function valueLabel(mixed $value): string

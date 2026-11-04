@@ -105,6 +105,17 @@ class OrdersSource extends DataSource
 FilamentDashboardsPlugin::make()->dataSources([OrdersSource::class]);
 ```
 
+A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too.
+
+Hide a source from users who may not use it; they are not offered it in the builder, and widgets built on it calculate nothing for them:
+
+```php
+public function canView(Model $user, ?Model $tenant): bool
+{
+    return $user->can('viewAny', Order::class);
+}
+```
+
 Users then pick New widget (stats cards, table, line, bar, scatter, pie, doughnut, polar area), choose a source, a metric and filters, and see a preview before saving. Saved widgets appear under Widgets, where they can be shared, cloned and deleted like dashboards. Ship ready-made ones as system widgets:
 
 ```php

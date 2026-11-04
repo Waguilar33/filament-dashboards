@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Waguilar\FilamentDashboards\Builder\Actions\ApplyFilters;
 use Waguilar\FilamentDashboards\Builder\DataSource;
+use Waguilar\FilamentDashboards\Builder\Field;
+use Waguilar\FilamentDashboards\Tests\Fixtures\CentsOrdersSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\Record;
 use Waguilar\FilamentDashboards\Tests\Fixtures\RecordsSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\WebOrdersSource;
@@ -172,4 +174,10 @@ it('treats null values as empty and keeps them for is not', function (): void {
         ->and($names('happened_at', 'is_empty'))->toBe([2])
         ->and($names('name', 'is_not', 'a'))->toBe([2, 3])
         ->and($names('amount', 'is_not', 5))->toBe([2, 3]);
+});
+
+it('compares a scaled number field in the units the user sees', function (): void {
+    expect(filteredNumbers([[['field' => 'total', 'operator' => 'greater_than', 'value' => 2.5]]], new CentsOrdersSource))->toBe(['C', 'D'])
+        ->and(filteredNumbers([[['field' => 'total', 'operator' => 'is', 'value' => 1]]], new CentsOrdersSource))->toBe(['A'])
+        ->and(Field::number('total', 'Total')->divideBy(100)->toStored(1.1))->toBe(110.0);
 });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Waguilar\FilamentDashboards\Builder\Actions\FetchRows;
 use Waguilar\FilamentDashboards\Builder\DataSource;
+use Waguilar\FilamentDashboards\Tests\Fixtures\CentsOrdersSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\WebOrdersSource;
 use Workbench\App\DataSources\OrdersSource;
 use Workbench\App\Models\DemoOrder;
@@ -75,4 +76,8 @@ it('stays inside the scoping of the source', function (): void {
     $filters = [[['field' => 'channel', 'operator' => 'is', 'value' => 'store']], [['field' => 'total', 'operator' => 'greater_than', 'value' => 0]]];
 
     expect(array_column(rows(['number'], 'number', filters: $filters, source: new WebOrdersSource), 'number'))->toBe(['A', 'C']);
+});
+
+it('divides a scaled number field', function (): void {
+    expect(array_column(rows(['number', 'total'], 'number', source: new CentsOrdersSource), 'total'))->toEqual([3, 1, 2]);
 });

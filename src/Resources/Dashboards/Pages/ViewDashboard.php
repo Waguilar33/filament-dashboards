@@ -128,12 +128,14 @@ class ViewDashboard extends Page
         $plugin = FilamentDashboardsPlugin::get();
         $user = DashboardResource::user();
         $widgets = $plugin->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), $user);
+        $sources = $plugin->getDataSourcesFor($user, Filament::getTenant());
         $builderWidgets = BuilderWidget::query()
-            ->when($plugin->getDataSources() === [], fn (Builder $query): Builder => $query->whereKey([]))
+            ->when($sources === [], fn (Builder $query): Builder => $query->whereKey([]))
             ->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())
             ->visibleTo($user)
             ->orderBy('name')
             ->get()
+            ->filter(fn (BuilderWidget $widget): bool => array_diff($widget->sourceKeys(), array_keys($sources)) === [])
             ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
 
         $quick = array_map(fn (string $widget): array => [
@@ -159,7 +161,7 @@ class ViewDashboard extends Page
             'options' => $quick,
         ]];
 
-        if ($plugin->getDataSources() !== []) {
+        if ($sources !== []) {
             $new = [];
 
             foreach (BuilderWidgetType::cases() as $type) {

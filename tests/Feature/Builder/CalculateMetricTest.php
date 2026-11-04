@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateMetric;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\Tests\Fixtures\CentsOrdersSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\WebOrdersSource;
 use Workbench\App\DataSources\OrdersSource;
 use Workbench\App\Models\DemoOrder;
@@ -66,3 +67,13 @@ it('rejects a metric that needs a number field', function (?string $field): void
     'date field' => ['ordered_at'],
     'boolean field' => ['paid'],
 ])->throws(InvalidArgumentException::class);
+
+it('divides a scaled number field after aggregating', function (Metric $metric, int|float $expected): void {
+    expect(metric($metric, 'total', [], new CentsOrdersSource))->toEqual($expected);
+})->with([
+    'count' => [Metric::Count, 3],
+    'sum' => [Metric::Sum, 9],
+    'average' => [Metric::Average, 3],
+    'min' => [Metric::Min, 1],
+    'max' => [Metric::Max, 6],
+]);

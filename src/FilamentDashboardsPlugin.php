@@ -202,6 +202,14 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
+     * @return array<string, DataSource>
+     */
+    public function getDataSourcesFor(Model $user, ?Model $tenant): array
+    {
+        return array_filter($this->getDataSources(), fn (DataSource $source): bool => $source->canView($user, $tenant));
+    }
+
+    /**
      * @param  list<class-string<SystemWidget>>  $widgets
      */
     public function systemWidgets(array $widgets): static

@@ -63,7 +63,7 @@ trait InteractsWithBuilderWidget
 
     protected function source(mixed $key): ?DataSource
     {
-        return is_string($key) ? (FilamentDashboardsPlugin::get()->getDataSources()[$key] ?? null) : null;
+        return is_string($key) ? (FilamentDashboardsPlugin::get()->getDataSourcesFor($this->viewer(), $this->tenant())[$key] ?? null) : null;
     }
 
     /**
