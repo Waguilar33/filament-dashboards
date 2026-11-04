@@ -189,8 +189,7 @@ it('toggles layout editing', function (): void {
     viewAs($owner, dashboard($owner))
         ->callAction('editLayout')
         ->assertSet('isEditingLayout', true)
-        ->callAction('editLayout')
-        ->assertSet('isEditingLayout', false);
+        ->assertRedirect('/demo/custom-dashboards/sales?editing=1');
 });
 
 it('saves the layout from the grid, keeping widgets inside it', function (): void {

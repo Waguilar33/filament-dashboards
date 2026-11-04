@@ -270,7 +270,11 @@ class ViewDashboard extends Page
                 ? __('filament-dashboards::dashboards.actions.done')
                 : __('filament-dashboards::dashboards.actions.edit_layout'))
             ->visible($this->canEdit())
-            ->action(fn () => $this->isEditingLayout = ! $this->isEditingLayout);
+            ->action(function (): void {
+                $this->isEditingLayout = ! $this->isEditingLayout;
+
+                $this->reloadDashboard();
+            });
     }
 
     protected function settingsAction(): EditAction

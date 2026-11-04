@@ -158,20 +158,22 @@ it('lists rows in a table', function (): void {
         ->assertDontSee('Eva');
 });
 
-it('renders a saved widget on a dashboard the viewer can see, but not otherwise', function (): void {
+it('shows a saved widget only to people the widget itself is shared with', function (): void {
     $owner = user();
     $widget = builderWidget($owner, ['name' => 'Team numbers']);
     $dashboard = dashboard($owner);
     $dashboard->items()->create(['widget' => $widget->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 4]);
     $teammate = user();
-    $stranger = user();
     share($dashboard, $teammate, ShareLevel::Read);
 
     $this->actingAs($teammate);
-    Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertSee('Team numbers');
-
-    $this->actingAs($stranger);
     Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertNotFound();
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets yet');
+
+    share($widget, $teammate, ShareLevel::Read);
+
+    Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertSee('Team numbers');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets yet');
 });
 
 it('polls a saved widget at its refresh interval', function (): void {

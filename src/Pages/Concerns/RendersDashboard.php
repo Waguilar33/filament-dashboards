@@ -31,6 +31,7 @@ trait RendersDashboard
 
         $builderWidgets = BuilderWidget::query()
             ->where('panel', $dashboard->panel)
+            ->visibleTo($user)
             ->whereIn('id', $dashboard->items()
                 ->where('widget', 'like', BuilderWidget::KEY_PREFIX.'%')
                 ->get(['widget'])

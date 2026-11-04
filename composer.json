@@ -72,6 +72,12 @@
             "@build",
             "@php vendor/bin/testbench serve --ansi"
         ],
+        "demo": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench dashboards:sync --ansi",
+            "@php vendor/bin/testbench serve --port=8765 --ansi"
+        ],
         "test": "vendor/bin/pest",
         "analyse": "vendor/bin/phpstan analyse",
         "format": "vendor/bin/pint",

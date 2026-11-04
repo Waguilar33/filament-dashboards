@@ -16,9 +16,9 @@ final class DatabaseSeeder extends Seeder
     public function run(): void
     {
         UserFactory::new()->create(['name' => 'Owner', 'email' => 'owner@example.com']);
-        UserFactory::new()->create(['name' => 'Teammate', 'email' => 'teammate@example.com']);
+        $teammate = UserFactory::new()->create(['name' => 'Teammate', 'email' => 'teammate@example.com']);
 
-        Role::create(['name' => 'Sales']);
+        $teammate->assignRole(Role::create(['name' => 'Sales']));
 
         $this->call(DemoOrderSeeder::class);
     }
