@@ -10,32 +10,25 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\TableWidget;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\CloneDashboard;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
-use Waguilar\FilamentDashboards\Actions\SaveShares;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
-use Waguilar\FilamentDashboards\Enums\ShareLevel;
+use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Models\Dashboard;
-use Waguilar\FilamentDashboards\Models\DashboardShare;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Schemas\DashboardForm;
@@ -144,90 +137,9 @@ class ViewDashboard extends Page
             ->action(fn (array $data) => app(AddDashboardWidget::class)->handle($this->getDashboard(), $widgets[Arr::string($data, 'widget')]));
     }
 
-    protected function shareAction(): Action
+    protected function shareAction(): ShareAction
     {
-        $plugin = FilamentDashboardsPlugin::get();
-        $userType = DashboardResource::user()->getMorphClass();
-        $roleType = $plugin->getRolesRelationship()?->getRelated()->getMorphClass();
-
-        return Action::make('share')
-            ->label(__('filament-dashboards::dashboards.actions.share'))
-            ->visible($this->getDashboard()->canBeSharedBy(DashboardResource::user()))
-            ->slideOver()
-            ->modalWidth(Width::TwoExtraLarge)
-            ->modalHeading(__('filament-dashboards::dashboards.modals.share.heading'))
-            ->modalDescription(__('filament-dashboards::dashboards.modals.share.description'))
-            ->fillForm(fn (): array => [
-                'shares' => $this->getDashboard()->shares->map(fn (DashboardShare $share): array => [
-                    'shareable_type' => $share->shareable_type,
-                    'shareable_id' => $share->shareable_id,
-                    'level' => $share->level->value,
-                ])->all(),
-            ])
-            ->schema([
-                Repeater::make('shares')
-                    ->hiddenLabel()
-                    ->defaultItems(0)
-                    ->reorderable(false)
-                    ->addActionLabel(__('filament-dashboards::dashboards.modals.share.add'))
-                    ->columns(3)
-                    ->schema([
-                        Select::make('shareable_type')
-                            ->label(__('filament-dashboards::dashboards.fields.shareable_type'))
-                            ->options($roleType === null ? [] : [
-                                $userType => __('filament-dashboards::dashboards.shareable_types.user'),
-                                $roleType => __('filament-dashboards::dashboards.shareable_types.role'),
-                            ])
-                            ->default($userType)
-                            ->selectablePlaceholder(false)
-                            ->live()
-                            ->visible($roleType !== null)
-                            ->required(),
-                        Select::make('shareable_id')
-                            ->label(__('filament-dashboards::dashboards.fields.shareable'))
-                            ->options(fn (Get $get): array => ($get('shareable_type') ?? $userType) === $roleType
-                                ? $plugin->getShareableRoles()?->pluck('name', 'id')->all() ?? []
-                                : $plugin->getShareableUsers(Filament::getTenant())
-                                    ->whereKeyNot(DashboardResource::user()->getKey())
-                                    ->get()
-                                    ->mapWithKeys(function (Model $user): array {
-                                        $key = $user->getKey();
-
-                                        return is_int($key) || is_string($key) ? [$key => Filament::getUserName($user)] : [];
-                                    })
-                                    ->all())
-                            ->searchable()
-                            ->required(),
-                        ToggleButtons::make('level')
-                            ->label(__('filament-dashboards::dashboards.fields.level'))
-                            ->options([
-                                ShareLevel::Read->value => __('filament-dashboards::dashboards.share_levels.read'),
-                                ShareLevel::Edit->value => __('filament-dashboards::dashboards.share_levels.edit'),
-                            ])
-                            ->default(ShareLevel::Read->value)
-                            ->inline()
-                            ->required(),
-                    ]),
-            ])
-            ->action(function (array $data) use ($userType): void {
-                $shares = [];
-
-                foreach (Arr::array($data, 'shares') as $share) {
-                    $id = is_array($share) ? ($share['shareable_id'] ?? null) : null;
-
-                    if (! is_array($share) || (! is_int($id) && ! is_string($id))) {
-                        continue;
-                    }
-
-                    $shares[] = [
-                        'shareable_type' => Arr::string($share + ['shareable_type' => $userType], 'shareable_type'),
-                        'shareable_id' => $id,
-                        'level' => Arr::string($share, 'level'),
-                    ];
-                }
-
-                app(SaveShares::class)->handle($this->getDashboard(), $shares);
-            });
+        return ShareAction::make()->record($this->getDashboard());
     }
 
     protected function editLayoutAction(): Action
