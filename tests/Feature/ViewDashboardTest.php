@@ -161,6 +161,15 @@ it('sets the dashboard as the user home', function (): void {
     expect(DashboardHome::query()->sole()->dashboard_id)->toBe($dashboard->id);
 });
 
+it('hides set as home on the user home dashboard only', function (): void {
+    $me = user();
+    $home = dashboard($me);
+    $other = dashboard($me, ['slug' => 'other']);
+
+    viewAs($me, $home)->callAction('setHome')->assertActionHidden('setHome');
+    viewAs($me, $other)->assertActionVisible('setHome');
+});
+
 it('updates the settings and follows a changed slug', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);

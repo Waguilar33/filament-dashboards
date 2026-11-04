@@ -25,6 +25,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\CloneDashboard;
+use Waguilar\FilamentDashboards\Actions\FindHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
@@ -324,6 +325,7 @@ class ViewDashboard extends Page
     {
         return Action::make('setHome')
             ->label(__('filament-dashboards::dashboards.actions.set_home'))
+            ->hidden(fn (): bool => app(FindHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())?->is($this->getDashboard()) === true)
             ->action(function (): void {
                 app(SetHomeDashboard::class)->handle($this->getDashboard(), DashboardResource::user(), Filament::getTenant());
 
