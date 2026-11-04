@@ -61,6 +61,7 @@ return [
         'remove' => 'Remove',
         'move_up' => 'Move up',
         'move_down' => 'Move down',
+        'edit' => 'Edit',
         'drag' => 'Drag to move',
         'previous' => 'Previous',
         'next' => 'Next',

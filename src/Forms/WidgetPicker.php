@@ -12,12 +12,12 @@ class WidgetPicker extends Field
     protected string $view = 'filament-dashboards::widget-picker';
 
     /**
-     * @var array<array{heading: string, description: string, carousel: bool, options: array<string, array{label: string, description: ?string, preview: ?string, kind: string}>}>|Closure
+     * @var list<array<string, mixed>>|Closure
      */
     protected array|Closure $sections = [];
 
     /**
-     * @param  array<array{heading: string, description: string, carousel: bool, options: array<string, array{label: string, description: ?string, preview: ?string, kind: string}>}>|Closure  $sections
+     * @param  list<array<string, mixed>>|Closure  $sections
      */
     public function sections(array|Closure $sections): static
     {
@@ -27,11 +27,11 @@ class WidgetPicker extends Field
     }
 
     /**
-     * @return array<array{heading: string, description: string, carousel: bool, options: array<string, array{label: string, description: ?string, preview: ?string, kind: string}>}>
+     * @return list<array<string, mixed>>
      */
     public function getSections(): array
     {
-        /** @var array<array{heading: string, description: string, carousel: bool, options: array<string, array{label: string, description: ?string, preview: ?string, kind: string}>}> */
+        /** @var list<array<string, mixed>> */
         return $this->evaluate($this->sections);
     }
 
@@ -43,7 +43,9 @@ class WidgetPicker extends Field
         $values = [];
 
         foreach ($this->getSections() as $section) {
-            array_push($values, ...array_map(strval(...), array_keys($section['options'])));
+            foreach (is_array($section['options'] ?? null) ? array_keys($section['options']) : [] as $value) {
+                $values[] = (string) $value;
+            }
         }
 
         return $values;

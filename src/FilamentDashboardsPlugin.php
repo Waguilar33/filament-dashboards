@@ -16,9 +16,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Gate;
 use LogicException;
+use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\SystemDashboards\SystemDashboard;
 use Waguilar\FilamentDashboards\SystemDashboards\SystemWidget;
@@ -44,6 +46,11 @@ final class FilamentDashboardsPlugin implements Plugin
      * @var list<class-string<SystemWidget>>
      */
     protected array $systemWidgets = [];
+
+    /**
+     * @var list<class-string<DataSource>>
+     */
+    protected array $dataSources = [];
 
     /**
      * @var (Closure(?Model): Builder<Model>)|null
@@ -74,7 +81,7 @@ final class FilamentDashboardsPlugin implements Plugin
     public function register(Panel $panel): void
     {
         $panel
-            ->resources([DashboardResource::class])
+            ->resources([DashboardResource::class, BuilderWidgetResource::class])
             ->authMiddleware([RegisterDashboardNavigation::class], isPersistent: true)
             ->tenantMiddleware([RegisterDashboardNavigation::class], isPersistent: true);
     }
@@ -167,6 +174,31 @@ final class FilamentDashboardsPlugin implements Plugin
         $this->systemDashboards = $dashboards;
 
         return $this;
+    }
+
+    /**
+     * @param  list<class-string<DataSource>>  $sources
+     */
+    public function dataSources(array $sources): static
+    {
+        $this->dataSources = $sources;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, DataSource>
+     */
+    public function getDataSources(): array
+    {
+        $sources = [];
+
+        foreach ($this->dataSources as $class) {
+            $source = new $class;
+            $sources[$source->key()] = $source;
+        }
+
+        return $sources;
     }
 
     /**

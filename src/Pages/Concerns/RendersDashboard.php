@@ -13,8 +13,10 @@ use Filament\Schemas\Components\View;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardItem;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
 
 trait RendersDashboard
 {
@@ -27,20 +29,43 @@ trait RendersDashboard
         $user = Filament::auth()->user();
         $widgets = FilamentDashboardsPlugin::get()->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), $user);
 
+        $builderWidgets = BuilderWidget::query()
+            ->where('panel', $dashboard->panel)
+            ->whereIn('id', $dashboard->items()
+                ->where('widget', 'like', BuilderWidget::KEY_PREFIX.'%')
+                ->get(['widget'])
+                ->map(fn (DashboardItem $item): string => substr($item->widget, strlen(BuilderWidget::KEY_PREFIX))))
+            ->get()
+            ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
+
         $items = $dashboard->items()
             ->orderBy('y')
             ->orderBy('x')
             ->orderBy('id')
             ->get()
-            ->filter(fn (DashboardItem $item): bool => isset($widgets[$item->widget]))
-            ->map(fn (DashboardItem $item): array => [
-                'id' => $item->id,
-                'widget' => $widgets[$item->widget],
-                'x' => $item->x,
-                'y' => $item->y,
-                'w' => $item->w,
-                'h' => $item->h,
-            ])
+            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $user): ?array {
+                $builderWidget = $builderWidgets->get($item->widget);
+                $component = $builderWidget instanceof BuilderWidget
+                    ? BuilderWidgetForm::component($builderWidget->type)
+                    : ($widgets[$item->widget] ?? null);
+
+                if ($component === null) {
+                    return null;
+                }
+
+                return [
+                    'id' => $item->id,
+                    'widget' => $component,
+                    'props' => $builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [],
+                    'version' => $builderWidget?->updated_at?->timestamp,
+                    'builderWidgetId' => $builderWidget instanceof BuilderWidget && $builderWidget->canBeEditedBy($user) ? $builderWidget->id : null,
+                    'x' => $item->x,
+                    'y' => $item->y,
+                    'w' => $item->w,
+                    'h' => $item->h,
+                ];
+            })
+            ->filter()
             ->values()
             ->all();
 

@@ -1,6 +1,6 @@
 # Dashboard Rules
 
-**Status:** Stage 1 released as v1.0.0-beta.1 and stage 2 as v1.0.0-beta.2 (2026-11-04, on branch `feat/stage-1-core`).
+**Status:** Stages 1–3 built and tagged v1.0.0-beta.1, beta.2 and beta.3 (2026-11-04, on branch `feat/stage-1-core`), waiting for the owner's review.
 **Last updated:** 2026-11-04
 
 ## Agreed rules
@@ -53,6 +53,11 @@ None yet.
 | FDP11 | Spanish screens call a dashboard "Escritorio", Filament's own word for its dashboard page. | One term on screen for the same thing. |
 | FDP12 | In Edit layout, widgets are dragged by a handle and resized by their corner (Gridstack.js). Height follows the widget's content; width is what the user sets. The layout is saved when a drag or resize ends. | A widget's own content decides how tall it must be; a fixed height either clips charts or leaves gaps. |
 | FDP13 | Below 1024 px wide every widget stacks in one column, and changes made there are not saved. | Saving a one-column arrangement would overwrite the desktop layout. |
+| FDP14 | A saved builder widget placed on a dashboard shows to everyone who can see that dashboard, even without its own share. Its own shares decide who can add it to other dashboards, edit it or clone it. | Sharing a dashboard means sharing what is on it. The numbers are always calculated for the person looking (FDP15), so nobody sees data their own access would not show. |
+| FDP15 | Builder widgets calculate with the viewer's own user and tenant, through the data source's own query. | The source decides what each person may see (FD15); a widget never carries its owner's access to someone else. |
+| FDP16 | The builder offers: stats cards (count, sum, average, minimum, maximum per card), line and bar over time (last 7, 30, 90 days, 12 months or this year, grouped by day, week, month or year), pie, doughnut and polar area split by a field (top 1–20), scatter of two numbers, and a table (chosen columns, sort, up to 100 rows). Filters are groups joined by "or", each a list of rules joined by "and". | Covers every widget kind in the reference demo with the fewest settings. |
+| FDP17 | Saved widgets have their own Widgets list (mine, shared with me, system) with edit, share, clone and delete. The list shows only when the app registers data sources. | Sharing and cloning widgets (FD12) needs a place where widgets exist outside a dashboard. |
+| FDP18 | After a widget is added, edited or removed the dashboard page reloads (keeping Edit layout on). | Gridstack does not rebuild reliably when Livewire swaps the grid in place. |
 
 ## Open decisions
 

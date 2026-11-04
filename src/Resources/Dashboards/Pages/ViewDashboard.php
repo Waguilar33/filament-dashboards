@@ -19,27 +19,36 @@ use Filament\Support\Enums\Width;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\TableWidget;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\CloneDashboard;
+use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
+use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
+use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Schemas\DashboardForm;
 
 class ViewDashboard extends Page
 {
+    public const NEW_PREFIX = 'new:';
+
     use InteractsWithRecord;
     use RendersDashboard;
 
     protected static string $resource = DashboardResource::class;
 
+    #[Url(as: 'editing')]
     public bool $isEditingLayout = false;
 
     public function mount(int|string $record): void
@@ -84,6 +93,16 @@ class ViewDashboard extends Page
         abort_unless($this->canEdit(), 403);
 
         $this->getDashboard()->items()->whereKey($item)->delete();
+
+        $this->reloadDashboard();
+    }
+
+    protected function reloadDashboard(): void
+    {
+        $this->redirect(DashboardResource::getUrl('view', array_filter([
+            'record' => $this->getDashboard(),
+            'editing' => $this->isEditingLayout ? 1 : null,
+        ])), navigate: true);
     }
 
     protected function getHeaderActions(): array
@@ -103,7 +122,54 @@ class ViewDashboard extends Page
 
     protected function addWidgetAction(): Action
     {
-        $widgets = FilamentDashboardsPlugin::get()->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), DashboardResource::user());
+        $plugin = FilamentDashboardsPlugin::get();
+        $user = DashboardResource::user();
+        $widgets = $plugin->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), $user);
+        $builderWidgets = BuilderWidget::query()
+            ->when($plugin->getDataSources() === [], fn (Builder $query): Builder => $query->whereKey([]))
+            ->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())
+            ->visibleTo($user)
+            ->orderBy('name')
+            ->get()
+            ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
+
+        $quick = array_map(fn (string $widget): array => [
+            'label' => $widget::dashboardLabel(),
+            'description' => $widget::dashboardDescription(),
+            'preview' => $widget::dashboardPreview(),
+            'kind' => match (true) {
+                is_subclass_of($widget, StatsOverviewWidget::class) => 'stats',
+                is_subclass_of($widget, ChartWidget::class) => 'line',
+                is_subclass_of($widget, TableWidget::class) => 'table',
+                default => 'widget',
+            },
+        ], $widgets);
+
+        foreach ($builderWidgets as $key => $widget) {
+            $quick[$key] = ['label' => $widget->name, 'description' => $widget->type->getLabel(), 'preview' => null, 'kind' => $widget->type->preview()];
+        }
+
+        $sections = [[
+            'heading' => __('filament-dashboards::dashboards.picker.quick.heading'),
+            'description' => __('filament-dashboards::dashboards.picker.quick.description'),
+            'carousel' => true,
+            'options' => $quick,
+        ]];
+
+        if ($plugin->getDataSources() !== []) {
+            $new = [];
+
+            foreach (BuilderWidgetType::cases() as $type) {
+                $new[self::NEW_PREFIX.$type->value] = ['label' => $type->getLabel(), 'description' => $type->getDescription(), 'preview' => null, 'kind' => $type->preview()];
+            }
+
+            $sections[] = [
+                'heading' => __('filament-dashboards::dashboards.builder.new.heading'),
+                'description' => __('filament-dashboards::dashboards.builder.new.description'),
+                'carousel' => false,
+                'options' => $new,
+            ];
+        }
 
         return Action::make('addWidget')
             ->label(__('filament-dashboards::dashboards.actions.add_widget'))
@@ -112,29 +178,84 @@ class ViewDashboard extends Page
             ->modalHeading(__('filament-dashboards::dashboards.modals.add_widget.heading'))
             ->modalDescription(__('filament-dashboards::dashboards.modals.add_widget.description'))
             ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
-            ->modalWidth(Width::SevenExtraLarge)
+            ->modalWidth(Width::FourExtraLarge)
             ->schema([
                 WidgetPicker::make('widget')
                     ->hiddenLabel()
                     ->required()
-                    ->sections([[
-                        'heading' => __('filament-dashboards::dashboards.picker.quick.heading'),
-                        'description' => __('filament-dashboards::dashboards.picker.quick.description'),
-                        'carousel' => true,
-                        'options' => array_map(fn (string $widget): array => [
-                            'label' => $widget::dashboardLabel(),
-                            'description' => $widget::dashboardDescription(),
-                            'preview' => $widget::dashboardPreview(),
-                            'kind' => match (true) {
-                                is_subclass_of($widget, StatsOverviewWidget::class) => 'stats',
-                                is_subclass_of($widget, ChartWidget::class) => 'line',
-                                is_subclass_of($widget, TableWidget::class) => 'table',
-                                default => 'widget',
-                            },
-                        ], $widgets),
-                    ]]),
+                    ->sections($sections),
             ])
-            ->action(fn (array $data) => app(AddDashboardWidget::class)->handle($this->getDashboard(), $widgets[Arr::string($data, 'widget')]));
+            ->action(function (array $data, Action $action) use ($widgets, $builderWidgets): void {
+                $key = Arr::string($data, 'widget');
+
+                if (str_starts_with($key, self::NEW_PREFIX)) {
+                    $this->replaceMountedAction('buildWidget', ['type' => substr($key, strlen(self::NEW_PREFIX))]);
+
+                    return;
+                }
+
+                $builderWidget = $builderWidgets->get($key);
+
+                app(AddDashboardWidget::class)->handle(
+                    $this->getDashboard(),
+                    $key,
+                    $builderWidget instanceof BuilderWidget ? $builderWidget->type->defaultSize() : $widgets[$key]::dashboardSize(),
+                );
+
+                $this->reloadDashboard();
+            });
+    }
+
+    public function buildWidgetAction(): Action
+    {
+        return Action::make('buildWidget')
+            ->visible($this->canEdit())
+            ->slideOver()
+            ->modalWidth(Width::FourExtraLarge)
+            ->modalHeading(fn (array $arguments): string => BuilderWidgetType::from(Arr::string($arguments, 'type'))->getLabel())
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
+            ->schema(fn (array $arguments): array => BuilderWidgetForm::components(BuilderWidgetType::from(Arr::string($arguments, 'type'))))
+            ->action(function (array $data, array $arguments): void {
+                $type = BuilderWidgetType::from(Arr::string($arguments, 'type'));
+                $widget = app(SaveBuilderWidget::class)->handle(
+                    SaveBuilderWidget::newFor(DashboardResource::user(), Filament::getTenant(), FilamentDashboardsPlugin::currentPanel()->getId()),
+                    $type,
+                    $data,
+                );
+
+                app(AddDashboardWidget::class)->handle($this->getDashboard(), $widget->dashboardKey(), $type->defaultSize());
+
+                $this->reloadDashboard();
+            });
+    }
+
+    public function editWidgetAction(): Action
+    {
+        return Action::make('editWidget')
+            ->slideOver()
+            ->modalWidth(Width::FourExtraLarge)
+            ->modalHeading(fn (array $arguments): string => $this->editableWidget($arguments)->name)
+            ->fillForm(fn (array $arguments): array => $this->editableWidget($arguments)->only(['name', 'refresh_interval', 'config']))
+            ->schema(fn (array $arguments): array => BuilderWidgetForm::components($this->editableWidget($arguments)->type))
+            ->action(function (array $data, array $arguments): void {
+                $widget = $this->editableWidget($arguments);
+
+                app(SaveBuilderWidget::class)->handle($widget, $widget->type, $data);
+
+                $this->reloadDashboard();
+            });
+    }
+
+    /**
+     * @param  array<mixed>  $arguments
+     */
+    protected function editableWidget(array $arguments): BuilderWidget
+    {
+        $widget = BuilderWidget::query()->find($arguments['widget'] ?? null);
+
+        abort_unless($widget instanceof BuilderWidget && $widget->canBeEditedBy(DashboardResource::user()), 403);
+
+        return $widget;
     }
 
     protected function shareAction(): ShareAction

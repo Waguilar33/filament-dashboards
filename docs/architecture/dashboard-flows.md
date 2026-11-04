@@ -24,6 +24,24 @@ What each action does: what starts it, what it checks, what it writes, and which
 | Writes | x, y, w, h of every item when a drag or resize ends (FDP12); remove deletes the item. |
 | Shows | The dashboard grid, for everyone who can see it. |
 
+## DF9 Build a widget
+
+| Step | What |
+|---|---|
+| Starts | Add widget, then a card under New widget; or Edit on a saved widget (grid toolbar or Widgets list). |
+| Checks | Edit on the dashboard (FD6) to add; edit on the widget to change it (FD12). Only registered data sources and their fields (FD15). |
+| Writes | A builder widget owned by the user in the current panel and tenant, and an item for it on the dashboard; editing changes name, refresh and settings. |
+| Shows | Preview tab while building; the dashboard grid (FDP18); the Widgets list; every dashboard that holds the widget. |
+
+## DF10 Share, clone or delete a widget
+
+| Step | What |
+|---|---|
+| Starts | The row menu in the Widgets list. |
+| Checks | Share and delete: owner only, never a system widget (FD7). Clone: anyone who can see it. |
+| Writes | Shares (FD6); a private copy for clone; delete removes the widget and its shares. |
+| Shows | The Widgets list; Add widget's Quick widgets for the people it is shared with. |
+
 ## DF2 Create a dashboard
 
 | Step | What |
@@ -74,6 +92,6 @@ What each action does: what starts it, what it checks, what it writes, and which
 | Step | What |
 |---|---|
 | Starts | `dashboards:sync`, run on deploy. |
-| Checks | The system dashboard classes registered with the plugin (FD16). |
+| Checks | The system widget and system dashboard classes registered with the plugin (FD16). Widgets sync first so system dashboards can place them. |
 | Writes | Creates or updates each one and its items; removes system dashboards no longer registered. |
 | Shows | Every user's list, read-only (FD8). |

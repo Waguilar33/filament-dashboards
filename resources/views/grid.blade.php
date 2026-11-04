@@ -27,6 +27,17 @@
                                 {{ \Filament\Support\generate_icon_html(\Filament\Support\Icons\Heroicon::OutlinedArrowsPointingOut) }}
                             </span>
 
+                            <span class="fi-dashboards-toolbar-actions">
+                            @if (filled($item['builderWidgetId']))
+                                <x-filament::icon-button
+                                    color="gray"
+                                    :icon="\Filament\Support\Icons\Heroicon::OutlinedPencilSquare"
+                                    :label="__('filament-dashboards::dashboards.actions.edit')"
+                                    size="sm"
+                                    wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }} })"
+                                />
+                            @endif
+
                             <x-filament::icon-button
                                 color="danger"
                                 :icon="\Filament\Support\Icons\Heroicon::OutlinedTrash"
@@ -34,10 +45,11 @@
                                 size="sm"
                                 wire:click="removeDashboardItem({{ $item['id'] }})"
                             />
+                            </span>
                         </div>
                     @endif
 
-                    @livewire($item['widget'], [], key('dashboard-item-' . $item['id']))
+                    @livewire($item['widget'], $item['props'], key('dashboard-item-' . $item['id'] . '-' . $item['version']))
                     </div>
                 </div>
             </div>

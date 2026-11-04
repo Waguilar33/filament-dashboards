@@ -61,6 +61,7 @@ return [
         'remove' => 'Quitar',
         'move_up' => 'Subir',
         'move_down' => 'Bajar',
+        'edit' => 'Editar',
         'drag' => 'Arrastra para mover',
         'previous' => 'Anterior',
         'next' => 'Siguiente',

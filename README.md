@@ -70,6 +70,66 @@ FilamentDashboardsPlugin::make()->systemDashboards([OverviewDashboard::class]);
 
 Run `php artisan dashboards:sync` on every deploy. Everyone can view system dashboards and clone them; nobody can edit or delete them.
 
+## The widget builder
+
+Register the data your users may build widgets from. Each data source returns its own query, already limited to what that user and tenant may see; the builder never reaches any other model or column.
+
+```php
+use Waguilar\FilamentDashboards\Builder\DataSource;
+use Waguilar\FilamentDashboards\Builder\Field;
+
+class OrdersSource extends DataSource
+{
+    public function key(): string { return 'orders'; }
+
+    public function label(): string { return 'Orders'; }
+
+    public function group(): ?string { return 'Shop'; }
+
+    public function query(Model $user, ?Model $tenant): Builder
+    {
+        return Order::query()->whereBelongsTo($tenant);
+    }
+
+    public function fields(): array
+    {
+        return [
+            Field::choice('status', 'Status', ['paid' => 'Paid', 'pending' => 'Pending']),
+            Field::number('total', 'Total'),
+            Field::boolean('paid', 'Paid'),
+            Field::date('ordered_at', 'Ordered at'),
+        ];
+    }
+}
+
+FilamentDashboardsPlugin::make()->dataSources([OrdersSource::class]);
+```
+
+Users then pick New widget (stats cards, table, line, bar, scatter, pie, doughnut, polar area), choose a source, a metric and filters, and see a preview before saving. Saved widgets appear under Widgets, where they can be shared, cloned and deleted like dashboards. Ship ready-made ones as system widgets:
+
+```php
+use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\SystemDashboards\SystemWidget;
+
+class OrdersByChannel extends SystemWidget
+{
+    public function key(): string { return 'orders-by-channel'; }
+
+    public function name(): string { return 'Orders by channel'; }
+
+    public function type(): BuilderWidgetType { return BuilderWidgetType::Doughnut; }
+
+    public function config(): array
+    {
+        return ['source' => 'orders', 'group_field' => 'channel', 'metric' => 'count'];
+    }
+}
+
+FilamentDashboardsPlugin::make()->systemWidgets([OrdersByChannel::class]);
+```
+
+A system dashboard can place a system widget by listing its class in `items()`.
+
 ## Who can do what
 
 | | Who |

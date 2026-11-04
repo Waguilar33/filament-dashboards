@@ -18,6 +18,10 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Pages\Home;
 use Workbench\App\Dashboards\OverviewDashboard;
+use Workbench\App\DataSources\OrdersSource;
+use Workbench\App\Widgets\OrdersByChannel;
+use Workbench\App\Widgets\RevenueTrend;
+use Workbench\App\Widgets\SalesThisYear;
 
 final class DemoPanelProvider extends PanelProvider
 {
@@ -30,7 +34,10 @@ final class DemoPanelProvider extends PanelProvider
             ->login()
             ->pages([Home::class])
             ->discoverWidgets(in: __DIR__.'/../../Filament/Widgets', for: 'Workbench\\App\\Filament\\Widgets')
-            ->plugin(FilamentDashboardsPlugin::make()->systemDashboards([OverviewDashboard::class]))
+            ->plugin(FilamentDashboardsPlugin::make()
+                ->dataSources([OrdersSource::class])
+                ->systemWidgets([SalesThisYear::class, RevenueTrend::class, OrdersByChannel::class])
+                ->systemDashboards([OverviewDashboard::class]))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
