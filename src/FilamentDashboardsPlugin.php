@@ -68,6 +68,18 @@ final class FilamentDashboardsPlugin implements Plugin
         return self::currentPanel()->getPlugin(FilamentDashboardsServiceProvider::NAME);
     }
 
+    public static function forPanel(string $panel): ?static
+    {
+        $instance = Filament::getPanel($panel, isStrict: false);
+
+        if ($instance === null || ! $instance->hasPlugin(FilamentDashboardsServiceProvider::NAME)) {
+            return null;
+        }
+
+        /** @var static */
+        return $instance->getPlugin(FilamentDashboardsServiceProvider::NAME);
+    }
+
     public static function currentPanel(): Panel
     {
         return Filament::getCurrentOrDefaultPanel() ?? throw new LogicException('Filament Dashboards needs a Filament panel.');
@@ -233,6 +245,32 @@ final class FilamentDashboardsPlugin implements Plugin
     public function getSystemDashboards(): array
     {
         return $this->systemDashboards;
+    }
+
+    public function getSystemDashboardName(string $key): ?string
+    {
+        foreach ($this->systemDashboards as $class) {
+            $dashboard = new $class;
+
+            if ($dashboard->key() === $key) {
+                return $dashboard->name();
+            }
+        }
+
+        return null;
+    }
+
+    public function getSystemWidgetName(string $key): ?string
+    {
+        foreach ($this->systemWidgets as $class) {
+            $widget = new $class;
+
+            if ($widget->key() === $key) {
+                return $widget->name();
+            }
+        }
+
+        return null;
     }
 
     /**

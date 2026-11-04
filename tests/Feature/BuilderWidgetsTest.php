@@ -62,3 +62,15 @@ it('removes system widgets no longer registered', function (): void {
 
     expect(BuilderWidget::query()->pluck('id')->all())->toBe([$mine->id]);
 });
+
+it('names system dashboards and widgets in the current language', function (): void {
+    $dashboard = dashboard(attributes: ['system_key' => 'overview', 'name' => 'Stored name']);
+    $widget = builderWidget(attributes: ['system_key' => 'orders-by-channel', 'name' => 'Stored name']);
+    $gone = dashboard(attributes: ['system_key' => 'gone', 'slug' => 'gone', 'name' => 'Stored name']);
+    $mine = dashboard(user(), ['slug' => 'mine', 'name' => 'My name']);
+
+    expect($dashboard->name)->toBe('Overview')
+        ->and($widget->name)->toBe('Orders by channel')
+        ->and($gone->name)->toBe('Stored name')
+        ->and($mine->name)->toBe('My name');
+});

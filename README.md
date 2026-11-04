@@ -11,6 +11,17 @@ composer require waguilar33/filament-dashboards:@beta
 php artisan filament-dashboards:install
 ```
 
+When your users or tenants have uuid or ulid keys, set them in `config/filament-dashboards.php` before migrating:
+
+```php
+'key_types' => [
+    'users' => 'uuid',
+    'tenants' => 'uuid',
+],
+```
+
+Left empty, they follow Laravel's default morph key type. Roles shared with must use the same key type as users.
+
 Register the plugin on a panel, and swap Filament's `Dashboard` page for the plugin's `Home` page so users can pick a home dashboard:
 
 ```php
@@ -68,7 +79,7 @@ class OverviewDashboard extends SystemDashboard
 FilamentDashboardsPlugin::make()->systemDashboards([OverviewDashboard::class]);
 ```
 
-Run `php artisan dashboards:sync` on every deploy. Everyone can view system dashboards and clone them; nobody can edit or delete them.
+Run `php artisan dashboards:sync` on every deploy. Names come from `name()` in the viewer's language, so it can return a translation. Everyone can view system dashboards and clone them; nobody can edit or delete them.
 
 ## The widget builder
 
@@ -107,7 +118,7 @@ FilamentDashboardsPlugin::make()->dataSources([OrdersSource::class]);
 
 A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too.
 
-Hide a source from users who may not use it; they are not offered it in the builder, and widgets built on it calculate nothing for them:
+Hide a source from users who may not use it; they are not offered it in the builder, and widgets built on it are left off their dashboards:
 
 ```php
 public function canView(Model $user, ?Model $tenant): bool

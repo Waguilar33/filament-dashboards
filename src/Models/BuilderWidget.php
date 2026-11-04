@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Models;
 
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Waguilar\FilamentDashboards\Builders\BuilderWidgetBuilder;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Concerns\HasOwnerAndShares;
 
 /**
@@ -57,6 +60,15 @@ class BuilderWidget extends Model
             array_map(fn (mixed $part): mixed => is_array($part) ? ($part['source'] ?? null) : null, $parts),
             is_string(...),
         )));
+    }
+
+    /**
+     * @return Attribute<string, never>
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::get(fn (mixed $value, array $attributes): string => ($this->system_key === null ? null : FilamentDashboardsPlugin::forPanel($this->panel)?->getSystemWidgetName($this->system_key))
+            ?? Arr::string($attributes, 'name'));
     }
 
     /**

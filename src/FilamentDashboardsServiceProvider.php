@@ -32,6 +32,10 @@ final class FilamentDashboardsServiceProvider extends PackageServiceProvider
                 ->publishMigrations()
                 ->askToRunMigrations()
                 ->endWith(function (InstallCommand $command): void {
+                    if (class_exists('Waguilar\\FilamentGuardian\\FilamentGuardianPlugin')) {
+                        return;
+                    }
+
                     $command->info('Tip: install waguilar33/filament-guardian to choose which roles can add each widget and create dashboards, and to share dashboards with whole roles.');
                 }));
     }

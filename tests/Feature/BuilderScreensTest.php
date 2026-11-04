@@ -303,3 +303,20 @@ it('hides the builder when the user may view no source', function (): void {
         ->callAction('addWidget', data: ['widget' => 'new:pie'])
         ->assertHasActionErrors(['widget']);
 });
+
+it('leaves widgets built on a source the viewer may not view off the dashboard', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $allowed = user();
+    gateOrders($allowed);
+    $widget = builderWidget($owner, ['config' => ['cards' => [['source' => 'gated-orders', 'metric' => 'count']]]]);
+    $dashboard->items()->create(['widget' => $widget->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 4]);
+    share($dashboard, $allowed, ShareLevel::Read);
+    share($widget, $allowed, ShareLevel::Read);
+
+    $this->actingAs($owner);
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets yet');
+
+    $this->actingAs($allowed);
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets yet');
+});

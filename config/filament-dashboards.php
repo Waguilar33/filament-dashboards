@@ -10,4 +10,9 @@ return [
         'shares' => 'custom_dashboard_shares',
         'homes' => 'custom_dashboard_homes',
     ],
+
+    'key_types' => [
+        'users' => null,
+        'tenants' => null,
+    ],
 ];

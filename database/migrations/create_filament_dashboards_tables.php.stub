@@ -12,11 +12,18 @@ return new class extends Migration
     {
         $tables = config('filament-dashboards.tables');
 
-        Schema::create($tables['dashboards'], function (Blueprint $table): void {
+        $morphs = fn (Blueprint $table, string $name, string $keys, bool $nullable = false) => $table->{match (config("filament-dashboards.key_types.{$keys}")) {
+            'int' => $nullable ? 'nullableNumericMorphs' : 'numericMorphs',
+            'uuid' => $nullable ? 'nullableUuidMorphs' : 'uuidMorphs',
+            'ulid' => $nullable ? 'nullableUlidMorphs' : 'ulidMorphs',
+            default => $nullable ? 'nullableMorphs' : 'morphs',
+        }}($name);
+
+        Schema::create($tables['dashboards'], function (Blueprint $table) use ($morphs): void {
             $table->id();
             $table->string('panel');
-            $table->nullableMorphs('tenant');
-            $table->nullableMorphs('owner');
+            $morphs($table, 'tenant', 'tenants', nullable: true);
+            $morphs($table, 'owner', 'users', nullable: true);
             $table->string('system_key')->nullable();
             $table->string('name');
             $table->string('slug');
@@ -43,11 +50,11 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create($tables['widgets'], function (Blueprint $table): void {
+        Schema::create($tables['widgets'], function (Blueprint $table) use ($morphs): void {
             $table->id();
             $table->string('panel');
-            $table->nullableMorphs('tenant');
-            $table->nullableMorphs('owner');
+            $morphs($table, 'tenant', 'tenants', nullable: true);
+            $morphs($table, 'owner', 'users', nullable: true);
             $table->string('system_key')->nullable();
             $table->string('name');
             $table->string('type');
@@ -58,21 +65,21 @@ return new class extends Migration
             $table->unique(['panel', 'system_key']);
         });
 
-        Schema::create($tables['shares'], function (Blueprint $table): void {
+        Schema::create($tables['shares'], function (Blueprint $table) use ($morphs): void {
             $table->id();
-            $table->morphs('subject');
-            $table->morphs('shareable');
+            $table->numericMorphs('subject');
+            $morphs($table, 'shareable', 'users');
             $table->string('level');
             $table->timestamps();
 
             $table->unique(['subject_type', 'subject_id', 'shareable_type', 'shareable_id']);
         });
 
-        Schema::create($tables['homes'], function (Blueprint $table) use ($tables): void {
+        Schema::create($tables['homes'], function (Blueprint $table) use ($tables, $morphs): void {
             $table->id();
             $table->string('panel');
-            $table->nullableMorphs('tenant');
-            $table->morphs('user');
+            $morphs($table, 'tenant', 'tenants', nullable: true);
+            $morphs($table, 'user', 'users');
             $table->foreignId('dashboard_id')->constrained($tables['dashboards'])->cascadeOnDelete();
             $table->timestamps();
         });

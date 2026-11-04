@@ -28,6 +28,7 @@ trait RendersDashboard
         /** @var Model $user */
         $user = Filament::auth()->user();
         $widgets = FilamentDashboardsPlugin::get()->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), $user);
+        $sources = FilamentDashboardsPlugin::get()->getDataSourcesFor($user, Filament::getTenant());
 
         $builderWidgets = BuilderWidget::query()
             ->where('panel', $dashboard->panel)
@@ -37,6 +38,7 @@ trait RendersDashboard
                 ->get(['widget'])
                 ->map(fn (DashboardItem $item): string => substr($item->widget, strlen(BuilderWidget::KEY_PREFIX))))
             ->get()
+            ->filter(fn (BuilderWidget $widget): bool => array_diff($widget->sourceKeys(), array_keys($sources)) === [])
             ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
 
         $items = $dashboard->items()
