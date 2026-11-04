@@ -13,7 +13,7 @@ abstract class SystemDashboard
     abstract public function name(): string;
 
     /**
-     * @return list<array{widget: class-string<DashboardWidget>, x: int, y: int, w: int, h: int}>
+     * @return list<array{widget: class-string<DashboardWidget>|class-string<SystemWidget>, x: int, y: int, w: int, h: int}>
      */
     abstract public function items(): array;
 }

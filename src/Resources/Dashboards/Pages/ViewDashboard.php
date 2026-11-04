@@ -29,7 +29,7 @@ use Illuminate\Support\Str;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\CloneDashboard;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
-use Waguilar\FilamentDashboards\Actions\SaveDashboardShares;
+use Waguilar\FilamentDashboards\Actions\SaveShares;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
@@ -226,7 +226,7 @@ class ViewDashboard extends Page
                     ];
                 }
 
-                app(SaveDashboardShares::class)->handle($this->getDashboard(), $shares);
+                app(SaveShares::class)->handle($this->getDashboard(), $shares);
             });
     }
 

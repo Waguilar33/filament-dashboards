@@ -13,7 +13,8 @@ use Waguilar\FilamentDashboards\Enums\ShareLevel;
 
 /**
  * @property int $id
- * @property int $dashboard_id
+ * @property string $subject_type
+ * @property int|string $subject_id
  * @property string $shareable_type
  * @property int|string $shareable_id
  * @property ShareLevel $level
@@ -29,6 +30,14 @@ class DashboardShare extends Model
     {
         /** @var string */
         return config('filament-dashboards.tables.shares');
+    }
+
+    /**
+     * @return MorphTo<Model, $this>
+     */
+    public function subject(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     /**

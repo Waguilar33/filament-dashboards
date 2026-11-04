@@ -7,11 +7,10 @@ namespace Waguilar\FilamentDashboards\Models;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 use Waguilar\FilamentDashboards\Builders\DashboardBuilder;
 use Waguilar\FilamentDashboards\Enums\NavigationPosition;
-use Waguilar\FilamentDashboards\Enums\ShareLevel;
+use Waguilar\FilamentDashboards\Models\Concerns\HasOwnerAndShares;
 
 /**
  * @property int $id
@@ -34,6 +33,8 @@ use Waguilar\FilamentDashboards\Enums\ShareLevel;
 #[UseEloquentBuilder(DashboardBuilder::class)]
 class Dashboard extends Model
 {
+    use HasOwnerAndShares;
+
     protected $guarded = [];
 
     /**
@@ -61,64 +62,6 @@ class Dashboard extends Model
     public function items(): HasMany
     {
         return $this->hasMany(DashboardItem::class);
-    }
-
-    /**
-     * @return HasMany<DashboardShare, $this>
-     */
-    public function shares(): HasMany
-    {
-        return $this->hasMany(DashboardShare::class);
-    }
-
-    /**
-     * @return MorphTo<Model, $this>
-     */
-    public function owner(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-    /**
-     * @return MorphTo<Model, $this>
-     */
-    public function tenant(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-    public function isSystem(): bool
-    {
-        return filled($this->system_key);
-    }
-
-    public function isOwnedBy(Model $user): bool
-    {
-        return $this->owner()->is($user);
-    }
-
-    public function canBeViewedBy(Model $user): bool
-    {
-        return static::query()->whereKey($this->getKey())->visibleTo($user)->exists();
-    }
-
-    public function canBeEditedBy(Model $user): bool
-    {
-        if ($this->isSystem()) {
-            return false;
-        }
-
-        return $this->isOwnedBy($user) || $this->shares()->sharedWith($user, ShareLevel::Edit)->exists();
-    }
-
-    public function canBeDeletedBy(Model $user): bool
-    {
-        return ! $this->isSystem() && $this->isOwnedBy($user);
-    }
-
-    public function canBeSharedBy(Model $user): bool
-    {
-        return $this->canBeDeletedBy($user);
     }
 
     /**

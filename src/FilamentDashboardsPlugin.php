@@ -21,6 +21,7 @@ use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\SystemDashboards\SystemDashboard;
+use Waguilar\FilamentDashboards\SystemDashboards\SystemWidget;
 
 final class FilamentDashboardsPlugin implements Plugin
 {
@@ -38,6 +39,11 @@ final class FilamentDashboardsPlugin implements Plugin
      * @var list<class-string<SystemDashboard>>
      */
     protected array $systemDashboards = [];
+
+    /**
+     * @var list<class-string<SystemWidget>>
+     */
+    protected array $systemWidgets = [];
 
     /**
      * @var (Closure(?Model): Builder<Model>)|null
@@ -161,6 +167,24 @@ final class FilamentDashboardsPlugin implements Plugin
         $this->systemDashboards = $dashboards;
 
         return $this;
+    }
+
+    /**
+     * @param  list<class-string<SystemWidget>>  $widgets
+     */
+    public function systemWidgets(array $widgets): static
+    {
+        $this->systemWidgets = $widgets;
+
+        return $this;
+    }
+
+    /**
+     * @return list<class-string<SystemWidget>>
+     */
+    public function getSystemWidgets(): array
+    {
+        return $this->systemWidgets;
     }
 
     /**

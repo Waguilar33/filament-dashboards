@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Commands;
 use Filament\Facades\Filament;
 use Illuminate\Console\Command;
 use Waguilar\FilamentDashboards\Actions\SyncSystemDashboards;
+use Waguilar\FilamentDashboards\Actions\SyncSystemWidgets;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\FilamentDashboardsServiceProvider;
 
@@ -16,7 +17,7 @@ class SyncDashboardsCommand extends Command
 
     protected $description = 'Copy the system dashboards registered on each panel into the database.';
 
-    public function handle(SyncSystemDashboards $sync): int
+    public function handle(SyncSystemWidgets $syncWidgets, SyncSystemDashboards $sync): int
     {
         foreach (Filament::getPanels() as $panel) {
             if (! $panel->hasPlugin(FilamentDashboardsServiceProvider::NAME)) {
@@ -26,9 +27,10 @@ class SyncDashboardsCommand extends Command
             /** @var FilamentDashboardsPlugin $plugin */
             $plugin = $panel->getPlugin(FilamentDashboardsServiceProvider::NAME);
 
+            $syncWidgets->handle($panel->getId(), $plugin->getSystemWidgets());
             $sync->handle($panel->getId(), $plugin->getSystemDashboards());
 
-            $this->components->info("Synced {$panel->getId()}: ".count($plugin->getSystemDashboards()).' system dashboards.');
+            $this->components->info("Synced {$panel->getId()}: ".count($plugin->getSystemDashboards()).' system dashboards, '.count($plugin->getSystemWidgets()).' system widgets.');
         }
 
         return self::SUCCESS;

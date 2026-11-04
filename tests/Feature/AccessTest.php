@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Spatie\Permission\Models\Role;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Models\DashboardShare;
 use Waguilar\FilamentDashboards\Tests\Fixtures\PlainUser;
 
 it('shows a private dashboard only to its owner', function (): void {
@@ -102,4 +103,13 @@ it('scopes dashboards to the panel and tenant, keeping system dashboards panel-w
 
     expect(Dashboard::query()->inScope('demo', null)->pluck('id')->all())->toBe([$here->id, $system->id])
         ->and(Dashboard::query()->inScope('demo', $tenant)->pluck('id')->all())->toBe([$otherTenant->id, $system->id]);
+});
+
+it('removes the shares of a deleted dashboard', function (): void {
+    $dashboard = dashboard(user());
+    share($dashboard, user(), ShareLevel::Read);
+
+    $dashboard->delete();
+
+    expect(DashboardShare::query()->count())->toBe(0);
 });
