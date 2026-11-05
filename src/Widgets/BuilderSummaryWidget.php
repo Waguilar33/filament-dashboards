@@ -52,7 +52,7 @@ class BuilderSummaryWidget extends TableWidget
                     ->translateLabel(false)
                     ->alignment(Alignment::End)
                     ->weight(fn (array $record): ?FontWeight => $record['total'] ? FontWeight::Bold : null)
-                    ->formatStateUsing(fn (int|float $state): string => number_format($state, 1).'%');
+                    ->formatStateUsing(fn (int|float $state): string => number_format($state, 2).'%');
             }
         }
 

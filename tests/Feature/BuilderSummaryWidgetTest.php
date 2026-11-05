@@ -47,9 +47,9 @@ it('adds a share of the total next to a count or sum, and a total row', function
         'total_row' => true,
     ])
         ->assertSeeInOrder(['Sum · Total', '% of total', 'Count', '% of total'])
-        ->assertSeeInOrder(['Web', 'Q75.00', '75.0%', '2', '66.7%'])
-        ->assertSeeInOrder(['Store', 'Q25.00', '25.0%', '1', '33.3%'])
-        ->assertSeeInOrder(['Total', 'Q100.00', '100.0%', '3', '100.0%']);
+        ->assertSeeInOrder(['Web', 'Q75.00', '75.00%', '2', '66.67%'])
+        ->assertSeeInOrder(['Store', 'Q25.00', '25.00%', '1', '33.33%'])
+        ->assertSeeInOrder(['Total', 'Q100.00', '100.00%', '3', '100.00%']);
 });
 
 it('builds a summary table from the dashboard', function (): void {
@@ -66,4 +66,11 @@ it('builds a summary table from the dashboard', function (): void {
 
     expect(BuilderWidget::query()->sole()->type)->toBe(BuilderWidgetType::Summary)
         ->and($dashboard->items()->sole()->only(['w', 'h']))->toBe(['w' => 6, 'h' => 6]);
+});
+
+it('shows a small share of the total with two decimals', function (): void {
+    DemoOrderFactory::new()->create(['channel' => 'phone', 'total' => 0.5]);
+
+    summary(['metrics' => [['metric' => 'sum', 'field' => 'total', 'percent' => true]]])
+        ->assertSeeInOrder(['Phone', '0.05%']);
 });
