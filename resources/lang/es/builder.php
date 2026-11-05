@@ -14,7 +14,7 @@ return [
         'choice' => 'Opción',
     ],
     'metrics' => [
-        'count' => 'Cantidad',
+        'count' => 'Conteo',
         'sum' => 'Suma',
         'average' => 'Promedio',
         'min' => 'Mínimo',
