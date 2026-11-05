@@ -129,7 +129,7 @@ public function canView(Model $user, ?Model $tenant): bool
 }
 ```
 
-Users then pick New widget (stats cards, table, summary table, line, bar, scatter, pie, doughnut, polar area), choose a source, a metric and filters, and see a preview before saving. In edit mode, drag the side handle of a stats card to size it on a 12-column row; sizes are kept per dashboard placement, and cards stack on widgets narrower than 384px. A summary table groups by one field and shows one or more figures per group (count, or sum, average, min or max of a number), each with an optional share of the total, and an optional total row. Saved widgets appear under Widgets, where they can be shared, cloned and deleted like dashboards. Ship ready-made ones as system widgets:
+Users then pick New widget (stats cards, table, summary table, figures table, line, bar, scatter, pie, doughnut, polar area), choose a source, a metric and filters, and see a preview before saving. In edit mode, drag the side handle of a stats card to size it on a 12-column row; sizes are kept per dashboard placement, and cards stack on widgets narrower than 384px. A summary table groups by one field and shows one or more figures per group (count, or sum, average, min or max of a number), each with an optional share of the total, and an optional total row. Saved widgets appear under Widgets, where they can be shared, cloned and deleted like dashboards. Ship ready-made ones as system widgets:
 
 ```php
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
@@ -153,6 +153,8 @@ FilamentDashboardsPlugin::make()->systemWidgets([OrdersByChannel::class]);
 ```
 
 A system dashboard can place a system widget by listing its class in `items()`.
+
+A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty.
 
 ## Dashboard dates
 

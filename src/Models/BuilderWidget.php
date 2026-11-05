@@ -54,7 +54,7 @@ class BuilderWidget extends Model
      */
     public function sourceKeys(): array
     {
-        $parts = is_array($this->config['cards'] ?? null) ? $this->config['cards'] : [$this->config];
+        $parts = $this->parts();
 
         return array_values(array_unique(array_filter(
             array_map(fn (mixed $part): mixed => is_array($part) ? ($part['source'] ?? null) : null, $parts),
@@ -64,7 +64,7 @@ class BuilderWidget extends Model
 
     public function followsDashboardDates(): bool
     {
-        $parts = is_array($this->config['cards'] ?? null) ? $this->config['cards'] : [$this->config];
+        $parts = $this->parts();
 
         foreach ($parts as $part) {
             if (is_array($part) && (filled($part['dates_field'] ?? null) || ($part['period'] ?? null) === 'dashboard')) {
@@ -73,6 +73,20 @@ class BuilderWidget extends Model
         }
 
         return false;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    protected function parts(): array
+    {
+        $parts = match ($this->type) {
+            BuilderWidgetType::Stats => $this->config['cards'] ?? null,
+            BuilderWidgetType::Figures => $this->config['columns'] ?? null,
+            default => [$this->config],
+        };
+
+        return is_array($parts) ? $parts : [];
     }
 
     /**

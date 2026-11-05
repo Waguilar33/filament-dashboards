@@ -63,6 +63,11 @@
     }
 }
 
+.fi-dashboards-figures-share {
+    font-weight: 400;
+    color: var(--gray-500);
+}
+
 .fi-dashboards-item-actions {
     display: flex;
     align-items: center;

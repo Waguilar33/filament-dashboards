@@ -20,6 +20,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Waguilar\FilamentDashboards\Builder\DataSource;
+use Waguilar\FilamentDashboards\Builder\Enums\Arithmetic;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Enums\Operator;
@@ -30,6 +31,7 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
+use Waguilar\FilamentDashboards\Widgets\BuilderFiguresWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderSummaryWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
@@ -74,7 +76,7 @@ class BuilderWidgetForm
     }
 
     /**
-     * @return class-string<BuilderStatsWidget|BuilderChartWidget|BuilderTableWidget|BuilderSummaryWidget>
+     * @return class-string<BuilderStatsWidget|BuilderChartWidget|BuilderTableWidget|BuilderSummaryWidget|BuilderFiguresWidget>
      */
     public static function component(BuilderWidgetType $type): string
     {
@@ -82,6 +84,7 @@ class BuilderWidgetForm
             BuilderWidgetType::Stats => BuilderStatsWidget::class,
             BuilderWidgetType::Table => BuilderTableWidget::class,
             BuilderWidgetType::Summary => BuilderSummaryWidget::class,
+            BuilderWidgetType::Figures => BuilderFiguresWidget::class,
             default => BuilderChartWidget::class,
         };
     }
@@ -186,6 +189,75 @@ class BuilderWidgetForm
                             ->visible(fn (Get $get): bool => self::metric($get('metric'))?->sharesOfTotal() ?? false),
                     ]),
                 self::filters(),
+            ],
+            BuilderWidgetType::Figures => [
+                Repeater::make('columns')
+                    ->label(__(self::T.'figure_columns'))
+                    ->helperText(__(self::T.'figure_columns_helper'))
+                    ->addActionLabel(__(self::T.'add_column'))
+                    ->minItems(1)
+                    ->defaultItems(1)
+                    ->collapsible()
+                    ->columns(2)
+                    ->itemLabel(fn (array $state): ?string => is_string($state['label'] ?? null) ? $state['label'] : null)
+                    ->schema([
+                        Hidden::make('key')->default(fn (): string => (string) Str::uuid()),
+                        TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
+                        Select::make('kind')
+                            ->label(__(self::T.'kind'))
+                            ->options(fn (): array => __('filament-dashboards::dashboards.builder.kinds'))
+                            ->default('figure')
+                            ->selectablePlaceholder(false)
+                            ->live(),
+                        Group::make([
+                            self::sourceSelect(),
+                            ...self::metricFields(),
+                            self::datesField(),
+                            self::filters(),
+                        ])
+                            ->columns(2)
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get): bool => $get('kind') !== 'calculation'),
+                        Group::make([
+                            ...self::operandFields('left'),
+                            Select::make('operator')
+                                ->label(__(self::T.'operation'))
+                                ->options(Arithmetic::class)
+                                ->required()
+                                ->live(),
+                            ...self::operandFields('right'),
+                        ])
+                            ->columns(2)
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get): bool => $get('kind') === 'calculation'),
+                        Select::make('share_of')
+                            ->label(__(self::T.'share_of'))
+                            ->options(fn (Get $get): array => array_diff_key(self::columnOptions($get('../../columns')), [self::stringOrEmpty($get('key')) => true]))
+                            ->live(),
+                        Select::make('blank_rows')
+                            ->label(__(self::T.'blank_rows'))
+                            ->options(fn (Get $get): array => self::rowOptions($get('../../base_label'), $get('../../rows')))
+                            ->multiple()
+                            ->live(),
+                    ]),
+                TextInput::make('base_label')
+                    ->label(__(self::T.'base_label'))
+                    ->default(fn (): string => __('filament-dashboards::dashboards.builder.figures.base'))
+                    ->required()
+                    ->live(onBlur: true)
+                    ->maxLength(255),
+                Repeater::make('rows')
+                    ->label(__(self::T.'figure_rows'))
+                    ->helperText(__(self::T.'figure_rows_helper'))
+                    ->addActionLabel(__(self::T.'add_row'))
+                    ->defaultItems(0)
+                    ->columns(3)
+                    ->schema([
+                        Hidden::make('key')->default(fn (): string => (string) Str::uuid()),
+                        TextInput::make('label')->label(__(self::T.'label'))->required()->live(onBlur: true)->maxLength(255),
+                        Select::make('operator')->label(__(self::T.'operation'))->options(Arithmetic::class)->required()->live(),
+                        TextInput::make('number')->label(__(self::T.'number'))->numeric()->required()->live(onBlur: true),
+                    ]),
             ],
             BuilderWidgetType::Scatter => [
                 Grid::make(2)->schema([
@@ -322,6 +394,66 @@ class BuilderWidgetForm
                             ->visible(fn (Get $get): bool => self::needsValue($get) && self::isChoice($get)),
                     ]),
             ]);
+    }
+
+    /**
+     * @return list<Component>
+     */
+    protected static function operandFields(string $side): array
+    {
+        return [
+            Select::make($side)
+                ->label(__(self::T.$side))
+                ->options(fn (Get $get): array => [
+                    ...self::columnOptions($get('../../columns'), before: self::stringOrEmpty($get('key'))),
+                    BuilderFiguresWidget::NUMBER => __(self::T.'a_number'),
+                ])
+                ->required()
+                ->live(),
+            TextInput::make("{$side}_number")
+                ->label(__(self::T.'number'))
+                ->numeric()
+                ->required()
+                ->live(onBlur: true)
+                ->visible(fn (Get $get): bool => $get($side) === BuilderFiguresWidget::NUMBER),
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected static function columnOptions(mixed $columns, ?string $before = null): array
+    {
+        $options = [];
+
+        foreach (is_array($columns) ? array_values($columns) : [] as $index => $column) {
+            $key = is_array($column) && is_string($column['key'] ?? null) ? $column['key'] : (string) $index;
+
+            if ($key === $before) {
+                break;
+            }
+
+            $label = is_array($column) ? self::stringOrEmpty($column['label'] ?? null) : '';
+            $options[$key] = $label === '' ? __(self::T.'column_number', ['number' => $index + 1]) : $label;
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected static function rowOptions(mixed $baseLabel, mixed $rows): array
+    {
+        $options = [BuilderFiguresWidget::BASE_ROW => self::stringOrEmpty($baseLabel)];
+
+        foreach (is_array($rows) ? array_values($rows) : [] as $index => $row) {
+            if (is_array($row)) {
+                $options[is_string($row['key'] ?? null) ? $row['key'] : "row_{$index}"] = self::stringOrEmpty($row['label'] ?? null);
+            }
+        }
+
+        return $options;
     }
 
     protected static function source(mixed $key): ?DataSource
