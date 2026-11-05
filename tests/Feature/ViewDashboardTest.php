@@ -9,6 +9,7 @@ use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
@@ -468,6 +469,32 @@ it('saves the layout from the grid, keeping widgets inside it', function (): voi
         ->and($foreign->refresh()->only(['x', 'y', 'w', 'h']))->toBe(['x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
 });
 
+it('saves the stats card widths on the placement, keeping its other options', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $item = $dashboard->items()->create(['widget' => builderWidget($owner)->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 4, 'options' => ['kept' => true]]);
+
+    viewAs($owner, $dashboard)->call('saveCardWidths', $item->id, ['a' => 6, 'b' => 13, 'c' => 0, 'd' => '4', 'e' => 12]);
+
+    expect($item->refresh()->options)->toBe(['kept' => true, 'card_widths' => ['a' => 6, 'e' => 12]])
+        ->and($item->cardWidths())->toBe(['a' => 6, 'e' => 12]);
+});
+
+it('passes the placement card widths to stats widgets, and makes them resizable while editing', function (bool $editing): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $stats = $dashboard->items()->create(['widget' => builderWidget($owner)->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 4, 'options' => ['card_widths' => ['a' => 6]]]);
+    $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 4, 'w' => 12, 'h' => 2]);
+    $this->actingAs($owner);
+
+    $page = Livewire::withQueryParams(['editing' => $editing ? 1 : null])->test(ViewDashboard::class, ['record' => $dashboard->slug])->instance();
+    $grid = $page->getSchema('content')?->getComponent(fn (mixed $component): bool => $component instanceof View);
+    $props = array_column($grid?->getViewData()['items'] ?? [], 'props', 'id');
+
+    expect($props[$stats->id])->toMatchArray(['cardWidths' => ['a' => 6], 'resizableCards' => $editing])
+        ->and(array_filter($props, fn (array $itemProps): bool => array_key_exists('cardWidths', $itemProps)))->toHaveKeys([$stats->id])->toHaveCount(1);
+})->with(['editing' => true, 'viewing' => false]);
+
 it('removes a widget from the dashboard', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);
@@ -485,6 +512,7 @@ it('refuses layout changes from someone who cannot edit', function (): void {
     share($dashboard, $reader, ShareLevel::Read);
 
     viewAs($reader, $dashboard)->call('saveDashboardLayout', [['id' => $item->id, 'x' => 3]])->assertForbidden();
+    viewAs($reader, $dashboard)->call('saveCardWidths', $item->id, ['a' => 6])->assertForbidden();
     viewAs($reader, $dashboard)->assertActionHidden('removeItem')->assertActionHidden('duplicateItem');
 
     expect($item->refresh()->x)->toBe(0);

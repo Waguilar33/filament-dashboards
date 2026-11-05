@@ -30,6 +30,16 @@ class DashboardItem extends Model
     }
 
     /**
+     * @return array<array-key, int>
+     */
+    public function cardWidths(): array
+    {
+        $widths = $this->options['card_widths'] ?? [];
+
+        return is_array($widths) ? array_filter($widths, is_int(...)) : [];
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

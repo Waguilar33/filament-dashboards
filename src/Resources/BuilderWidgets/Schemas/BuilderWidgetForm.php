@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas;
 
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -17,6 +18,7 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
@@ -132,11 +134,8 @@ class BuilderWidgetForm
                     ->collapsible()
                     ->columns(2)
                     ->schema([
-                        TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
-                        Select::make('width')
-                            ->label(__(self::T.'width'))
-                            ->options(fn (): array => __('filament-dashboards::dashboards.builder.widths'))
-                            ->live(),
+                        Hidden::make('key')->default(fn (): string => (string) Str::uuid()),
+                        TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255)->columnSpanFull(),
                         self::sourceSelect(),
                         ...self::metricFields(),
                         self::datesField(),

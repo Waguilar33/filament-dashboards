@@ -133,7 +133,6 @@ return [
             'metric' => 'Metric',
             'field' => 'Field',
             'label' => 'Label',
-            'width' => 'Width',
             'total_row' => 'Total row',
             'metrics' => 'Columns',
             'metrics_helper' => 'Each column calculates one figure per group.',
@@ -158,14 +157,6 @@ return [
             'add_rule' => 'Add rule (and)',
             'operator' => 'Condition',
             'value' => 'Value',
-        ],
-        'widths' => [
-            12 => 'Full',
-            9 => '3/4',
-            8 => '2/3',
-            6 => 'Half',
-            4 => '1/3',
-            3 => '1/4',
         ],
         'periods' => [
             'dashboard' => 'Dashboard dates',

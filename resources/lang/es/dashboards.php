@@ -133,7 +133,6 @@ return [
             'metric' => 'Cálculo',
             'field' => 'Campo',
             'label' => 'Etiqueta',
-            'width' => 'Ancho',
             'total_row' => 'Fila de total',
             'metrics' => 'Columnas',
             'metrics_helper' => 'Cada columna calcula una cifra por grupo.',
@@ -158,14 +157,6 @@ return [
             'add_rule' => 'Agregar regla (y)',
             'operator' => 'Condición',
             'value' => 'Valor',
-        ],
-        'widths' => [
-            12 => 'Completo',
-            9 => '3/4',
-            8 => '2/3',
-            6 => 'Mitad',
-            4 => '1/3',
-            3 => '1/4',
         ],
         'periods' => [
             'dashboard' => 'Fechas del escritorio',

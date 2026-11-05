@@ -19,6 +19,7 @@ use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardItem;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
+use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 
 trait RendersDashboard
 {
@@ -91,15 +92,35 @@ trait RendersDashboard
             ...(array_filter(array_column($items, 'followsDates')) === [] ? [] : [EmbeddedSchema::make('filtersForm')]),
             View::make('filament-dashboards::grid')->viewData(function () use ($items, $editing): array {
                 $editable = $editing instanceof Closure ? (bool) $editing() : $editing;
+                $cardWidths = $this->cardWidths(array_column(array_filter($items, fn (array $item): bool => $item['widget'] === BuilderStatsWidget::class), 'id'));
 
                 return [
-                    'items' => array_map(fn (array $item): array => $item['followsDates']
-                        ? [...$item, 'props' => [...$item['props'], 'pageFilters' => $this->filters]]
-                        : $item, $items),
+                    'items' => array_map(fn (array $item): array => [...$item, 'props' => [
+                        ...$item['props'],
+                        ...($item['followsDates'] ? ['pageFilters' => $this->filters] : []),
+                        ...($item['widget'] === BuilderStatsWidget::class ? ['cardWidths' => $cardWidths[$item['id']] ?? [], 'resizableCards' => $editable] : []),
+                    ]], $items),
                     'editable' => $editable,
                     'signature' => md5((string) json_encode([$items, $editable])),
                 ];
             }),
         ];
+    }
+
+    /**
+     * @param  list<int>  $itemIds
+     * @return array<int, array<array-key, int>>
+     */
+    protected function cardWidths(array $itemIds): array
+    {
+        if ($itemIds === []) {
+            return [];
+        }
+
+        return DashboardItem::query()
+            ->whereKey($itemIds)
+            ->get()
+            ->mapWithKeys(fn (DashboardItem $item): array => [$item->id => $item->cardWidths()])
+            ->all();
     }
 }

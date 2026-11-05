@@ -18,7 +18,7 @@ export default function dashboardGrid({ editable }) {
                     animate: true,
                     sizeToContent: true,
                     staticGrid: !editable,
-                    draggable: { cancel: 'input,textarea,button,select,option,a,.fi-dashboards-item-actions' },
+                    draggable: { cancel: 'input,textarea,button,select,option,a,.fi-dashboards-item-actions,.fi-dashboards-stat-resize' },
                     resizable: { handles: 'e, w', autoHide: false },
                     columnOpts: { breakpointForWindow: true, breakpoints: [{ w: 1024, c: 1 }] },
                 },
@@ -33,6 +33,55 @@ export default function dashboardGrid({ editable }) {
             this.$refs.grid.querySelectorAll('.fi-dashboards-item').forEach((item) => this.observer.observe(item))
 
             this.grid.on('dragstop resizestop', () => setTimeout(() => this.save()))
+
+            if (editable) {
+                this.$refs.grid.addEventListener('pointerdown', (event) => this.resizeCard(event))
+            }
+        },
+
+        resizeCard(event) {
+            const handle = event.target.closest('.fi-dashboards-stat-resize')
+
+            if (!handle) {
+                return
+            }
+
+            event.preventDefault()
+            event.stopPropagation()
+
+            const column = handle.closest('.fi-grid-col')
+            const cards = column.parentElement
+            const gap = parseFloat(getComputedStyle(cards).columnGap) || 0
+            const step = (cards.clientWidth + gap) / COLUMNS
+            const startWidth = column.getBoundingClientRect().width
+            const startX = event.clientX
+
+            handle.setPointerCapture(event.pointerId)
+
+            const move = (moveEvent) => {
+                const span = Math.min(COLUMNS, Math.max(1, Math.round((startWidth + gap + moveEvent.clientX - startX) / step)))
+
+                column.style.setProperty('--col-span-cxl', `span ${span} / span ${span}`)
+                column.style.setProperty('--col-span-nlg', `span ${span} / span ${span}`)
+            }
+
+            const stop = () => {
+                handle.removeEventListener('pointermove', move)
+                handle.removeEventListener('pointerup', stop)
+                handle.removeEventListener('pointercancel', stop)
+
+                const widths = {}
+
+                cards.querySelectorAll(':scope > .fi-grid-col .fi-dashboards-stat').forEach((card) => {
+                    widths[card.dataset.cardKey] = Math.round((card.closest('.fi-grid-col').getBoundingClientRect().width + gap) / step)
+                })
+
+                this.$wire.saveCardWidths(Number(handle.closest('.grid-stack-item').getAttribute('gs-id')), widths)
+            }
+
+            handle.addEventListener('pointermove', move)
+            handle.addEventListener('pointerup', stop)
+            handle.addEventListener('pointercancel', stop)
         },
 
         save() {

@@ -27,6 +27,42 @@
     cursor: ew-resize;
 }
 
+.fi-dashboards-stat {
+    position: relative;
+}
+
+.fi-dashboards-stat-resize {
+    position: absolute;
+    top: 0;
+    right: -0.5rem;
+    bottom: 0;
+    width: 1rem;
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.fi-dashboards-stat-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.25rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background: var(--gray-300);
+    transform: translate(-50%, -50%);
+}
+
+.dark .fi-dashboards-stat-resize::after {
+    background: var(--gray-600);
+}
+
+@container (width < 36rem) {
+    .fi-dashboards-stat-resize {
+        display: none;
+    }
+}
+
 .fi-dashboards-item-actions {
     display: flex;
     align-items: center;

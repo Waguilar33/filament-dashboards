@@ -30,6 +30,7 @@ use Waguilar\FilamentDashboards\Actions\DuplicateDashboardItem;
 use Waguilar\FilamentDashboards\Actions\FindHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\RemoveHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
+use Waguilar\FilamentDashboards\Actions\SaveCardWidths;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
@@ -102,6 +103,14 @@ class ViewDashboard extends Page
         abort_unless($this->canEdit(), 403);
 
         app(SaveDashboardLayout::class)->handle($this->getDashboard(), $layout);
+    }
+
+    /**
+     * @param  array<mixed>  $widths
+     */
+    public function saveCardWidths(int $item, array $widths): void
+    {
+        app(SaveCardWidths::class)->handle($this->editableItem(['item' => $item]), $widths);
     }
 
     public function duplicateItemAction(): Action
