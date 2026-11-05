@@ -9,7 +9,6 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
@@ -61,9 +60,9 @@ class ShareAction extends Action
                     ->addActionLabel(__('filament-dashboards::dashboards.modals.share.add'))
                     ->compact()
                     ->table([
-                        ...($roleType === null ? [] : [TableColumn::make(__('filament-dashboards::dashboards.fields.shareable_type'))->markAsRequired()]),
-                        TableColumn::make(__('filament-dashboards::dashboards.fields.shareable'))->markAsRequired(),
-                        TableColumn::make(__('filament-dashboards::dashboards.fields.level'))->markAsRequired(),
+                        ...($roleType === null ? [] : [TableColumn::make(__('filament-dashboards::dashboards.fields.shareable_type'))->markAsRequired()->alignStart()]),
+                        TableColumn::make(__('filament-dashboards::dashboards.fields.shareable'))->markAsRequired()->alignStart(),
+                        TableColumn::make(__('filament-dashboards::dashboards.fields.level'))->markAsRequired()->alignStart(),
                     ])
                     ->schema([
                         Select::make('shareable_type')
@@ -92,14 +91,14 @@ class ShareAction extends Action
                                     ->all())
                             ->searchable()
                             ->required(),
-                        ToggleButtons::make('level')
+                        Select::make('level')
                             ->label(__('filament-dashboards::dashboards.fields.level'))
                             ->options([
                                 ShareLevel::Read->value => __('filament-dashboards::dashboards.share_levels.read'),
                                 ShareLevel::Edit->value => __('filament-dashboards::dashboards.share_levels.edit'),
                             ])
                             ->default(ShareLevel::Read->value)
-                            ->inline()
+                            ->selectablePlaceholder(false)
                             ->required(),
                     ]),
             ])

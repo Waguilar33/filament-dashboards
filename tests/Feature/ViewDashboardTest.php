@@ -13,6 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Livewire;
@@ -520,7 +521,7 @@ it('refuses layout changes from someone who cannot edit', function (): void {
     expect($item->refresh()->x)->toBe(0);
 });
 
-it('lays the shares out as a compact table with required column headers', function (): void {
+it('lays the shares out as a compact table with required, left-aligned column headers and an access select', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);
 
@@ -528,7 +529,9 @@ it('lays the shares out as a compact table with required column headers', functi
     $shares = $page->getSchema($page->getMountedActionSchemaName())?->getComponent(fn (mixed $component): bool => $component instanceof Repeater && $component->getName() === 'shares');
 
     expect($shares?->isCompact())->toBeTrue()
-        ->and(array_map(fn (TableColumn $column): bool => $column->isMarkedAsRequired(), $shares?->getTableColumns() ?? []))->toBe([true, true, true]);
+        ->and(array_map(fn (TableColumn $column): bool => $column->isMarkedAsRequired(), $shares?->getTableColumns() ?? []))->toBe([true, true, true])
+        ->and(array_map(fn (TableColumn $column): ?Alignment => $column->getAlignment(), $shares?->getTableColumns() ?? []))->each->toBe(Alignment::Start)
+        ->and(collect($shares?->getDefaultChildComponents())->last())->toBeInstanceOf(Select::class);
 });
 
 it('offers the users the app chooses to share with', function (): void {
