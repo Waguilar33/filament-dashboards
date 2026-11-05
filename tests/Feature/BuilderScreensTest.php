@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use Filament\Facades\Filament;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Actions\BuildFilters;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
+use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
@@ -217,6 +219,17 @@ it('lists saved widgets by kind and clones one', function (): void {
         ->assertHasNoTableActionErrors();
 
     expect(BuilderWidget::query()->where('name', 'My copy')->sole()->isOwnedBy($me))->toBeTrue();
+});
+
+it('lets the app modify the widget share action', function (): void {
+    FilamentDashboardsPlugin::get()->modifyShareActionUsing(fn (ShareAction $action): ShareAction => $action->modalWidth(Width::Medium));
+    $me = user();
+    $widget = builderWidget($me);
+    $this->actingAs($me);
+
+    $page = Livewire::test(ListBuilderWidgets::class)->mountTableAction('share', $widget)->instance();
+
+    expect($page->getMountedAction()?->getModalWidth())->toBe(Width::Medium);
 });
 
 it('saves filters built in the form', function (): void {

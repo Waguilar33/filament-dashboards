@@ -176,7 +176,7 @@ class ViewDashboard extends Page
             ];
         }
 
-        return Action::make('addWidget')
+        return $plugin->modifyAddWidgetAction(Action::make('addWidget')
             ->label(__('filament-dashboards::dashboards.actions.add_widget'))
             ->visible($this->canEdit())
             ->slideOver()
@@ -208,7 +208,7 @@ class ViewDashboard extends Page
                 );
 
                 $this->reloadDashboard();
-            });
+            }));
     }
 
     public function buildWidgetAction(): Action
@@ -265,7 +265,7 @@ class ViewDashboard extends Page
 
     protected function shareAction(): ShareAction
     {
-        return ShareAction::make()->record($this->getDashboard());
+        return FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->record($this->getDashboard()));
     }
 
     protected function editLayoutAction(): Action
@@ -284,14 +284,14 @@ class ViewDashboard extends Page
 
     protected function settingsAction(): EditAction
     {
-        return EditAction::make('settings')
+        return FilamentDashboardsPlugin::get()->modifySettingsAction(EditAction::make('settings')
             ->label(__('filament-dashboards::dashboards.actions.settings'))
             ->icon(null)
             ->visible($this->canEdit())
             ->slideOver()
             ->record($this->getDashboard())
             ->schema(fn (Schema $schema): Schema => DashboardForm::configure($schema))
-            ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record]));
+            ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record])));
     }
 
     protected function cloneAction(): Action

@@ -7,7 +7,6 @@ namespace Waguilar\FilamentDashboards\Resources\Dashboards\Pages;
 use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Support\Enums\Width;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
@@ -19,8 +18,8 @@ class ListDashboards extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
-                ->modalWidth(Width::Medium)
+            FilamentDashboardsPlugin::get()->modifyCreateDashboardAction(CreateAction::make()
+                ->slideOver()
                 ->mutateDataUsing(fn (array $data): array => [
                     ...$data,
                     'panel' => FilamentDashboardsPlugin::currentPanel()->getId(),
@@ -29,7 +28,7 @@ class ListDashboards extends ListRecords
                     'tenant_type' => Filament::getTenant()?->getMorphClass(),
                     'tenant_id' => Filament::getTenant()?->getKey(),
                 ])
-                ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record])),
+                ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record]))),
         ];
     }
 }

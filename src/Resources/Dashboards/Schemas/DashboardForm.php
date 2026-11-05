@@ -23,7 +23,7 @@ class DashboardForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema->columns(1)->components([
+        return FilamentDashboardsPlugin::get()->modifyDashboardForm($schema->components([
             TextInput::make('name')
                 ->label(__('filament-dashboards::dashboards.fields.name'))
                 ->required()
@@ -66,7 +66,7 @@ class DashboardForm
                 ->default(NavigationPosition::End->value)
                 ->inline()
                 ->visible(fn (Get $get): bool => (bool) $get('show_in_navigation')),
-        ]);
+        ]));
     }
 
     public static function uniqueSlug(?Dashboard $ignore): Closure

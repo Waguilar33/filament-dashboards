@@ -109,7 +109,7 @@ class BuilderWidgetResource extends Resource
                     ->schema(fn (BuilderWidget $record): array => BuilderWidgetForm::components($record->type))
                     ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data)),
                 ActionGroup::make([
-                    ShareAction::make()->icon(Heroicon::OutlinedShare),
+                    FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
                     Action::make('clone')
                         ->label(__('filament-dashboards::dashboards.actions.clone'))
                         ->icon(Heroicon::OutlinedDocumentDuplicate)

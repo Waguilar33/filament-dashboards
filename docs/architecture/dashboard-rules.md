@@ -64,6 +64,7 @@ None yet.
 | FDP21 | System dashboards and system widgets show the name their class gives in the viewer's language; the stored name is only a fallback for a class no longer registered. | Sortivo, 2026-11-04: `dashboards:sync` runs in the CLI's language, so Spanish companies saw the English name. |
 | FDP22 | Owner, share, home and tenant keys follow the app's key type: `key_types.users` and `key_types.tenants` in the config (`int`, `uuid`, `ulid`), else Laravel's default morph type. Roles share the users' key type. The subject of a share is always numeric, as the plugin's own ids are. | Sortivo, 2026-11-04: users, roles and tenants have uuid keys and every insert failed. |
 | FDP23 | A number field can format its value (`formatUsing`) for stats cards and table cells; a stats card without its own label is titled metric · field · source. Charts show plain numbers. | Sortivo, 2026-11-04: a money card read "544,909" with no currency, titled "Suma · Órdenes" without the field. |
+| FDP24 | The plugin keeps its own look for its screens; the app changes it through `modify…Using` hooks on the plugin: the dashboard form, and the create, settings, share and add widget actions. Each hook receives the configured component and returns it; it runs last, so the app's settings win. | Owner, 2026-11-04: the plugin must not hardcode Sortivo's preference for a centered create modal. |
 
 ## Open decisions
 

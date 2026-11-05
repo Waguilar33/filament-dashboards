@@ -173,6 +173,21 @@ FilamentDashboardsPlugin::make()
 
 `shareableUsersUsing` limits the users offered in Share, for example to the members of the current tenant.
 
+## Changing the plugin's screens
+
+Each hook receives the plugin's configured form or action and returns it; your changes win:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(1))
+    ->modifyCreateDashboardActionUsing(fn (CreateAction $action): CreateAction => $action->slideOver(false)->modalWidth(Width::Medium))
+    ->modifySettingsActionUsing(fn (EditAction $action): EditAction => $action)
+    ->modifyShareActionUsing(fn (ShareAction $action): ShareAction => $action)
+    ->modifyAddWidgetActionUsing(fn (Action $action): Action => $action);
+```
+
+The dashboard form is used by both create and settings. The share hook applies to dashboards and saved widgets.
+
 ## Works better with Filament Guardian
 
 Install [waguilar33/filament-guardian](https://github.com/Waguilar33/filament-guardian) and access is managed from the role screen instead of code:

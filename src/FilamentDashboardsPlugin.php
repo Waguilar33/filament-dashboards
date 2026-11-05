@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards;
 
 use Closure;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
 use Filament\Panel;
+use Filament\Schemas\Schema;
 use Filament\Widgets\Widget;
 use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Auth\EloquentUserProvider;
@@ -18,6 +22,7 @@ use Illuminate\Support\Facades\Gate;
 use LogicException;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
+use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
@@ -56,6 +61,31 @@ final class FilamentDashboardsPlugin implements Plugin
      * @var (Closure(?Model): Builder<covariant Model>)|null
      */
     protected ?Closure $shareableUsersUsing = null;
+
+    /**
+     * @var (Closure(Schema): Schema)|null
+     */
+    protected ?Closure $modifyDashboardFormUsing = null;
+
+    /**
+     * @var (Closure(CreateAction): CreateAction)|null
+     */
+    protected ?Closure $modifyCreateDashboardActionUsing = null;
+
+    /**
+     * @var (Closure(EditAction): EditAction)|null
+     */
+    protected ?Closure $modifySettingsActionUsing = null;
+
+    /**
+     * @var (Closure(ShareAction): ShareAction)|null
+     */
+    protected ?Closure $modifyShareActionUsing = null;
+
+    /**
+     * @var (Closure(Action): Action)|null
+     */
+    protected ?Closure $modifyAddWidgetActionUsing = null;
 
     public static function make(): static
     {
@@ -310,5 +340,80 @@ final class FilamentDashboardsPlugin implements Plugin
         }
 
         return $this->canCreateDashboardsUsing === null || ($this->canCreateDashboardsUsing)($user);
+    }
+
+    /**
+     * @param  (Closure(Schema): Schema)|null  $callback
+     */
+    public function modifyDashboardFormUsing(?Closure $callback): static
+    {
+        $this->modifyDashboardFormUsing = $callback;
+
+        return $this;
+    }
+
+    public function modifyDashboardForm(Schema $schema): Schema
+    {
+        return $this->modifyDashboardFormUsing === null ? $schema : ($this->modifyDashboardFormUsing)($schema);
+    }
+
+    /**
+     * @param  (Closure(CreateAction): CreateAction)|null  $callback
+     */
+    public function modifyCreateDashboardActionUsing(?Closure $callback): static
+    {
+        $this->modifyCreateDashboardActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function modifyCreateDashboardAction(CreateAction $action): CreateAction
+    {
+        return $this->modifyCreateDashboardActionUsing === null ? $action : ($this->modifyCreateDashboardActionUsing)($action);
+    }
+
+    /**
+     * @param  (Closure(EditAction): EditAction)|null  $callback
+     */
+    public function modifySettingsActionUsing(?Closure $callback): static
+    {
+        $this->modifySettingsActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function modifySettingsAction(EditAction $action): EditAction
+    {
+        return $this->modifySettingsActionUsing === null ? $action : ($this->modifySettingsActionUsing)($action);
+    }
+
+    /**
+     * @param  (Closure(ShareAction): ShareAction)|null  $callback
+     */
+    public function modifyShareActionUsing(?Closure $callback): static
+    {
+        $this->modifyShareActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function modifyShareAction(ShareAction $action): ShareAction
+    {
+        return $this->modifyShareActionUsing === null ? $action : ($this->modifyShareActionUsing)($action);
+    }
+
+    /**
+     * @param  (Closure(Action): Action)|null  $callback
+     */
+    public function modifyAddWidgetActionUsing(?Closure $callback): static
+    {
+        $this->modifyAddWidgetActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function modifyAddWidgetAction(Action $action): Action
+    {
+        return $this->modifyAddWidgetActionUsing === null ? $action : ($this->modifyAddWidgetActionUsing)($action);
     }
 }

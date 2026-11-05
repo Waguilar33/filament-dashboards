@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
@@ -31,16 +33,26 @@ it('lists the dashboards the user can see, by kind', function (): void {
         ->assertTableColumnStateSet('kind', 'System', $system);
 });
 
-it('creates dashboards in a medium centered modal', function (): void {
+it('creates dashboards in a slide-over with the form in two columns by default', function (): void {
     $this->actingAs(user());
 
-    $action = Livewire::test(ListDashboards::class)
-        ->mountAction('create')
-        ->instance()
-        ->getMountedAction();
+    $page = Livewire::test(ListDashboards::class)->mountAction('create')->instance();
 
-    expect($action?->isModalSlideOver())->toBeFalse()
-        ->and($action?->getModalWidth())->toBe(Width::Medium);
+    expect($page->getMountedAction()?->isModalSlideOver())->toBeTrue()
+        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(2);
+});
+
+it('lets the app modify the create action and the dashboard form', function (): void {
+    FilamentDashboardsPlugin::get()
+        ->modifyCreateDashboardActionUsing(fn (CreateAction $action): CreateAction => $action->slideOver(false)->modalWidth(Width::Medium))
+        ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(1));
+    $this->actingAs(user());
+
+    $page = Livewire::test(ListDashboards::class)->mountAction('create')->instance();
+
+    expect($page->getMountedAction()?->isModalSlideOver())->toBeFalse()
+        ->and($page->getMountedAction()?->getModalWidth())->toBe(Width::Medium)
+        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(1);
 });
 
 it('creates a private dashboard owned by the user in the current panel', function (): void {

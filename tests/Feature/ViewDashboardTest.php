@@ -2,11 +2,16 @@
 
 declare(strict_types=1);
 
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
+use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardHome;
@@ -185,6 +190,30 @@ it('removes the home from the home dashboard only', function (): void {
         ->assertActionVisible('setHome');
 
     expect(DashboardHome::query()->exists())->toBeFalse();
+});
+
+it('lets the app modify the settings action and its form', function (): void {
+    FilamentDashboardsPlugin::get()
+        ->modifySettingsActionUsing(fn (EditAction $action): EditAction => $action->slideOver(false)->modalWidth(Width::Medium))
+        ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(1));
+    $owner = user();
+
+    $page = viewAs($owner, dashboard($owner))->mountAction('settings')->instance();
+
+    expect($page->getMountedAction()?->isModalSlideOver())->toBeFalse()
+        ->and($page->getMountedAction()?->getModalWidth())->toBe(Width::Medium)
+        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(1);
+});
+
+it('lets the app modify the share and add widget actions', function (): void {
+    FilamentDashboardsPlugin::get()
+        ->modifyShareActionUsing(fn (ShareAction $action): ShareAction => $action->modalWidth(Width::Medium))
+        ->modifyAddWidgetActionUsing(fn (Action $action): Action => $action->slideOver(false));
+    $owner = user();
+    $dashboard = dashboard($owner);
+
+    expect(viewAs($owner, $dashboard)->mountAction('share')->instance()->getMountedAction()?->getModalWidth())->toBe(Width::Medium)
+        ->and(viewAs($owner, $dashboard)->mountAction('addWidget')->instance()->getMountedAction()?->isModalSlideOver())->toBeFalse();
 });
 
 it('updates the settings and follows a changed slug', function (): void {
