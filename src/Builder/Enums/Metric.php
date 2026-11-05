@@ -19,6 +19,22 @@ enum Metric: string implements HasLabel
         return trans('filament-dashboards::builder.metrics.'.$this->value);
     }
 
+    public function sqlFunction(): string
+    {
+        return match ($this) {
+            self::Count => 'count',
+            self::Sum => 'sum',
+            self::Average => 'avg',
+            self::Min => 'min',
+            self::Max => 'max',
+        };
+    }
+
+    public function sharesOfTotal(): bool
+    {
+        return $this === self::Count || $this === self::Sum;
+    }
+
     public function requiresNumberField(): bool
     {
         return $this !== self::Count;

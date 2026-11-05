@@ -99,6 +99,7 @@ return [
     'widget_types' => [
         'stats' => ['label' => 'Tarjetas de resumen', 'description' => 'Tarjetas con las cifras clave.'],
         'table' => ['label' => 'Tabla', 'description' => 'Filas y columnas de registros.'],
+        'summary' => ['label' => 'Tabla resumen', 'description' => 'Totales por grupo, con % del total opcional.'],
         'line' => ['label' => 'Gráfica de líneas', 'description' => 'Cómo cambia una cifra en el tiempo.'],
         'bar' => ['label' => 'Gráfica de barras', 'description' => 'Compara una cifra en el tiempo.'],
         'scatter' => ['label' => 'Gráfica de dispersión', 'description' => 'Cómo se relacionan dos números.'],
@@ -110,6 +111,10 @@ return [
         'new' => [
             'heading' => 'Nuevo widget',
             'description' => 'Arma un widget con tus datos.',
+        ],
+        'summary' => [
+            'total' => 'Total',
+            'percent' => '% del total',
         ],
         'tabs' => [
             'edit' => 'Editar',
@@ -128,6 +133,11 @@ return [
             'metric' => 'Cálculo',
             'field' => 'Campo',
             'label' => 'Etiqueta',
+            'total_row' => 'Fila de total',
+            'metrics' => 'Columnas',
+            'metrics_helper' => 'Cada columna calcula una cifra por grupo.',
+            'add_metric' => 'Agregar columna',
+            'percent' => 'Mostrar % del total',
             'dates_field' => 'Campo de fecha',
             'dates_field_helper' => 'Filtra esta fecha con las fechas del escritorio.',
             'date_field' => 'Fecha',

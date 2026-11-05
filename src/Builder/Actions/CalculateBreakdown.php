@@ -40,18 +40,10 @@ class CalculateBreakdown
 
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
         $groupColumn = $query->qualifyColumn($group->name);
-        $function = match ($metric) {
-            Metric::Count => 'count',
-            Metric::Sum => 'sum',
-            Metric::Average => 'avg',
-            Metric::Min => 'min',
-            Metric::Max => 'max',
-        };
-
         $rows = $query
             ->reorder()
             ->select($groupColumn)
-            ->addSelect(new AggregateExpression($function, $numberField === null ? null : $query->qualifyColumn($numberField->name), 'aggregate'))
+            ->addSelect(new AggregateExpression($metric->sqlFunction(), $numberField === null ? null : $query->qualifyColumn($numberField->name), 'aggregate'))
             ->groupBy($groupColumn)
             ->orderByDesc('aggregate')
             ->orderBy($groupColumn)

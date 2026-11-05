@@ -8,6 +8,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
@@ -26,6 +27,7 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
+use Waguilar\FilamentDashboards\Widgets\BuilderSummaryWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
 
 class BuilderWidgetForm
@@ -67,13 +69,14 @@ class BuilderWidgetForm
     }
 
     /**
-     * @return class-string<BuilderStatsWidget|BuilderChartWidget|BuilderTableWidget>
+     * @return class-string<BuilderStatsWidget|BuilderChartWidget|BuilderTableWidget|BuilderSummaryWidget>
      */
     public static function component(BuilderWidgetType $type): string
     {
         return match ($type) {
             BuilderWidgetType::Stats => BuilderStatsWidget::class,
             BuilderWidgetType::Table => BuilderTableWidget::class,
+            BuilderWidgetType::Summary => BuilderSummaryWidget::class,
             default => BuilderChartWidget::class,
         };
     }
@@ -131,6 +134,32 @@ class BuilderWidgetForm
                         ->live(),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                 ]),
+                self::filters(),
+            ],
+            BuilderWidgetType::Summary => [
+                Grid::make(2)->schema([
+                    self::sourceSelect(),
+                    self::fieldSelect('group_field', FieldType::Choice, FieldType::Text, FieldType::Boolean)->label(__(self::T.'group_field'))->required(),
+                    TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(100)->default(20)->live(onBlur: true),
+                    self::datesField(),
+                    Toggle::make('total_row')->label(__(self::T.'total_row'))->live(),
+                ]),
+                Repeater::make('metrics')
+                    ->label(__(self::T.'metrics'))
+                    ->helperText(__(self::T.'metrics_helper'))
+                    ->addActionLabel(__(self::T.'add_metric'))
+                    ->minItems(1)
+                    ->defaultItems(1)
+                    ->columns(2)
+                    ->columnSpanFull()
+                    ->schema([
+                        ...self::metricFields('../../source'),
+                        TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
+                        Toggle::make('percent')
+                            ->label(__(self::T.'percent'))
+                            ->live()
+                            ->visible(fn (Get $get): bool => self::metric($get('metric'))?->sharesOfTotal() ?? false),
+                    ]),
                 self::filters(),
             ],
             BuilderWidgetType::Scatter => [
@@ -193,7 +222,7 @@ class BuilderWidgetForm
     /**
      * @return array<Component>
      */
-    protected static function metricFields(): array
+    protected static function metricFields(string $sourcePath = 'source'): array
     {
         return [
             Select::make('metric')
@@ -203,7 +232,9 @@ class BuilderWidgetForm
                 ->selectablePlaceholder(false)
                 ->required()
                 ->live(),
-            self::fieldSelect('field', FieldType::Number)
+            Select::make('field')
+                ->options(fn (Get $get): array => self::fieldOptions(self::source($get($sourcePath)), FieldType::Number))
+                ->live()
                 ->label(__(self::T.'field'))
                 ->required()
                 ->visible(fn (Get $get): bool => self::metric($get('metric'))?->requiresNumberField() ?? false),

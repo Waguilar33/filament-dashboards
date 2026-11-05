@@ -8,6 +8,7 @@ enum BuilderWidgetType: string
 {
     case Stats = 'stats';
     case Table = 'table';
+    case Summary = 'summary';
     case Line = 'line';
     case Bar = 'bar';
     case Scatter = 'scatter';
@@ -29,13 +30,14 @@ enum BuilderWidgetType: string
     {
         return match ($this) {
             self::PolarArea => 'polar',
+            self::Summary => 'table',
             default => $this->value,
         };
     }
 
     public function isChart(): bool
     {
-        return ! in_array($this, [self::Stats, self::Table], true);
+        return ! in_array($this, [self::Stats, self::Table, self::Summary], true);
     }
 
     /**
@@ -45,6 +47,7 @@ enum BuilderWidgetType: string
     {
         return match ($this) {
             self::Stats, self::Table => ['w' => 12, 'h' => 4],
+            self::Summary => ['w' => 6, 'h' => 6],
             default => ['w' => 6, 'h' => 8],
         };
     }

@@ -99,6 +99,7 @@ return [
     'widget_types' => [
         'stats' => ['label' => 'Stats overview cards', 'description' => 'A set of cards showing key figures.'],
         'table' => ['label' => 'Table', 'description' => 'Rows and columns of records.'],
+        'summary' => ['label' => 'Summary table', 'description' => 'Totals per group, with optional % of total.'],
         'line' => ['label' => 'Line chart', 'description' => 'How a figure changes over time.'],
         'bar' => ['label' => 'Bar chart', 'description' => 'Compare a figure over time.'],
         'scatter' => ['label' => 'Scatter chart', 'description' => 'How two numbers relate.'],
@@ -110,6 +111,10 @@ return [
         'new' => [
             'heading' => 'New widget',
             'description' => 'Build a widget from your data.',
+        ],
+        'summary' => [
+            'total' => 'Total',
+            'percent' => '% of total',
         ],
         'tabs' => [
             'edit' => 'Edit',
@@ -128,6 +133,11 @@ return [
             'metric' => 'Metric',
             'field' => 'Field',
             'label' => 'Label',
+            'total_row' => 'Total row',
+            'metrics' => 'Columns',
+            'metrics_helper' => 'Each column calculates one figure per group.',
+            'add_metric' => 'Add column',
+            'percent' => 'Show % of total',
             'dates_field' => 'Dashboard date field',
             'dates_field_helper' => 'Filters this date with the dashboard dates.',
             'date_field' => 'Date',

@@ -127,7 +127,7 @@ public function canView(Model $user, ?Model $tenant): bool
 }
 ```
 
-Users then pick New widget (stats cards, table, line, bar, scatter, pie, doughnut, polar area), choose a source, a metric and filters, and see a preview before saving. Saved widgets appear under Widgets, where they can be shared, cloned and deleted like dashboards. Ship ready-made ones as system widgets:
+Users then pick New widget (stats cards, table, summary table, line, bar, scatter, pie, doughnut, polar area), choose a source, a metric and filters, and see a preview before saving. A summary table groups by one field and shows one or more figures per group (count, or sum, average, min or max of a number), each with an optional share of the total, and an optional total row. Saved widgets appear under Widgets, where they can be shared, cloned and deleted like dashboards. Ship ready-made ones as system widgets:
 
 ```php
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
