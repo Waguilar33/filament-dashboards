@@ -229,7 +229,7 @@ it('lets the app modify the share and add widget actions', function (): void {
         ->and(viewAs($owner, $dashboard)->mountAction('addWidget')->instance()->getMountedAction()?->isModalSlideOver())->toBeFalse();
 });
 
-it('offers the navigation groups and keeps a stored group missing from them', function (): void {
+it('offers the navigation groups searchable and keeps a stored group missing from them', function (): void {
     FilamentDashboardsPlugin::get()->navigationGroupsUsing(fn (): array => ['sales' => 'Ventas']);
     $owner = user();
 
@@ -237,7 +237,8 @@ it('offers the navigation groups and keeps a stored group missing from them', fu
     $field = $page->getSchema($page->getMountedActionSchemaName())?->getComponent(fn (mixed $component): bool => $component instanceof Select && $component->getName() === 'navigation_group', withHidden: true);
 
     expect($field)->toBeInstanceOf(Select::class)
-        ->and($field->getOptions())->toBe(['sales' => 'Ventas', 'Old' => 'Old']);
+        ->and($field->getOptions())->toBe(['sales' => 'Ventas', 'Old' => 'Old'])
+        ->and($field->isSearchable())->toBeTrue();
 });
 
 it('lets the app replace the navigation icon field', function (): void {

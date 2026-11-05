@@ -56,6 +56,7 @@ class DashboardForm
             Select::make('navigation_group')
                 ->label(__('filament-dashboards::dashboards.fields.navigation_group'))
                 ->options(fn (?Dashboard $record): array => self::groupOptions($record))
+                ->searchable()
                 ->visible(fn (Get $get): bool => (bool) $get('show_in_navigation')),
             ToggleButtons::make('navigation_position')
                 ->label(__('filament-dashboards::dashboards.fields.navigation_position'))
