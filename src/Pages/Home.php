@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Pages;
 use Filament\Facades\Filament;
 use Filament\Pages\Dashboard as FilamentDashboard;
 use Filament\Schemas\Schema;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
@@ -14,10 +15,12 @@ use Waguilar\FilamentDashboards\Actions\FindHomeDashboard;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Pages\Concerns\HasDashboardDates;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
 
 class Home extends FilamentDashboard
 {
+    use HasDashboardDates;
     use RendersDashboard;
 
     protected ?Dashboard $home = null;
@@ -42,7 +45,12 @@ class Home extends FilamentDashboard
         $home = $this->getHome();
 
         if ($home === null) {
-            return parent::content($schema);
+            $followers = array_filter($this->getWidgets(), fn (string|WidgetConfiguration $widget): bool => in_array(InteractsWithPageFilters::class, class_uses_recursive($widget instanceof WidgetConfiguration ? $widget->widget : $widget), true));
+
+            return $schema->components([
+                ...($followers === [] ? [] : [$this->getFiltersFormContentComponent()]),
+                $this->getWidgetsContentComponent(),
+            ]);
         }
 
         return $schema->components($this->dashboardComponents($home, false, null));

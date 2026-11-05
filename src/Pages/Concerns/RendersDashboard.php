@@ -8,9 +8,11 @@ use Closure;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\EmptyState;
 use Filament\Schemas\Components\View;
 use Filament\Support\Icons\Heroicon;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
@@ -62,6 +64,7 @@ trait RendersDashboard
                     'props' => $builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [],
                     'version' => $builderWidget?->updated_at?->timestamp,
                     'builderWidgetId' => $builderWidget instanceof BuilderWidget && $builderWidget->canBeEditedBy($user) ? $builderWidget->id : null,
+                    'followsDates' => in_array(InteractsWithPageFilters::class, class_uses_recursive($component), true),
                     'x' => $item->x,
                     'y' => $item->y,
                     'w' => $item->w,
@@ -82,11 +85,14 @@ trait RendersDashboard
         }
 
         return [
+            ...(array_filter(array_column($items, 'followsDates')) === [] ? [] : [EmbeddedSchema::make('filtersForm')]),
             View::make('filament-dashboards::grid')->viewData(function () use ($items, $editing): array {
                 $editable = $editing instanceof Closure ? (bool) $editing() : $editing;
 
                 return [
-                    'items' => $items,
+                    'items' => array_map(fn (array $item): array => $item['followsDates']
+                        ? [...$item, 'props' => [...$item['props'], 'pageFilters' => $this->filters]]
+                        : $item, $items),
                     'editable' => $editable,
                     'signature' => md5((string) json_encode([$items, $editable])),
                 ];

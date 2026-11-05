@@ -30,6 +30,12 @@ return [
         'shared' => 'Compartidos conmigo',
         'system' => 'Del sistema',
     ],
+    'dates' => [
+        'today' => 'Hoy',
+        'days' => '{1} :count día|[2,*] :count días',
+        'from' => 'Fecha inicial',
+        'until' => 'Fecha final',
+    ],
     'navigation_positions' => [
         'start' => 'Al inicio del grupo',
         'end' => 'Al final del grupo',

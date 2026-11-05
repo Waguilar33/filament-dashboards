@@ -21,7 +21,8 @@ it('shows the user home dashboard', function (): void {
 
     Livewire::test(Home::class)
         ->assertSee('My home')
-        ->assertSee("dashboard-item-{$dashboard->items()->sole()->id}");
+        ->assertSee("dashboard-item-{$dashboard->items()->sole()->id}")
+        ->assertSeeHtml('filtersForm.preset');
 });
 
 it('keeps dashboard widgets off the default dashboard', function (): void {
@@ -33,5 +34,8 @@ it('keeps dashboard widgets off the default dashboard', function (): void {
 it('shows the default dashboard without a home', function (): void {
     $this->actingAs(user());
 
-    Livewire::test(Home::class)->assertSee('Dashboard')->assertDontSee('No widgets yet');
+    Livewire::test(Home::class)
+        ->assertSee('Dashboard')
+        ->assertDontSee('No widgets yet')
+        ->assertDontSeeHtml('filtersForm.preset');
 });

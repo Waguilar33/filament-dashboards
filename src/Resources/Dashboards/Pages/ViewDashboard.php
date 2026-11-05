@@ -36,6 +36,7 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Pages\Concerns\HasDashboardDates;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
@@ -45,6 +46,7 @@ class ViewDashboard extends Page
 {
     public const NEW_PREFIX = 'new:';
 
+    use HasDashboardDates;
     use InteractsWithRecord;
     use RendersDashboard;
 

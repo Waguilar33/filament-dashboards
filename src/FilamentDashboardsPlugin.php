@@ -21,6 +21,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use LogicException;
 use Waguilar\FilamentDashboards\Builder\DataSource;
@@ -65,6 +66,18 @@ final class FilamentDashboardsPlugin implements Plugin
      * @var (Closure(?Model): Builder<covariant Model>)|null
      */
     protected ?Closure $shareableUsersUsing = null;
+
+    /**
+     * @var list<int>
+     */
+    protected array $datePresets = [1, 15, 30, 60, 90];
+
+    protected int $defaultDatePreset = 30;
+
+    /**
+     * @var (Closure(): string)|null
+     */
+    protected ?Closure $timezoneUsing = null;
 
     /**
      * @var (Closure(string): Field)|null
@@ -477,5 +490,50 @@ final class FilamentDashboardsPlugin implements Plugin
         }
 
         return $groups;
+    }
+
+    /**
+     * @param  list<int>  $days
+     */
+    public function datePresets(array $days): static
+    {
+        $this->datePresets = $days;
+
+        return $this;
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getDatePresets(): array
+    {
+        return $this->datePresets;
+    }
+
+    public function defaultDatePreset(int $days): static
+    {
+        $this->defaultDatePreset = $days;
+
+        return $this;
+    }
+
+    public function getDefaultDatePreset(): int
+    {
+        return $this->defaultDatePreset;
+    }
+
+    /**
+     * @param  (Closure(): string)|null  $callback
+     */
+    public function timezoneUsing(?Closure $callback): static
+    {
+        $this->timezoneUsing = $callback;
+
+        return $this;
+    }
+
+    public function getTimezone(): string
+    {
+        return $this->timezoneUsing === null ? Config::string('app.timezone') : ($this->timezoneUsing)();
     }
 }

@@ -152,6 +152,36 @@ FilamentDashboardsPlugin::make()->systemWidgets([OrdersByChannel::class]);
 
 A system dashboard can place a system widget by listing its class in `items()`.
 
+## Dashboard dates
+
+A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and a start and end date. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:
+
+```php
+use Waguilar\FilamentDashboards\Concerns\InteractsWithDashboardDates;
+
+class SalesByCategory extends TableWidget implements DashboardWidget
+{
+    use InteractsWithDashboard;
+    use InteractsWithDashboardDates;
+
+    public function table(Table $table): Table
+    {
+        $range = $this->dateRange();
+
+        return $table->query(Sale::query()->whereBetween('sold_at', [$range->start, $range->end]));
+    }
+}
+```
+
+`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters` (`preset`, `startDate`, `endDate`). Change the presets, the default and the time zone:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->datePresets([1, 7, 30, 365])
+    ->defaultDatePreset(7)
+    ->timezoneUsing(fn (): string => auth()->user()->timezone);
+```
+
 ## Who can do what
 
 | | Who |
