@@ -22,6 +22,7 @@ use Orchestra\Testbench\TestCase as Orchestra;
 use Spatie\Permission\PermissionServiceProvider;
 use Waguilar\FilamentDashboards\FilamentDashboardsServiceProvider;
 use Workbench\App\Providers\Filament\DemoPanelProvider;
+use Workbench\App\Providers\Filament\TeamsPanelProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -54,6 +55,7 @@ abstract class TestCase extends Orchestra
             PermissionServiceProvider::class,
             FilamentDashboardsServiceProvider::class,
             DemoPanelProvider::class,
+            TeamsPanelProvider::class,
         ];
     }
 }

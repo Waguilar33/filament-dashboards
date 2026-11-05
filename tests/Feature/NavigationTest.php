@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationGroup;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Workbench\App\Models\Team;
 
 it('adds dashboards marked for navigation to the user navigation', function (): void {
     $me = user();
@@ -38,4 +39,20 @@ it('offers the panel navigation groups by default', function (): void {
 
     expect(FilamentDashboardsPlugin::get()->getNavigationGroups($panel))
         ->toBe(['Reports' => 'Reports', 'Sales' => 'Sales', 'Finance' => 'Finance', 'keyed' => 'Keyed label', 'Plain' => 'Plain']);
+});
+
+it('adds dashboards of the current tenant to the navigation on a tenant panel', function (): void {
+    $me = user();
+    $team = Team::query()->create(['name' => 'North']);
+    $other = Team::query()->create(['name' => 'South']);
+    $team->users()->attach($me);
+    dashboard($me, ['panel' => 'teams', 'name' => 'Team board', 'show_in_navigation' => true])->tenant()->associate($team)->save();
+    dashboard($me, ['panel' => 'teams', 'name' => 'Other board', 'slug' => 'other', 'show_in_navigation' => true])->tenant()->associate($other)->save();
+    dashboard($me, ['panel' => 'teams', 'name' => 'Plain', 'slug' => 'plain'])->tenant()->associate($team)->save();
+
+    $this->actingAs($me)
+        ->get("/teams/{$team->getKey()}/custom-dashboards/plain")
+        ->assertOk()
+        ->assertSee('Team board')
+        ->assertDontSee('Other board');
 });

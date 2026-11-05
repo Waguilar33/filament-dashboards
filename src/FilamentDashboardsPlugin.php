@@ -27,6 +27,7 @@ use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
+use Waguilar\FilamentDashboards\Http\Middleware\RegisterTenantDashboardNavigation;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
@@ -138,7 +139,7 @@ final class FilamentDashboardsPlugin implements Plugin
         $panel
             ->resources([DashboardResource::class, BuilderWidgetResource::class])
             ->authMiddleware([RegisterDashboardNavigation::class], isPersistent: true)
-            ->tenantMiddleware([RegisterDashboardNavigation::class], isPersistent: true);
+            ->tenantMiddleware([RegisterTenantDashboardNavigation::class], isPersistent: true);
     }
 
     public function boot(Panel $panel): void {}

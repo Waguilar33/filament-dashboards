@@ -3,6 +3,7 @@ laravel: '@testbench'
 providers:
   - Waguilar\FilamentDashboards\FilamentDashboardsServiceProvider
   - Workbench\App\Providers\Filament\DemoPanelProvider
+  - Workbench\App\Providers\Filament\TeamsPanelProvider
 
 migrations:
   - workbench/database/migrations

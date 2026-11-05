@@ -17,6 +17,8 @@ use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 
 class RegisterDashboardNavigation
 {
+    protected const RUNS_AFTER_TENANT = false;
+
     /**
      * @param  Closure(Request): Response  $next
      */
@@ -26,7 +28,7 @@ class RegisterDashboardNavigation
         $user = Filament::auth()->user();
         $tenant = Filament::getTenant();
 
-        if (! $user instanceof Model || ($panel->hasTenancy() && $tenant === null)) {
+        if (! $user instanceof Model || $panel->hasTenancy() !== static::RUNS_AFTER_TENANT) {
             return $next($request);
         }
 
