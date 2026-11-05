@@ -74,6 +74,11 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $headerActionsUsing = null;
 
     /**
+     * @var (Closure(array<string, Action>): array<Action|ActionGroup>)|null
+     */
+    protected ?Closure $widgetRecordActionsUsing = null;
+
+    /**
      * @var list<int>
      */
     protected array $datePresets = [1, 15, 30, 60, 90];
@@ -573,6 +578,32 @@ final class FilamentDashboardsPlugin implements Plugin
                 $actions['removeHome'],
                 $actions['delete'],
             ]),
+        ];
+    }
+
+    /**
+     * @param  (Closure(array<string, Action>): array<Action|ActionGroup>)|null  $callback
+     */
+    public function widgetRecordActionsUsing(?Closure $callback): static
+    {
+        $this->widgetRecordActionsUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, Action>  $actions
+     * @return array<Action|ActionGroup>
+     */
+    public function arrangeWidgetRecordActions(array $actions): array
+    {
+        if ($this->widgetRecordActionsUsing !== null) {
+            return ($this->widgetRecordActionsUsing)($actions);
+        }
+
+        return [
+            $actions['edit'],
+            ActionGroup::make([$actions['share'], $actions['duplicate'], $actions['delete']]),
         ];
     }
 }

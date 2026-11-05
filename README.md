@@ -276,6 +276,19 @@ FilamentDashboardsPlugin::make()
 
 Add widget lives in the Edit mode banner; Edit hides itself while editing.
 
+The Widgets list shows Edit on each row, with Share, Duplicate and Delete in a menu. Arrange them the same way; the hook receives the row actions keyed by `edit`, `duplicate`, `share` and `delete`:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->widgetRecordActionsUsing(fn (array $actions): array => [
+        $actions['edit'],
+        $actions['duplicate'],
+        ActionGroup::make([$actions['share'], $actions['delete']]),
+    ]);
+```
+
+Each action keeps its own visibility and permission checks; the hook only places them. The Dashboards list has no row actions; a row opens its dashboard.
+
 The dashboard form is used by both create and settings. The share hook applies to dashboards and saved widgets.
 
 Users pick a dashboard's navigation group from the panel's registered groups. When your group labels are translated, give each a stable key so a dashboard saved in one language shows in another:
