@@ -320,6 +320,37 @@ it('lists saved widgets by kind and clones one', function (): void {
     expect(BuilderWidget::query()->where('name', 'My copy')->sole()->isOwnedBy($me))->toBeTrue();
 });
 
+it('creates a widget from the list without placing it on a dashboard', function (): void {
+    $me = user();
+    $dashboard = dashboard($me);
+    $this->actingAs($me);
+
+    Livewire::test(ListBuilderWidgets::class)
+        ->assertActionVisible('create')
+        ->callAction('create', data: ['type' => 'summary'])
+        ->assertActionMounted('buildWidget')
+        ->fillForm(['name' => 'Orders by channel', 'source' => 'orders', 'group_field' => 'channel', 'metrics' => [['metric' => 'count']]])
+        ->callMountedAction()
+        ->assertHasNoActionErrors();
+
+    $widget = BuilderWidget::query()->sole();
+
+    expect($widget->name)->toBe('Orders by channel')
+        ->and($widget->type)->toBe(BuilderWidgetType::Summary)
+        ->and($widget->isOwnedBy($me))->toBeTrue()
+        ->and($widget->panel)->toBe('demo')
+        ->and($dashboard->items()->count())->toBe(0);
+});
+
+it('hides creating widgets from the list without any data source', function (): void {
+    FilamentDashboardsPlugin::get()->dataSources([GatedOrdersSource::class]);
+    $this->actingAs(user());
+
+    Livewire::test(ListBuilderWidgets::class)
+        ->assertActionHidden('create')
+        ->assertActionHidden('buildWidget');
+});
+
 it('lets the app modify the widget share action', function (): void {
     FilamentDashboardsPlugin::get()->modifyShareActionUsing(fn (ShareAction $action): ShareAction => $action->modalWidth(Width::Medium));
     $me = user();

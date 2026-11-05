@@ -59,6 +59,7 @@ return [
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'create' => 'Crear',
         'done_editing' => 'Terminar edición',
         'duplicate' => 'Duplicar',
         'add_widget' => 'Agregar widget',

@@ -33,7 +33,7 @@ use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveCardWidths;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
-use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\Filament\Actions\BuildWidgetAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
@@ -219,18 +219,7 @@ class ViewDashboard extends Page
         ]];
 
         if ($sources !== []) {
-            $new = [];
-
-            foreach (BuilderWidgetType::cases() as $type) {
-                $new[self::NEW_PREFIX.$type->value] = ['label' => $type->getLabel(), 'description' => $type->getDescription(), 'preview' => null, 'kind' => $type->preview()];
-            }
-
-            $sections[] = [
-                'heading' => __('filament-dashboards::dashboards.builder.new.heading'),
-                'description' => __('filament-dashboards::dashboards.builder.new.description'),
-                'carousel' => false,
-                'options' => $new,
-            ];
+            $sections[] = BuildWidgetAction::pickerSection(self::NEW_PREFIX);
         }
 
         return $plugin->modifyAddWidgetAction(Action::make('addWidget')
@@ -270,22 +259,11 @@ class ViewDashboard extends Page
 
     public function buildWidgetAction(): Action
     {
-        return Action::make('buildWidget')
+        return BuildWidgetAction::make()
             ->visible($this->canEdit())
-            ->slideOver()
-            ->modalWidth(Width::FourExtraLarge)
-            ->modalHeading(fn (array $arguments): string => BuilderWidgetType::from(Arr::string($arguments, 'type'))->getLabel())
             ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
-            ->schema(fn (array $arguments): array => BuilderWidgetForm::components(BuilderWidgetType::from(Arr::string($arguments, 'type'))))
-            ->action(function (array $data, array $arguments): void {
-                $type = BuilderWidgetType::from(Arr::string($arguments, 'type'));
-                $widget = app(SaveBuilderWidget::class)->handle(
-                    SaveBuilderWidget::newFor(DashboardResource::user(), Filament::getTenant(), FilamentDashboardsPlugin::currentPanel()->getId()),
-                    $type,
-                    $data,
-                );
-
-                app(AddDashboardWidget::class)->handle($this->getDashboard(), $widget->dashboardKey(), $type->defaultSize());
+            ->after(function (BuilderWidget $record): void {
+                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize());
 
                 $this->reloadDashboard();
             });

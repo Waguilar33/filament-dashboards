@@ -59,6 +59,7 @@ return [
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'create' => 'Create',
         'done_editing' => 'Finish editing',
         'duplicate' => 'Duplicate',
         'add_widget' => 'Add widget',
