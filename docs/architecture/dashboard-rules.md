@@ -27,7 +27,9 @@
 
 ## Superseded
 
-None yet.
+| Rule | Old wording | Replaced | Why |
+|---|---|---|---|
+| FDP12 | In Edit layout, widgets are dragged by a handle and resized by their corner (Gridstack.js). Height follows the widget's content; width is what the user sets. The layout is saved when a drag or resize ends. | 2026-11-04 | Owner asked for a distinct edit mode with framed widgets, drag anywhere and side-edge resize. |
 
 ## Facts
 
@@ -52,7 +54,7 @@ None yet.
 | FDP9 | An app policy for the dashboard model decides only who sees the dashboards list (`viewAny`) and who creates (`create`). View, edit, share and delete always follow FD6 and FD7. | A generated policy (Guardian's `Update:Dashboard`) would otherwise let a role edit or delete dashboards it does not own. |
 | FDP10 | Add widget shows cards (preview, name, description) in a carousel, like the reference demo. A widget's `dashboardPreview()` image wins; otherwise a drawing by kind (stats, chart, table, other). | Matches the screenshots the owner shared. |
 | FDP11 | Spanish screens call a dashboard "Escritorio", Filament's own word for its dashboard page. | One term on screen for the same thing. |
-| FDP12 | In Edit layout, widgets are dragged by a handle and resized by their corner (Gridstack.js). Height follows the widget's content; width is what the user sets. The layout is saved when a drag or resize ends. | A widget's own content decides how tall it must be; a fixed height either clips charts or leaves gaps. |
+| FDP12 | Edit layout is a mode: a compact Edit mode banner (Finish editing, Add widget) sits above the grid, and each widget is framed with its name and Edit (builder widgets only), Duplicate and Remove. A widget is dragged by grabbing its frame and resized from its side edges, snapping to 12 columns (Gridstack.js). Height follows the widget's content; width is what the user sets. The layout is saved when a drag or resize ends. Reading shows the widgets alone, with no frames and no drag or resize. Duplicate adds the same code widget, or the user's own copy of a builder widget. | A widget's own content decides how tall it must be; a fixed height either clips charts or leaves gaps. Owner, 2026-11-04: read and edit looked too alike and the move and expand icons confused. |
 | FDP13 | Below 1024 px wide every widget stacks in one column, and changes made there are not saved. | Saving a one-column arrangement would overwrite the desktop layout. |
 | FDP14 | A saved builder widget shows on a dashboard only to people who can see the widget itself (owner, its shares, or everyone for a system widget). Someone who can see the dashboard but not the widget sees the dashboard without it. | FD12 and FD6: a private widget is seen only by its owner, wherever it is placed. |
 | FDP15 | Builder widgets calculate with the viewer's own user and tenant, through the data source's own query. | The source decides what each person may see (FD15); a widget never carries its owner's access to someone else. |

@@ -55,7 +55,12 @@ return [
         'two_thirds' => 'Dos tercios',
         'full' => 'Completo',
     ],
+    'edit_mode' => [
+        'heading' => 'Modo edición',
+    ],
     'actions' => [
+        'done_editing' => 'Terminar edición',
+        'duplicate' => 'Duplicar',
         'add_widget' => 'Agregar widget',
         'share' => 'Compartir',
         'save' => 'Guardar',
@@ -65,15 +70,10 @@ return [
         'remove_home' => 'Quitar como inicio',
         'delete' => 'Eliminar',
         'edit_layout' => 'Editar diseño',
-        'done' => 'Listo',
         'remove' => 'Quitar',
-        'move_up' => 'Subir',
-        'move_down' => 'Bajar',
         'edit' => 'Editar',
-        'drag' => 'Arrastra para mover',
         'previous' => 'Anterior',
         'next' => 'Siguiente',
-        'resize' => 'Cambiar ancho',
     ],
     'modals' => [
         'add_widget' => [

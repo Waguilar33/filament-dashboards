@@ -19,9 +19,9 @@ What each action does: what starts it, what it checks, what it writes, and which
 
 | Step | What |
 |---|---|
-| Starts | Edit layout, then dragging a widget's handle or its corner; or the trash button on a widget. |
-| Checks | Owner or Edit share, checked again on the server (FD6). Only items of this dashboard; position and size kept inside the 12-column grid. Nothing saved on narrow screens (FDP13). |
-| Writes | x, y, w, h of every item when a drag or resize ends (FDP12); remove deletes the item. |
+| Starts | Edit layout, then dragging a widget's frame or its side edges; or Duplicate or Remove under a widget. Finish editing in the banner ends it. |
+| Checks | Owner or Edit share, checked again on the server (FD6). Only items of this dashboard; Duplicate only of a widget the user can see; position and size kept inside the 12-column grid. Nothing saved on narrow screens (FDP13). |
+| Writes | x, y, w, h of every item when a drag or resize ends (FDP12); Remove deletes the item; Duplicate adds an item below the others, with a copy of a builder widget owned by the user. |
 | Shows | The dashboard grid, for everyone who can see it. |
 
 ## DF9 Build a widget

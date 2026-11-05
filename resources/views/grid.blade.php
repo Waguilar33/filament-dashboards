@@ -9,6 +9,7 @@
     x-load-src="{{ FilamentAsset::getAlpineComponentSrc('dashboard-grid', 'waguilar33/filament-dashboards') }}"
     x-data="dashboardGrid({ editable: @js($editable) })"
     class="fi-dashboards-grid"
+    data-editable="{{ $editable ? 'true' : 'false' }}"
 >
     <div x-ref="grid" class="grid-stack">
         @foreach ($items as $item)
@@ -23,34 +24,43 @@
                 <div class="grid-stack-item-content">
                     <div class="fi-dashboards-item">
                     @if ($editable)
-                        <div class="fi-dashboards-toolbar">
-                            <span class="fi-dashboards-drag-handle" title="{{ __('filament-dashboards::dashboards.actions.drag') }}">
-                                {{ \Filament\Support\generate_icon_html(\Filament\Support\Icons\Heroicon::OutlinedArrowsPointingOut) }}
-                            </span>
+                        <x-filament::section compact :heading="$item['label']" class="fi-dashboards-frame">
+                            @livewire($item['widget'], $item['props'], key('dashboard-item-' . $item['id'] . '-' . $item['version']))
 
-                            <span class="fi-dashboards-toolbar-actions">
-                            @if (filled($item['builderWidgetId']))
-                                <x-filament::icon-button
-                                    color="gray"
-                                    :icon="\Filament\Support\Icons\Heroicon::OutlinedPencilSquare"
-                                    :label="__('filament-dashboards::dashboards.actions.edit')"
-                                    size="sm"
-                                    wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }} })"
-                                />
-                            @endif
+                            <x-slot name="footer">
+                                <div class="fi-dashboards-item-actions">
+                                    @if (filled($item['builderWidgetId']))
+                                        <x-filament::link
+                                            tag="button"
+                                            :icon="\Filament\Support\Icons\Heroicon::OutlinedPencilSquare"
+                                            wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }} })"
+                                        >
+                                            {{ __('filament-dashboards::dashboards.actions.edit') }}
+                                        </x-filament::link>
+                                    @endif
 
-                            <x-filament::icon-button
-                                color="danger"
-                                :icon="\Filament\Support\Icons\Heroicon::OutlinedTrash"
-                                :label="__('filament-dashboards::dashboards.actions.remove')"
-                                size="sm"
-                                wire:click="removeDashboardItem({{ $item['id'] }})"
-                            />
-                            </span>
-                        </div>
+                                    <x-filament::link
+                                        tag="button"
+                                        :icon="\Filament\Support\Icons\Heroicon::OutlinedDocumentDuplicate"
+                                        wire:click="mountAction('duplicateItem', { item: {{ $item['id'] }} })"
+                                    >
+                                        {{ __('filament-dashboards::dashboards.actions.duplicate') }}
+                                    </x-filament::link>
+
+                                    <x-filament::link
+                                        tag="button"
+                                        color="danger"
+                                        :icon="\Filament\Support\Icons\Heroicon::OutlinedTrash"
+                                        wire:click="mountAction('removeItem', { item: {{ $item['id'] }} })"
+                                    >
+                                        {{ __('filament-dashboards::dashboards.actions.remove') }}
+                                    </x-filament::link>
+                                </div>
+                            </x-slot>
+                        </x-filament::section>
+                    @else
+                        @livewire($item['widget'], $item['props'], key('dashboard-item-' . $item['id'] . '-' . $item['version']))
                     @endif
-
-                    @livewire($item['widget'], $item['props'], key('dashboard-item-' . $item['id'] . '-' . $item['version']))
                     </div>
                 </div>
             </div>

@@ -55,7 +55,12 @@ return [
         'two_thirds' => 'Two thirds',
         'full' => 'Full',
     ],
+    'edit_mode' => [
+        'heading' => 'Edit mode',
+    ],
     'actions' => [
+        'done_editing' => 'Finish editing',
+        'duplicate' => 'Duplicate',
         'add_widget' => 'Add widget',
         'share' => 'Share',
         'save' => 'Save',
@@ -65,15 +70,10 @@ return [
         'remove_home' => 'Remove as home',
         'delete' => 'Delete',
         'edit_layout' => 'Edit layout',
-        'done' => 'Done',
         'remove' => 'Remove',
-        'move_up' => 'Move up',
-        'move_down' => 'Move down',
         'edit' => 'Edit',
-        'drag' => 'Drag to move',
         'previous' => 'Previous',
         'next' => 'Next',
-        'resize' => 'Resize',
     ],
     'modals' => [
         'add_widget' => [

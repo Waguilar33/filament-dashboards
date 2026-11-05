@@ -14,8 +14,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\TableWidget;
@@ -25,6 +27,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\CloneDashboard;
+use Waguilar\FilamentDashboards\Actions\DuplicateDashboardItem;
 use Waguilar\FilamentDashboards\Actions\FindHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\RemoveHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
@@ -36,6 +39,7 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Models\DashboardItem;
 use Waguilar\FilamentDashboards\Pages\Concerns\HasDashboardDates;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
@@ -75,11 +79,20 @@ class ViewDashboard extends Page
 
     public function content(Schema $schema): Schema
     {
-        return $schema->components($this->dashboardComponents(
-            $this->getDashboard(),
-            fn (): bool => $this->isEditingLayout,
-            $this->canEdit() ? $this->addWidgetAction() : null,
-        ));
+        return $schema->components([
+            ...($this->isEditingLayout && $this->canEdit() ? [
+                Section::make(__('filament-dashboards::dashboards.edit_mode.heading'))
+                    ->key('editMode')
+                    ->compact()
+                    ->icon(Heroicon::OutlinedPencilSquare)
+                    ->headerActions([$this->doneEditingAction(), $this->addWidgetAction()]),
+            ] : []),
+            ...$this->dashboardComponents(
+                $this->getDashboard(),
+                fn (): bool => $this->isEditingLayout,
+                $this->canEdit() && ! $this->isEditingLayout ? $this->addWidgetAction() : null,
+            ),
+        ]);
     }
 
     /**
@@ -92,13 +105,50 @@ class ViewDashboard extends Page
         app(SaveDashboardLayout::class)->handle($this->getDashboard(), $layout);
     }
 
-    public function removeDashboardItem(int $item): void
+    public function duplicateItemAction(): Action
+    {
+        return Action::make('duplicateItem')
+            ->visible($this->canEdit())
+            ->action(function (array $arguments): void {
+                $item = $this->editableItem($arguments);
+                $user = DashboardResource::user();
+                $builderWidget = BuilderWidget::query()
+                    ->where('panel', $this->getDashboard()->panel)
+                    ->visibleTo($user)
+                    ->get()
+                    ->first(fn (BuilderWidget $widget): bool => $widget->dashboardKey() === $item->widget);
+
+                abort_unless(
+                    $builderWidget instanceof BuilderWidget
+                        || array_key_exists($item->widget, FilamentDashboardsPlugin::get()->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), $user)),
+                    403,
+                );
+
+                app(DuplicateDashboardItem::class)->handle($this->getDashboard(), $item, $builderWidget, $user, Filament::getTenant());
+
+                $this->reloadDashboard();
+            });
+    }
+
+    public function removeItemAction(): Action
+    {
+        return Action::make('removeItem')
+            ->visible($this->canEdit())
+            ->action(function (array $arguments): void {
+                $this->editableItem($arguments)->delete();
+
+                $this->reloadDashboard();
+            });
+    }
+
+    /**
+     * @param  array<mixed>  $arguments
+     */
+    protected function editableItem(array $arguments): DashboardItem
     {
         abort_unless($this->canEdit(), 403);
 
-        $this->getDashboard()->items()->whereKey($item)->delete();
-
-        $this->reloadDashboard();
+        return $this->getDashboard()->items()->whereKey($arguments['item'] ?? null)->firstOrFail();
     }
 
     protected function reloadDashboard(): void
@@ -112,7 +162,7 @@ class ViewDashboard extends Page
     protected function getHeaderActions(): array
     {
         return [
-            $this->addWidgetAction(),
+            ...($this->isEditingLayout ? [] : [$this->addWidgetAction()]),
             $this->shareAction(),
             ActionGroup::make([
                 $this->editLayoutAction(),
@@ -273,12 +323,22 @@ class ViewDashboard extends Page
     protected function editLayoutAction(): Action
     {
         return Action::make('editLayout')
-            ->label(fn (): string => $this->isEditingLayout
-                ? __('filament-dashboards::dashboards.actions.done')
-                : __('filament-dashboards::dashboards.actions.edit_layout'))
-            ->visible($this->canEdit())
+            ->label(__('filament-dashboards::dashboards.actions.edit_layout'))
+            ->visible($this->canEdit() && ! $this->isEditingLayout)
             ->action(function (): void {
-                $this->isEditingLayout = ! $this->isEditingLayout;
+                $this->isEditingLayout = true;
+
+                $this->reloadDashboard();
+            });
+    }
+
+    protected function doneEditingAction(): Action
+    {
+        return Action::make('doneEditing')
+            ->label(__('filament-dashboards::dashboards.actions.done_editing'))
+            ->color('gray')
+            ->action(function (): void {
+                $this->isEditingLayout = false;
 
                 $this->reloadDashboard();
             });

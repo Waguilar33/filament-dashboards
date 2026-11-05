@@ -10,27 +10,24 @@
     background: transparent;
 }
 
-.fi-dashboards-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.25rem;
-    padding: 0.25rem 0.25rem 0.375rem;
-}
-
-.fi-dashboards-toolbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.fi-dashboards-drag-handle {
+.fi-dashboards-grid[data-editable='true'] .grid-stack-item-content {
     cursor: grab;
-    color: var(--gray-400);
 }
 
-.fi-dashboards-drag-handle:active {
+.fi-dashboards-grid[data-editable='true'] .ui-draggable-dragging .grid-stack-item-content {
     cursor: grabbing;
+}
+
+.fi-dashboards-grid .ui-resizable-e,
+.fi-dashboards-grid .ui-resizable-w {
+    cursor: ew-resize;
+}
+
+.fi-dashboards-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: default;
 }
 
 .fi-dashboards-picker {

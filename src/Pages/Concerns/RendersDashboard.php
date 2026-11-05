@@ -64,6 +64,7 @@ trait RendersDashboard
                     'props' => $builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [],
                     'version' => $builderWidget?->updated_at?->timestamp,
                     'builderWidgetId' => $builderWidget instanceof BuilderWidget && $builderWidget->canBeEditedBy($user) ? $builderWidget->id : null,
+                    'label' => $builderWidget instanceof BuilderWidget ? $builderWidget->name : $component::dashboardLabel(),
                     'followsDates' => in_array(InteractsWithPageFilters::class, class_uses_recursive($component), true),
                     'x' => $item->x,
                     'y' => $item->y,

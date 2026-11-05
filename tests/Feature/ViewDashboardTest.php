@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -16,6 +17,7 @@ use Waguilar\FilamentDashboards\Enums\NavigationPosition;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardHome;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ViewDashboard;
@@ -298,6 +300,105 @@ it('toggles layout editing', function (): void {
         ->assertRedirect('/demo/custom-dashboards/sales?editing=1');
 });
 
+it('shows the edit banner with finish and add widget only while editing', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $this->actingAs($owner);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertDontSee('Edit mode')
+        ->assertActionVisible('addWidget')
+        ->assertActionVisible('editLayout');
+
+    Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertSee('Edit mode')
+        ->assertSee('Finish editing')
+        ->assertSee('Add widget')
+        ->assertActionHidden('editLayout')
+        ->callAction(TestAction::make('doneEditing')->schemaComponent('editMode', schema: 'content'))
+        ->assertSet('isEditingLayout', false)
+        ->assertRedirect('/demo/custom-dashboards/sales');
+});
+
+it('frames each item with its actions while editing, and edit only for builder widgets', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $builder = builderWidget($owner, ['name' => 'Revenue']);
+    $code = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+    $built = $dashboard->items()->create(['widget' => $builder->dashboardKey(), 'x' => 6, 'y' => 0, 'w' => 6, 'h' => 4]);
+    $this->actingAs($owner);
+
+    Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertSeeHtml('data-editable="true"')
+        ->assertSee('Orders Overview')
+        ->assertSee('Revenue')
+        ->assertSeeHtml("mountAction('duplicateItem', { item: {$code->id} })")
+        ->assertSeeHtml("mountAction('removeItem', { item: {$code->id} })")
+        ->assertSeeHtml("mountAction('editWidget', { widget: {$builder->id} })")
+        ->assertSeeHtml("mountAction('duplicateItem', { item: {$built->id} })")
+        ->assertSeeHtml("mountAction('removeItem', { item: {$built->id} })");
+
+    $built->delete();
+
+    Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertSeeHtml("mountAction('removeItem', { item: {$code->id} })")
+        ->assertDontSeeHtml("mountAction('editWidget'");
+});
+
+it('shows a clean grid without frames, actions, drag or resize when reading', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+    $this->actingAs($owner);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertSeeHtml('data-editable="false"')
+        ->assertSeeHtml('editable: false')
+        ->assertDontSeeHtml('fi-dashboards-frame')
+        ->assertDontSeeHtml("mountAction('removeItem', { item: {$item->id} })");
+});
+
+it('duplicates a code widget item with its size', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 4, 'h' => 3, 'options' => ['a' => 1]]);
+
+    viewAs($owner, $dashboard)->callAction('duplicateItem', arguments: ['item' => $item->id]);
+
+    expect($dashboard->items()->whereKeyNot($item->id)->sole()->only(['widget', 'x', 'y', 'w', 'h', 'options']))
+        ->toBe(['widget' => 'orders-overview', 'x' => 0, 'y' => 3, 'w' => 4, 'h' => 3, 'options' => ['a' => 1]]);
+});
+
+it('duplicates a builder widget item as the user own copy', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $editor = user();
+    share($dashboard, $editor, ShareLevel::Edit);
+    $source = builderWidget($owner, ['name' => 'Revenue']);
+    share($source, $editor, ShareLevel::Read);
+    $item = $dashboard->items()->create(['widget' => $source->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
+
+    viewAs($editor, $dashboard)->callAction('duplicateItem', arguments: ['item' => $item->id]);
+
+    $copy = BuilderWidget::query()->whereKeyNot($source->id)->sole();
+
+    expect($copy->name)->toBe('Copy of Revenue')
+        ->and($copy->isOwnedBy($editor))->toBeTrue()
+        ->and($dashboard->items()->whereKeyNot($item->id)->sole()->widget)->toBe($copy->dashboardKey());
+});
+
+it('refuses to duplicate an item the editor cannot see', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $hidden = $dashboard->items()->create(['widget' => builderWidget($owner)->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
+    $editor = user();
+    share($dashboard, $editor, ShareLevel::Edit);
+
+    viewAs($editor, $dashboard)->call('mountAction', 'duplicateItem', ['item' => $hidden->id])->assertForbidden();
+
+    expect($dashboard->items()->count())->toBe(1);
+});
+
 it('saves the layout from the grid, keeping widgets inside it', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);
@@ -322,24 +423,22 @@ it('removes a widget from the dashboard', function (): void {
     $dashboard = dashboard($owner);
     $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 2]);
 
-    viewAs($owner, $dashboard)->call('removeDashboardItem', $item->id);
+    viewAs($owner, $dashboard)->callAction('removeItem', arguments: ['item' => $item->id]);
 
     expect($dashboard->items()->count())->toBe(0);
 });
 
-it('refuses layout changes from someone who cannot edit', function (string $method, mixed $argument): void {
+it('refuses layout changes from someone who cannot edit', function (): void {
     $dashboard = dashboard(user());
     $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 2]);
     $reader = user();
     share($dashboard, $reader, ShareLevel::Read);
 
-    viewAs($reader, $dashboard)->call($method, $argument === 'item' ? $item->id : [['id' => $item->id, 'x' => 3]])->assertForbidden();
+    viewAs($reader, $dashboard)->call('saveDashboardLayout', [['id' => $item->id, 'x' => 3]])->assertForbidden();
+    viewAs($reader, $dashboard)->assertActionHidden('removeItem')->assertActionHidden('duplicateItem');
 
     expect($item->refresh()->x)->toBe(0);
-})->with([
-    'layout' => ['saveDashboardLayout', 'layout'],
-    'remove' => ['removeDashboardItem', 'item'],
-]);
+});
 
 it('offers the users the app chooses to share with', function (): void {
     $owner = user();
@@ -372,7 +471,7 @@ it('leaves widgets an editor cannot see where they are', function (): void {
 
     viewAs($editor, $dashboard)
         ->call('saveDashboardLayout', [['id' => $visible->id, 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 2]])
-        ->call('removeDashboardItem', $removed->id);
+        ->callAction('removeItem', arguments: ['item' => $removed->id]);
 
     expect($hidden->refresh()->only(['x', 'y', 'w', 'h']))->toBe(['x' => 0, 'y' => 0, 'w' => 6, 'h' => 4])
         ->and($dashboard->items()->pluck('id')->sort()->values()->all())->toBe([$hidden->id, $visible->id]);
