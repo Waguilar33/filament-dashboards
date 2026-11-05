@@ -67,13 +67,21 @@ export default function dashboardGrid({ editable }) {
 
         // Gridstack sizes a cell from its content, so the widget's card, or its innermost layout without one, is stretched to fill the cell's last partial row.
         card(item) {
+            const box = item.getBoundingClientRect()
+            const walker = document.createTreeWalker(item, NodeFilter.SHOW_ELEMENT)
+
+            while (walker.nextNode()) {
+                const element = walker.currentNode
+                const { width, height } = element.getBoundingClientRect()
+
+                if (width >= box.width - 1 && height >= box.height * 0.8 && getComputedStyle(element).backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                    return element
+                }
+            }
+
             let element = item
 
             while (element) {
-                if (getComputedStyle(element).backgroundColor !== 'rgba(0, 0, 0, 0)') {
-                    return element
-                }
-
                 const shown = Array.from(element.children).filter((child) => child.offsetHeight > 0)
 
                 if (shown.length !== 1) {
