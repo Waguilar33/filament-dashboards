@@ -143,7 +143,7 @@ class BuilderWidgetForm
                         self::sourceSelect(),
                         ...self::metricFields(),
                         self::datesField(),
-                        self::filters(),
+                        self::filters(ruleColumns: 1),
                     ]),
             ],
             BuilderWidgetType::Line, BuilderWidgetType::Bar => [
@@ -353,7 +353,7 @@ class BuilderWidgetForm
             ->live();
     }
 
-    protected static function filters(): Repeater
+    protected static function filters(int $ruleColumns = 3): Repeater
     {
         return Repeater::make('filters')
             ->label(__(self::T.'filters'))
@@ -369,7 +369,7 @@ class BuilderWidgetForm
                     ->minItems(1)
                     ->defaultItems(1)
                     ->reorderable(false)
-                    ->columns(3)
+                    ->columns($ruleColumns)
                     ->schema([
                         Select::make('field')
                             ->label(__(self::T.'field'))
