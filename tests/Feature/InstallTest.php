@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Waguilar\FilamentDashboards\FilamentDashboardsServiceProvider;
 
 function rebuildTables(): void
 {
@@ -45,10 +46,12 @@ it('keeps integer keys by default', function (): void {
 });
 
 it('suggests Filament Guardian only when it is missing', function (): void {
-    $this->beforeApplicationDestroyed(fn () => File::delete([
-        config_path('filament-dashboards.php'),
-        ...File::glob(database_path('migrations/*_create_filament_dashboards_tables.php')),
-    ]));
+    $published = sys_get_temp_dir().'/filament-dashboards-install-'.getmypid();
+    File::ensureDirectoryExists("{$published}/migrations");
+    $this->beforeApplicationDestroyed(fn () => File::deleteDirectory($published));
+    $this->app->useConfigPath($published);
+    $this->app->useDatabasePath($published);
+    $this->app->register(FilamentDashboardsServiceProvider::class, force: true);
 
     $this->artisan('filament-dashboards:install')
         ->expectsConfirmation('Would you like to run the migrations now?', 'no')
@@ -61,4 +64,7 @@ it('suggests Filament Guardian only when it is missing', function (): void {
         ->expectsConfirmation('Would you like to run the migrations now?', 'no')
         ->doesntExpectOutputToContain('Tip: install waguilar33/filament-guardian')
         ->assertSuccessful();
+
+    expect(File::exists("{$published}/filament-dashboards.php"))->toBeTrue()
+        ->and(File::glob("{$published}/migrations/*_create_filament_dashboards_tables.php"))->toHaveCount(1);
 });
