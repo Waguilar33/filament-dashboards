@@ -33,26 +33,27 @@ it('lists the dashboards the user can see, by kind', function (): void {
         ->assertTableColumnStateSet('kind', 'System', $system);
 });
 
-it('creates dashboards in a slide-over with the form in two columns by default', function (): void {
+it('creates dashboards in a medium slide-over with the form in one column by default', function (): void {
     $this->actingAs(user());
 
     $page = Livewire::test(ListDashboards::class)->mountAction('create')->instance();
 
     expect($page->getMountedAction()?->isModalSlideOver())->toBeTrue()
-        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(2);
+        ->and($page->getMountedAction()?->getModalWidth())->toBe(Width::Medium)
+        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(1);
 });
 
 it('lets the app modify the create action and the dashboard form', function (): void {
     FilamentDashboardsPlugin::get()
-        ->modifyCreateDashboardActionUsing(fn (CreateAction $action): CreateAction => $action->slideOver(false)->modalWidth(Width::Medium))
-        ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(1));
+        ->modifyCreateDashboardActionUsing(fn (CreateAction $action): CreateAction => $action->slideOver(false)->modalWidth(Width::TwoExtraLarge))
+        ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(2));
     $this->actingAs(user());
 
     $page = Livewire::test(ListDashboards::class)->mountAction('create')->instance();
 
     expect($page->getMountedAction()?->isModalSlideOver())->toBeFalse()
-        ->and($page->getMountedAction()?->getModalWidth())->toBe(Width::Medium)
-        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(1);
+        ->and($page->getMountedAction()?->getModalWidth())->toBe(Width::TwoExtraLarge)
+        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(2);
 });
 
 it('creates a private dashboard owned by the user in the current panel', function (): void {

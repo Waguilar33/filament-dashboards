@@ -194,17 +194,27 @@ it('removes the home from the home dashboard only', function (): void {
     expect(DashboardHome::query()->exists())->toBeFalse();
 });
 
+it('opens settings in a medium slide-over with the form in one column by default', function (): void {
+    $owner = user();
+
+    $page = viewAs($owner, dashboard($owner))->mountAction('settings')->instance();
+
+    expect($page->getMountedAction()?->isModalSlideOver())->toBeTrue()
+        ->and($page->getMountedAction()?->getModalWidth())->toBe(Width::Medium)
+        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(1);
+});
+
 it('lets the app modify the settings action and its form', function (): void {
     FilamentDashboardsPlugin::get()
-        ->modifySettingsActionUsing(fn (EditAction $action): EditAction => $action->slideOver(false)->modalWidth(Width::Medium))
-        ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(1));
+        ->modifySettingsActionUsing(fn (EditAction $action): EditAction => $action->slideOver(false)->modalWidth(Width::TwoExtraLarge))
+        ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(2));
     $owner = user();
 
     $page = viewAs($owner, dashboard($owner))->mountAction('settings')->instance();
 
     expect($page->getMountedAction()?->isModalSlideOver())->toBeFalse()
-        ->and($page->getMountedAction()?->getModalWidth())->toBe(Width::Medium)
-        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(1);
+        ->and($page->getMountedAction()?->getModalWidth())->toBe(Width::TwoExtraLarge)
+        ->and($page->getSchema($page->getMountedActionSchemaName())?->getColumns('lg'))->toBe(2);
 });
 
 it('lets the app modify the share and add widget actions', function (): void {

@@ -175,12 +175,12 @@ FilamentDashboardsPlugin::make()
 
 ## Changing the plugin's screens
 
-Each hook receives the plugin's configured form or action and returns it; your changes win:
+Create dashboard and Settings open in a medium slide-over with the form in one column. Each hook receives the plugin's configured form or action and returns it; your changes win:
 
 ```php
 FilamentDashboardsPlugin::make()
-    ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(1))
-    ->modifyCreateDashboardActionUsing(fn (CreateAction $action): CreateAction => $action->slideOver(false)->modalWidth(Width::Medium))
+    ->modifyDashboardFormUsing(fn (Schema $schema): Schema => $schema->columns(2))
+    ->modifyCreateDashboardActionUsing(fn (CreateAction $action): CreateAction => $action->slideOver(false))
     ->modifySettingsActionUsing(fn (EditAction $action): EditAction => $action)
     ->modifyShareActionUsing(fn (ShareAction $action): ShareAction => $action)
     ->modifyAddWidgetActionUsing(fn (Action $action): Action => $action);

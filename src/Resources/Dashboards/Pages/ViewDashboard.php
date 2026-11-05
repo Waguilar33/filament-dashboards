@@ -289,6 +289,7 @@ class ViewDashboard extends Page
             ->icon(null)
             ->visible($this->canEdit())
             ->slideOver()
+            ->modalWidth(Width::Medium)
             ->record($this->getDashboard())
             ->schema(fn (Schema $schema): Schema => DashboardForm::configure($schema))
             ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record])));
