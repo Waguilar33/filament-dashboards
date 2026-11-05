@@ -53,7 +53,7 @@ final class FilamentDashboardsPlugin implements Plugin
     protected array $dataSources = [];
 
     /**
-     * @var (Closure(?Model): Builder<Model>)|null
+     * @var (Closure(?Model): Builder<covariant Model>)|null
      */
     protected ?Closure $shareableUsersUsing = null;
 
@@ -101,7 +101,7 @@ final class FilamentDashboardsPlugin implements Plugin
     public function boot(Panel $panel): void {}
 
     /**
-     * @param  (Closure(?Model): Builder<Model>)|null  $callback
+     * @param  (Closure(?Model): Builder<covariant Model>)|null  $callback
      */
     public function shareableUsersUsing(?Closure $callback): static
     {
@@ -111,7 +111,7 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @return Builder<Model>
+     * @return Builder<covariant Model>
      */
     public function getShareableUsers(?Model $tenant): Builder
     {
