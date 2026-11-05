@@ -125,6 +125,37 @@ it('shows stats cards computed for the viewer', function (): void {
         ->assertSee('150');
 });
 
+it('lays stats cards out on twelve columns once any card has a width', function (): void {
+    demoOrders();
+    $this->actingAs(user());
+
+    $section = Livewire::test(BuilderStatsWidget::class, ['previewType' => 'stats', 'previewConfig' => ['cards' => [
+        ['source' => 'orders', 'metric' => 'count', 'width' => '8'],
+        ['source' => 'orders', 'metric' => 'count', 'width' => '4'],
+        ['source' => 'orders', 'metric' => 'count'],
+    ]]])->instance()->getSectionContentComponent();
+
+    expect($section->getColumns())->toBe(['@xl' => 12, '!@lg' => 12])
+        ->and(array_map(fn (Component $stat): mixed => $stat->getColumnSpan(), $section->getDefaultChildComponents()))->toBe([
+            ['@xl' => 8, '!@lg' => 8],
+            ['@xl' => 4, '!@lg' => 4],
+            ['@xl' => 12, '!@lg' => 12],
+        ]);
+});
+
+it('keeps the default stats layout when no card has a width', function (): void {
+    demoOrders();
+    $this->actingAs(user());
+
+    $section = Livewire::test(BuilderStatsWidget::class, ['previewType' => 'stats', 'previewConfig' => ['cards' => [
+        ['source' => 'orders', 'metric' => 'count'],
+        ['source' => 'orders', 'metric' => 'count', 'width' => ''],
+    ]]])->instance()->getSectionContentComponent();
+
+    expect($section->getColumns())->toBe(['@xl' => 3, '!@lg' => 3])
+        ->and(array_map(fn (Component $stat): mixed => $stat->getColumnSpan(), $section->getDefaultChildComponents()))->each->not->toHaveKey('@xl');
+});
+
 it('charts a breakdown with one colour per slice', function (): void {
     demoOrders();
     $this->actingAs(user());
@@ -365,7 +396,7 @@ it('saves shares with a save button', function (): void {
     expect($page->instance()->getMountedAction()?->getModalSubmitActionLabel())->toBe('Save');
 });
 
-it('lays each stats card out in two columns with its label on top', function (): void {
+it('lays each stats card out in two collapsible columns with its label and width on top', function (): void {
     $owner = user();
     $this->actingAs($owner);
 
@@ -376,5 +407,6 @@ it('lays each stats card out in two columns with its label on top', function ():
     $cards = $page->getSchema($page->getMountedActionSchemaName())?->getComponent(fn (Component $component): bool => $component instanceof Repeater && $component->getName() === 'cards');
 
     expect($cards?->getColumns('lg'))->toBe(2)
-        ->and(array_map(fn (Component $field): ?string => $field instanceof Field ? $field->getName() : null, $cards?->getDefaultChildComponents() ?? []))->toBe(['label', 'source', 'metric', 'field', 'dates_field', 'filters']);
+        ->and($cards?->isCollapsible())->toBeTrue()
+        ->and(array_map(fn (Component $field): ?string => $field instanceof Field ? $field->getName() : null, $cards?->getDefaultChildComponents() ?? []))->toBe(['label', 'width', 'source', 'metric', 'field', 'dates_field', 'filters']);
 });

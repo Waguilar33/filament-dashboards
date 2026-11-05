@@ -129,9 +129,14 @@ class BuilderWidgetForm
                     ->minItems(1)
                     ->defaultItems(1)
                     ->itemLabel(fn (array $state): ?string => is_string($state['label'] ?? null) ? $state['label'] : null)
+                    ->collapsible()
                     ->columns(2)
                     ->schema([
-                        TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255)->columnSpanFull(),
+                        TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
+                        Select::make('width')
+                            ->label(__(self::T.'width'))
+                            ->options(fn (): array => __('filament-dashboards::dashboards.builder.widths'))
+                            ->live(),
                         self::sourceSelect(),
                         ...self::metricFields(),
                         self::datesField(),
