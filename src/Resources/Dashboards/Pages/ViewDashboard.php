@@ -288,7 +288,7 @@ class ViewDashboard extends Page
             ->slideOver()
             ->modalWidth(Width::FourExtraLarge)
             ->modalHeading(fn (array $arguments): string => $this->editableWidget($arguments)->name)
-            ->fillForm(fn (array $arguments): array => $this->editableWidget($arguments)->only(['name', 'refresh_interval', 'config']))
+            ->fillForm(fn (array $arguments): array => BuilderWidgetForm::fill($this->editableWidget($arguments)))
             ->schema(fn (array $arguments): array => BuilderWidgetForm::components($this->editableWidget($arguments)->type))
             ->action(function (array $data, array $arguments): void {
                 $widget = $this->editableWidget($arguments);

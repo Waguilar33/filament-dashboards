@@ -52,7 +52,7 @@ it('builds a widget and places it on the dashboard', function (): void {
         ->callAction('buildWidget', data: [
             'name' => 'Revenue',
             'refresh_interval' => 30,
-            'config' => ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'sum', 'field' => 'total', 'period' => '30d'],
+            'source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'sum', 'field' => 'total', 'period' => '30d',
         ], arguments: ['type' => 'line'])
         ->assertHasNoActionErrors();
 
@@ -98,7 +98,7 @@ it('edits a widget only for those allowed to edit it', function (): void {
     $this->actingAs($owner);
 
     $page = Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
-        ->callAction('editWidget', data: ['name' => 'Renamed', 'config' => ['cards' => [['source' => 'orders', 'metric' => 'count']]]], arguments: ['widget' => $mine->id])
+        ->callAction('editWidget', data: ['name' => 'Renamed', 'cards' => [['source' => 'orders', 'metric' => 'count']]], arguments: ['widget' => $mine->id])
         ->assertHasNoActionErrors();
 
     expect($mine->refresh()->name)->toBe('Renamed');
@@ -241,7 +241,7 @@ it('saves filters built in the form', function (): void {
         ->mountAction('buildWidget', ['type' => 'stats'])
         ->fillForm([
             'name' => 'Paid web orders',
-            'config' => ['cards' => [[
+            'cards' => [[
                 'source' => 'orders',
                 'metric' => 'count',
                 'label' => 'Paid web',
@@ -250,7 +250,7 @@ it('saves filters built in the form', function (): void {
                     ['field' => 'paid', 'operator' => 'is', 'choice' => '1'],
                     ['field' => 'ordered_at', 'operator' => 'after', 'value' => '2026-01-01'],
                 ]]],
-            ]]],
+            ]],
         ])
         ->callMountedAction()
         ->assertHasNoActionErrors();

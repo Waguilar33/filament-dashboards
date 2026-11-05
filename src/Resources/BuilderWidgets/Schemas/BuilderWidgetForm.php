@@ -16,6 +16,7 @@ use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Support\Arr;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
@@ -24,6 +25,7 @@ use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
 use Waguilar\FilamentDashboards\Builder\Field;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
@@ -56,13 +58,14 @@ class BuilderWidgetForm
                             ->integer()
                             ->minValue(5),
                     ]),
-                    Group::make(self::configFields($type))->statePath('config'),
+                    // Config sits at the form root: under a 'config' key a stats card filter rule passes Livewire's nesting depth of 10.
+                    Group::make(self::configFields($type)),
                 ]),
                 Tab::make(__('filament-dashboards::dashboards.builder.tabs.preview'))->schema([
                     Livewire::make(
                         self::component($type),
-                        fn (Get $get): array => ['previewConfig' => self::state($get('config')), 'previewType' => $type->value],
-                    )->key(fn (Get $get): string => 'builder-preview-'.md5((string) json_encode($get('config')))),
+                        fn (Component $component): array => ['previewConfig' => self::config($component->getRootContainer()->getRawState()), 'previewType' => $type->value],
+                    )->key(fn (Component $component): string => 'builder-preview-'.md5((string) json_encode(self::config($component->getRootContainer()->getRawState())))),
                 ]),
             ]),
         ];
@@ -79,6 +82,23 @@ class BuilderWidgetForm
             BuilderWidgetType::Summary => BuilderSummaryWidget::class,
             default => BuilderChartWidget::class,
         };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function config(mixed $state): array
+    {
+        /** @var array<string, mixed> */
+        return Arr::except(self::state($state), ['name', 'refresh_interval']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function fill(BuilderWidget $widget): array
+    {
+        return [...$widget->config, 'name' => $widget->name, 'refresh_interval' => $widget->refresh_interval];
     }
 
     /**

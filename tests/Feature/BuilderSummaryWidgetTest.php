@@ -60,7 +60,7 @@ it('builds a summary table from the dashboard', function (): void {
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
         ->callAction('buildWidget', data: [
             'name' => 'Sales by channel',
-            'config' => ['source' => 'cents-orders', 'group_field' => 'channel', 'metrics' => [['metric' => 'sum', 'field' => 'total', 'percent' => true]], 'total_row' => true],
+            'source' => 'cents-orders', 'group_field' => 'channel', 'metrics' => [['metric' => 'sum', 'field' => 'total', 'percent' => true]], 'total_row' => true,
         ], arguments: ['type' => 'summary'])
         ->assertHasNoActionErrors();
 

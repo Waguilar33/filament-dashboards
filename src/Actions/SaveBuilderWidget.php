@@ -22,7 +22,7 @@ class SaveBuilderWidget
         $widget->fill([
             'name' => Arr::string($data, 'name'),
             'type' => $type,
-            'config' => BuilderWidgetForm::state($data['config'] ?? []),
+            'config' => BuilderWidgetForm::config($data),
             'refresh_interval' => is_numeric($interval) ? max(5, (int) $interval) : null,
         ])->save();
 

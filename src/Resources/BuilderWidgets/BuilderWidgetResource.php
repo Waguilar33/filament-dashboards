@@ -105,7 +105,7 @@ class BuilderWidgetResource extends Resource
                     ->visible(fn (BuilderWidget $record): bool => $record->canBeEditedBy(DashboardResource::user()))
                     ->slideOver()
                     ->modalWidth(Width::FourExtraLarge)
-                    ->fillForm(fn (BuilderWidget $record): array => $record->only(['name', 'refresh_interval', 'config']))
+                    ->fillForm(fn (BuilderWidget $record): array => BuilderWidgetForm::fill($record))
                     ->schema(fn (BuilderWidget $record): array => BuilderWidgetForm::components($record->type))
                     ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data)),
                 ActionGroup::make([
