@@ -19,6 +19,7 @@ use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 use Waguilar\FilamentDashboards\Actions\CloneBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
@@ -51,7 +52,7 @@ class BuilderWidgetResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return FilamentDashboardsPlugin::get()->getDataSourcesFor(DashboardResource::user(), Filament::getTenant()) !== [];
+        return static::canViewAny();
     }
 
     /**
@@ -68,7 +69,8 @@ class BuilderWidgetResource extends Resource
     {
         $user = DashboardResource::user();
         $allowed = match ($action) {
-            'viewAny' => true,
+            'viewAny', 'create' => FilamentDashboardsPlugin::get()->getDataSourcesFor($user, Filament::getTenant()) !== []
+                && (Gate::getPolicyFor(BuilderWidget::class) === null || parent::getAuthorizationResponse($action)->allowed()),
             'update' => $record instanceof BuilderWidget && $record->canBeEditedBy($user),
             'delete' => $record instanceof BuilderWidget && $record->canBeDeletedBy($user),
             default => false,
@@ -124,6 +126,7 @@ class BuilderWidgetResource extends Resource
             'duplicate' => Action::make('duplicate')
                 ->label(__('filament-dashboards::dashboards.actions.duplicate'))
                 ->icon(Heroicon::OutlinedDocumentDuplicate)
+                ->visible(fn (): bool => static::canCreate())
                 ->modalWidth(Width::Medium)
                 ->fillForm(fn (BuilderWidget $record): array => ['name' => __('filament-dashboards::dashboards.modals.clone.name', ['name' => $record->name])])
                 ->schema([

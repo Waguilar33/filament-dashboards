@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Resources\BuilderWidgets\Pages;
 
 use Filament\Actions\Action;
-use Filament\Facades\Filament;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Arr;
 use Waguilar\FilamentDashboards\Filament\Actions\BuildWidgetAction;
-use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
-use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 
 class ListBuilderWidgets extends ListRecords
 {
@@ -22,7 +19,7 @@ class ListBuilderWidgets extends ListRecords
     public function buildWidgetAction(): Action
     {
         return BuildWidgetAction::make()
-            ->visible($this->hasSources())
+            ->visible(BuilderWidgetResource::canCreate())
             ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.create'));
     }
 
@@ -31,7 +28,7 @@ class ListBuilderWidgets extends ListRecords
         return [
             Action::make('create')
                 ->label(__('filament-dashboards::dashboards.actions.create'))
-                ->visible($this->hasSources())
+                ->visible(BuilderWidgetResource::canCreate())
                 ->slideOver()
                 ->modalWidth(Width::FourExtraLarge)
                 ->modalHeading(__('filament-actions::create.single.modal.heading', ['label' => BuilderWidgetResource::getModelLabel()]))
@@ -44,10 +41,5 @@ class ListBuilderWidgets extends ListRecords
                 ])
                 ->action(fn (array $data) => $this->replaceMountedAction('buildWidget', ['type' => Arr::string($data, 'type')])),
         ];
-    }
-
-    protected function hasSources(): bool
-    {
-        return FilamentDashboardsPlugin::get()->getDataSourcesFor(DashboardResource::user(), Filament::getTenant()) !== [];
     }
 }

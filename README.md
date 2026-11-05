@@ -251,6 +251,8 @@ FilamentDashboardsPlugin::make()
 
 `shareableUsersUsing` limits the users offered in Share, for example to the members of the current tenant.
 
+A policy you register for the dashboard model decides who sees the Dashboards list (`viewAny`) and who creates dashboards (`create`). Register a policy for `BuilderWidget` with `viewAny` and `create` to gate the Widgets list and building widgets from roles the same way; users still need at least one data source. Viewing, editing, sharing and deleting a given dashboard or widget always follow ownership and shares. With no policy, every user with a data source can use the Widgets list and build widgets.
+
 ## Changing the plugin's screens
 
 Create dashboard and Settings open in a medium slide-over with the form in one column. Each hook receives the plugin's configured form or action and returns it; your changes win:

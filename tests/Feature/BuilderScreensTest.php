@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Repeater;
@@ -30,6 +31,7 @@ use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
 use Workbench\App\DataSources\OrdersSource;
+use Workbench\App\Models\User;
 use Workbench\Database\Factories\DemoOrderFactory;
 
 beforeEach(function (): void {
@@ -346,13 +348,13 @@ it('creates a widget from the list without placing it on a dashboard', function 
         ->and($dashboard->items()->count())->toBe(0);
 });
 
-it('hides creating widgets from the list without any data source', function (): void {
+it('closes the widgets list and creating widgets without any data source', function (): void {
     FilamentDashboardsPlugin::get()->dataSources([GatedOrdersSource::class]);
     $this->actingAs(user());
 
-    Livewire::test(ListBuilderWidgets::class)
-        ->assertActionHidden('create')
-        ->assertActionHidden('buildWidget');
+    Livewire::test(ListBuilderWidgets::class)->assertForbidden();
+
+    expect(BuilderWidgetResource::canCreate())->toBeFalse();
 });
 
 it('shows edit with share, duplicate and delete in a menu by default', function (): void {
@@ -388,6 +390,57 @@ it('lets the app take over the widgets table with the plugin actions', function 
     expect(array_keys($page->instance()->getTable()->getColumns()))->toBe(['name'])
         ->and(BuilderWidget::query()->where('name', 'Copy')->exists())->toBeTrue();
 });
+
+it('lets a registered widget policy gate the list and creating, keeping record rules', function (): void {
+    Gate::policy(BuilderWidget::class, WidgetListPolicy::class);
+    $me = user();
+    $mine = builderWidget($me, ['name' => 'Mine']);
+    $dashboard = dashboard($me);
+    $this->actingAs($me);
+
+    WidgetListPolicy::$viewAny = false;
+    Livewire::test(ListBuilderWidgets::class)->assertForbidden();
+    expect(BuilderWidgetResource::shouldRegisterNavigation())->toBeFalse();
+
+    WidgetListPolicy::$viewAny = true;
+    WidgetListPolicy::$create = false;
+    Livewire::test(ListBuilderWidgets::class)
+        ->assertOk()
+        ->assertActionHidden('create')
+        ->assertTableActionVisible('edit', $mine)
+        ->assertTableActionHidden('duplicate', $mine);
+    expect(BuilderWidgetResource::canCreate())->toBeFalse();
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertActionHidden(TestAction::make('buildWidget')->arguments(['type' => 'stats']));
+
+    WidgetListPolicy::$create = true;
+    Livewire::test(ListBuilderWidgets::class)->assertActionVisible('create');
+    expect(BuilderWidgetResource::canEdit($mine))->toBeTrue();
+});
+
+it('keeps the widgets list open to everyone with a source when no policy is registered', function (): void {
+    $this->actingAs(user());
+
+    expect(BuilderWidgetResource::canViewAny())->toBeTrue()
+        ->and(BuilderWidgetResource::canCreate())->toBeTrue()
+        ->and(BuilderWidgetResource::shouldRegisterNavigation())->toBeTrue();
+});
+
+final class WidgetListPolicy
+{
+    public static bool $viewAny = true;
+
+    public static bool $create = true;
+
+    public function viewAny(User $user): bool
+    {
+        return self::$viewAny;
+    }
+
+    public function create(User $user): bool
+    {
+        return self::$create;
+    }
+}
 
 it('lets the app modify the widget share action', function (): void {
     FilamentDashboardsPlugin::get()->modifyShareActionUsing(fn (ShareAction $action): ShareAction => $action->modalWidth(Width::Medium));

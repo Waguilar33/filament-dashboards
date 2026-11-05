@@ -38,6 +38,7 @@ use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardItem;
 use Waguilar\FilamentDashboards\Pages\Concerns\HasDashboardDates;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 
@@ -213,7 +214,7 @@ class ViewDashboard extends Page
             'options' => $quick,
         ]];
 
-        if ($sources !== []) {
+        if (BuilderWidgetResource::canCreate()) {
             $sections[] = BuildWidgetAction::pickerSection(self::NEW_PREFIX);
         }
 
@@ -255,7 +256,7 @@ class ViewDashboard extends Page
     public function buildWidgetAction(): Action
     {
         return BuildWidgetAction::make()
-            ->visible($this->canEdit())
+            ->visible($this->canEdit() && BuilderWidgetResource::canCreate())
             ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
             ->after(function (BuilderWidget $record): void {
                 app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize());
