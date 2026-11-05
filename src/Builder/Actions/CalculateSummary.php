@@ -19,6 +19,7 @@ class CalculateSummary
         protected ResolveField $resolveField,
         protected ResolveMetricField $resolveMetricField,
         protected ParseNumber $parseNumber,
+        protected ResolveColumn $resolveColumn,
     ) {}
 
     /**
@@ -41,10 +42,10 @@ class CalculateSummary
         $numberFields = array_map(fn (array $metric): ?Field => $this->resolveMetricField->handle($source, $metric['metric'], $metric['field']), $metrics);
 
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates)->reorder();
-        $groupColumn = $query->qualifyColumn($group->name);
+        $groupColumn = $this->resolveColumn->handle($query, $group);
 
         $rows = $this->aggregates(clone $query, $metrics, $numberFields)
-            ->addSelect($groupColumn)
+            ->addSelect("{$groupColumn} as {$group->alias()}")
             ->groupBy($groupColumn)
             ->orderByDesc('aggregate_0')
             ->orderBy($groupColumn)
@@ -57,7 +58,7 @@ class CalculateSummary
 
         return [
             'rows' => array_values($rows->map(fn (array $row): array => [
-                'group' => blank($row[$group->name]) ? trans('filament-dashboards::builder.empty') : $group->valueLabel($row[$group->name]),
+                'group' => blank($row[$group->alias()]) ? trans('filament-dashboards::builder.empty') : $group->valueLabel($row[$group->alias()]),
                 'values' => $this->values($row, $numberFields),
             ])->all()),
             'totals' => $this->values($totals, $numberFields),
@@ -77,7 +78,7 @@ class CalculateSummary
         foreach ($metrics as $index => $metric) {
             $query->addSelect(new AggregateExpression(
                 $metric['metric']->sqlFunction(),
-                $numberFields[$index] === null ? null : $query->qualifyColumn($numberFields[$index]->name),
+                $numberFields[$index] === null ? null : $this->resolveColumn->handle($query, $numberFields[$index]),
                 "aggregate_{$index}",
             ));
         }

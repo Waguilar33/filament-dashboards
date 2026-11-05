@@ -17,6 +17,7 @@ class CalculateBreakdown
         protected ResolveField $resolveField,
         protected ResolveMetricField $resolveMetricField,
         protected ParseNumber $parseNumber,
+        protected ResolveColumn $resolveColumn,
     ) {}
 
     /**
@@ -39,11 +40,11 @@ class CalculateBreakdown
         $numberField = $this->resolveMetricField->handle($source, $metric, $field);
 
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
-        $groupColumn = $query->qualifyColumn($group->name);
+        $groupColumn = $this->resolveColumn->handle($query, $group);
         $rows = $query
             ->reorder()
-            ->select($groupColumn)
-            ->addSelect(new AggregateExpression($metric->sqlFunction(), $numberField === null ? null : $query->qualifyColumn($numberField->name), 'aggregate'))
+            ->select("{$groupColumn} as {$group->alias()}")
+            ->addSelect(new AggregateExpression($metric->sqlFunction(), $numberField === null ? null : $this->resolveColumn->handle($query, $numberField), 'aggregate'))
             ->groupBy($groupColumn)
             ->orderByDesc('aggregate')
             ->orderBy($groupColumn)
@@ -54,7 +55,7 @@ class CalculateBreakdown
 
         return [
             'labels' => array_values($rows
-                ->map(fn (array $row): string => blank($row[$group->name]) ? trans('filament-dashboards::builder.empty') : $group->valueLabel($row[$group->name]))
+                ->map(fn (array $row): string => blank($row[$group->alias()]) ? trans('filament-dashboards::builder.empty') : $group->valueLabel($row[$group->alias()]))
                 ->all()),
             'values' => array_values($rows
                 ->map(fn (array $row): int|float => $numberField === null

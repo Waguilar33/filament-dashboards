@@ -116,6 +116,8 @@ class OrdersSource extends DataSource
 FilamentDashboardsPlugin::make()->dataSources([OrdersSource::class]);
 ```
 
+A field can read through the source model's relationships with dot notation, as a Filament column does: `Field::text('product.family.name', 'Family')` joins `product` and its `family` for grouping, filters, sorting and figures. Each step must be a belongs-to or has-one relationship; a has-many or belongs-to-many step is refused, because grouping by it would count a row once per related record. The joins ignore the related models' own scopes (such as soft deletes), so filter those in `query()` when they matter.
+
 A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too. Format how its values read on cards and in tables with `->formatUsing(fn (int|float $value): string => Number::currency($value, 'GTQ'))`.
 
 Hide a source from users who may not use it; they are not offered it in the builder, and widgets built on it are left off their dashboards:

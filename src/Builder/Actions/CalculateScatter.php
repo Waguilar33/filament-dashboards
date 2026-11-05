@@ -15,6 +15,7 @@ class CalculateScatter
         protected ApplyFilters $applyFilters,
         protected ResolveField $resolveField,
         protected ParseNumber $parseNumber,
+        protected ResolveColumn $resolveColumn,
     ) {}
 
     /**
@@ -36,19 +37,19 @@ class CalculateScatter
         $y = $this->resolveField->handle($source, $yField, FieldType::Number);
 
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
-        $xColumn = $query->qualifyColumn($x->name);
-        $yColumn = $query->qualifyColumn($y->name);
+        $xColumn = $this->resolveColumn->handle($query, $x);
+        $yColumn = $this->resolveColumn->handle($query, $y);
 
         return array_values($query
             ->whereNotNull($xColumn)
             ->whereNotNull($yColumn)
             ->limit($limit)
             ->toBase()
-            ->get([$xColumn, $yColumn])
+            ->get(["{$xColumn} as x", "{$yColumn} as y"])
             ->map(fn (object $row): array => (array) $row)
             ->map(fn (array $row): array => [
-                'x' => $x->fromStored($this->parseNumber->handle($row[$x->name])),
-                'y' => $y->fromStored($this->parseNumber->handle($row[$y->name])),
+                'x' => $x->fromStored($this->parseNumber->handle($row['x'])),
+                'y' => $y->fromStored($this->parseNumber->handle($row['y'])),
             ])
             ->all());
     }

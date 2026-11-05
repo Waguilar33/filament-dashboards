@@ -19,6 +19,7 @@ class CalculateTrend
         protected ResolveField $resolveField,
         protected ResolveMetricField $resolveMetricField,
         protected ParseNumber $parseNumber,
+        protected ResolveColumn $resolveColumn,
     ) {}
 
     /**
@@ -44,8 +45,8 @@ class CalculateTrend
         $end = $grouping->next($grouping->start(CarbonImmutable::instance($to)->setTimezone(date_default_timezone_get())));
 
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters);
-        $dateColumn = $query->qualifyColumn($date->name);
-        $columns = $numberField === null ? [$dateColumn] : [$dateColumn, $query->qualifyColumn($numberField->name)];
+        $dateColumn = $this->resolveColumn->handle($query, $date);
+        $columns = $numberField === null ? ["{$dateColumn} as bucket_date"] : ["{$dateColumn} as bucket_date", $this->resolveColumn->handle($query, $numberField).' as bucket_value'];
 
         $perBucket = $query
             ->where($dateColumn, '>=', $start)
@@ -53,9 +54,9 @@ class CalculateTrend
             ->toBase()
             ->get($columns)
             ->map(fn (object $row): array => (array) $row)
-            ->map(function (array $row) use ($date, $numberField, $grouping): ?array {
-                $when = $row[$date->name];
-                $value = $numberField === null ? 1 : $row[$numberField->name];
+            ->map(function (array $row) use ($numberField, $grouping): ?array {
+                $when = $row['bucket_date'];
+                $value = $numberField === null ? 1 : $row['bucket_value'];
 
                 if (! is_string($when) || $value === null) {
                     return null;

@@ -16,7 +16,10 @@ use Waguilar\FilamentDashboards\Dates\DateRange;
 
 class ApplyFilters
 {
-    public function __construct(protected ResolveField $resolveField) {}
+    public function __construct(
+        protected ResolveField $resolveField,
+        protected ResolveColumn $resolveColumn,
+    ) {}
 
     /**
      * @param  Builder<covariant Model>  $query
@@ -28,7 +31,7 @@ class ApplyFilters
         $fields = Collection::make($source->fields())->keyBy('name');
 
         if ($dateField !== null && $dates !== null) {
-            $column = $query->qualifyColumn($this->resolveField->handle($source, $dateField, FieldType::Date)->name);
+            $column = $this->resolveColumn->handle($query, $this->resolveField->handle($source, $dateField, FieldType::Date));
             $timezone = date_default_timezone_get();
 
             $query->whereBetween($column, [$dates->start->setTimezone($timezone), $dates->end->setTimezone($timezone)]);
@@ -38,6 +41,7 @@ class ApplyFilters
             ->map(fn (array $rules): Collection => Collection::make($rules)
                 ->map(fn (array $rule): ?array => $this->resolve($fields, $rule))
                 ->filter()
+                ->map(fn (array $rule): array => [...$rule, 'column' => $this->resolveColumn->handle($query, $rule['field'])])
                 ->values())
             ->filter(fn (Collection $rules): bool => $rules->isNotEmpty());
 
@@ -47,7 +51,7 @@ class ApplyFilters
 
         return $query->where(fn (Builder $scoped) => $groups->each(
             fn (Collection $rules) => $scoped->orWhere(fn (Builder $group) => $rules->each(
-                fn (array $rule) => $this->apply($group, $rule['field'], $rule['operator'], $rule['value']),
+                fn (array $rule) => $this->apply($group, $rule['column'], $rule['field'], $rule['operator'], $rule['value']),
             )),
         ));
     }
@@ -92,9 +96,8 @@ class ApplyFilters
     /**
      * @param  Builder<covariant Model>  $group
      */
-    private function apply(Builder $group, Field $field, Operator $operator, string|int|float|bool|null $value): void
+    private function apply(Builder $group, string $column, Field $field, Operator $operator, string|int|float|bool|null $value): void
     {
-        $column = $group->qualifyColumn($field->name);
         $textual = $field->type === FieldType::Text || $field->type === FieldType::Choice;
 
         $compare = fn (Builder $query, string $symbol): Builder => $field->type === FieldType::Date && is_string($value)

@@ -13,7 +13,10 @@ use Waguilar\FilamentDashboards\Dates\DateRange;
 
 class FetchRows
 {
-    public function __construct(protected ApplyFilters $applyFilters) {}
+    public function __construct(
+        protected ApplyFilters $applyFilters,
+        protected ResolveColumn $resolveColumn,
+    ) {}
 
     /**
      * @param  list<string>  $columns
@@ -46,22 +49,24 @@ class FetchRows
 
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
 
-        if ($sortField !== null && $fields->has($sortField)) {
-            $query->orderBy($query->qualifyColumn($sortField), strtolower($sortDirection) === 'desc' ? 'desc' : 'asc');
+        $sort = $sortField === null ? null : $fields->get($sortField);
+
+        if ($sort instanceof Field) {
+            $query->orderBy($this->resolveColumn->handle($query, $sort), strtolower($sortDirection) === 'desc' ? 'desc' : 'asc');
         }
 
         return array_values($query
             ->limit($limit)
             ->toBase()
-            ->get($selected->map(fn (Field $field): string => $query->qualifyColumn($field->name))->all())
+            ->get($selected->map(fn (Field $field): string => $this->resolveColumn->handle($query, $field).' as '.$field->alias())->all())
             ->map(fn (object $row): array => (array) $row)
             ->map(fn (array $row): array => $selected
                 ->mapWithKeys(fn (Field $field): array => [
-                    $field->name => match (true) {
-                        $row[$field->name] === null => null,
-                        in_array($field->type, [FieldType::Choice, FieldType::Boolean], true) => $field->valueLabel($row[$field->name]),
-                        $field->type === FieldType::Number && is_numeric($row[$field->name]) => $field->fromStored($row[$field->name] + 0),
-                        default => $row[$field->name],
+                    $field->alias() => match (true) {
+                        $row[$field->alias()] === null => null,
+                        in_array($field->type, [FieldType::Choice, FieldType::Boolean], true) => $field->valueLabel($row[$field->alias()]),
+                        $field->type === FieldType::Number && is_numeric($row[$field->alias()]) => $field->fromStored($row[$field->alias()] + 0),
+                        default => $row[$field->alias()],
                     },
                 ])
                 ->all())

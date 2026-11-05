@@ -63,6 +63,11 @@ final readonly class Field
         return new self($this->name, $this->label, $this->type, $this->options, $this->divisor, $formatter);
     }
 
+    public function alias(): string
+    {
+        return str_replace('.', '__', $this->name);
+    }
+
     public function format(int|float $value): ?string
     {
         return $this->formatter === null ? null : ($this->formatter)($value);

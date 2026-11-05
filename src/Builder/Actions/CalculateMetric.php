@@ -15,6 +15,7 @@ class CalculateMetric
         protected ApplyFilters $applyFilters,
         protected ResolveMetricField $resolveMetricField,
         protected ParseNumber $parseNumber,
+        protected ResolveColumn $resolveColumn,
     ) {}
 
     /**
@@ -24,7 +25,7 @@ class CalculateMetric
     {
         $numberField = $this->resolveMetricField->handle($source, $metric, $field);
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
-        $column = $numberField === null ? '*' : $query->qualifyColumn($numberField->name);
+        $column = $numberField === null ? '*' : $this->resolveColumn->handle($query, $numberField);
 
         $value = $this->parseNumber->handle(match ($metric) {
             Metric::Count => $query->count(),
