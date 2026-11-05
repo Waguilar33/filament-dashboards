@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
@@ -216,7 +218,30 @@ it('lets the app modify the share and add widget actions', function (): void {
         ->and(viewAs($owner, $dashboard)->mountAction('addWidget')->instance()->getMountedAction()?->isModalSlideOver())->toBeFalse();
 });
 
+it('offers the navigation groups and keeps a stored group missing from them', function (): void {
+    FilamentDashboardsPlugin::get()->navigationGroupsUsing(fn (): array => ['sales' => 'Ventas']);
+    $owner = user();
+
+    $page = viewAs($owner, dashboard($owner, ['show_in_navigation' => true, 'navigation_group' => 'Old']))->mountAction('settings')->instance();
+    $field = $page->getSchema($page->getMountedActionSchemaName())?->getComponent(fn (mixed $component): bool => $component instanceof Select && $component->getName() === 'navigation_group', withHidden: true);
+
+    expect($field)->toBeInstanceOf(Select::class)
+        ->and($field->getOptions())->toBe(['sales' => 'Ventas', 'Old' => 'Old']);
+});
+
+it('lets the app replace the navigation icon field', function (): void {
+    FilamentDashboardsPlugin::get()->navigationIconFieldUsing(fn (string $name): TextInput => TextInput::make($name));
+    $owner = user();
+
+    $page = viewAs($owner, dashboard($owner, ['show_in_navigation' => true]))->mountAction('settings')->instance();
+    $field = $page->getSchema($page->getMountedActionSchemaName())?->getComponent(fn (mixed $component): bool => $component instanceof TextInput && $component->getName() === 'navigation_icon', withHidden: true);
+
+    expect($field)->toBeInstanceOf(TextInput::class)
+        ->and($field->getLabel())->toBe('Navigation icon');
+});
+
 it('updates the settings and follows a changed slug', function (): void {
+    FilamentDashboardsPlugin::get()->navigationGroupsUsing(fn (): array => ['Reports' => 'Reports']);
     $owner = user();
     $dashboard = dashboard($owner);
 

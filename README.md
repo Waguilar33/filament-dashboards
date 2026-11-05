@@ -188,6 +188,22 @@ FilamentDashboardsPlugin::make()
 
 The dashboard form is used by both create and settings. The share hook applies to dashboards and saved widgets.
 
+Users pick a dashboard's navigation group from the panel's registered groups. When your group labels are translated, give each a stable key so a dashboard saved in one language shows in another:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->navigationGroupsUsing(fn (): array => collect(NavigationGroupEnum::cases())
+        ->mapWithKeys(fn (NavigationGroupEnum $group): array => [$group->value => $group->getLabel()])
+        ->all());
+```
+
+The key is stored and shown as its label in the navigation. Replace the Heroicon icon select with your own field; it receives the field name, and any blade-icons name it stores renders:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->navigationIconFieldUsing(fn (string $name): Field => IconPicker::make($name));
+```
+
 ## Works better with Filament Guardian
 
 Install [waguilar33/filament-guardian](https://github.com/Waguilar33/filament-guardian) and access is managed from the role screen instead of code:

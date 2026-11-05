@@ -36,6 +36,7 @@ final class DemoPanelProvider extends PanelProvider
             ->path('demo')
             ->login()
             ->pages([Home::class])
+            ->navigationGroups(['Reports', 'Sales'])
             ->discoverWidgets(in: __DIR__.'/../../Filament/Widgets', for: 'Workbench\\App\\Filament\\Widgets')
             ->plugin(FilamentDashboardsPlugin::make()
                 ->dataSources([OrdersSource::class])

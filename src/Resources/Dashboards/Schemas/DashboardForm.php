@@ -43,19 +43,19 @@ class DashboardForm
             Toggle::make('show_in_navigation')
                 ->label(__('filament-dashboards::dashboards.fields.show_in_navigation'))
                 ->live(),
-            Select::make('navigation_icon')
-                ->label(__('filament-dashboards::dashboards.fields.navigation_icon'))
+            (FilamentDashboardsPlugin::get()->getNavigationIconField('navigation_icon') ?? Select::make('navigation_icon')
                 ->options(self::iconOptions())
-                ->searchable()
+                ->searchable())
+                ->label(__('filament-dashboards::dashboards.fields.navigation_icon'))
                 ->visible(fn (Get $get): bool => (bool) $get('show_in_navigation')),
             TextInput::make('navigation_label')
                 ->label(__('filament-dashboards::dashboards.fields.navigation_label'))
                 ->helperText(__('filament-dashboards::dashboards.fields.navigation_label_helper'))
                 ->maxLength(255)
                 ->visible(fn (Get $get): bool => (bool) $get('show_in_navigation')),
-            TextInput::make('navigation_group')
+            Select::make('navigation_group')
                 ->label(__('filament-dashboards::dashboards.fields.navigation_group'))
-                ->maxLength(255)
+                ->options(fn (?Dashboard $record): array => self::groupOptions($record))
                 ->visible(fn (Get $get): bool => (bool) $get('show_in_navigation')),
             ToggleButtons::make('navigation_position')
                 ->label(__('filament-dashboards::dashboards.fields.navigation_position'))
@@ -82,6 +82,21 @@ class DashboardForm
                 $fail(__('filament-dashboards::dashboards.validation.slug_taken'));
             }
         };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected static function groupOptions(?Dashboard $record): array
+    {
+        $groups = FilamentDashboardsPlugin::get()->getNavigationGroups(FilamentDashboardsPlugin::currentPanel());
+        $current = $record?->navigation_group;
+
+        if (filled($current) && ! array_key_exists($current, $groups)) {
+            $groups[$current] = $current;
+        }
+
+        return $groups;
     }
 
     /**

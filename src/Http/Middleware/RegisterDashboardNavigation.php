@@ -30,6 +30,8 @@ class RegisterDashboardNavigation
             return $next($request);
         }
 
+        $groups = FilamentDashboardsPlugin::get()->getNavigationGroups($panel);
+
         $panel->navigationItems(Dashboard::query()
             ->inScope($panel->getId(), $tenant)
             ->visibleTo($user)
@@ -39,7 +41,7 @@ class RegisterDashboardNavigation
             ->map(fn (Dashboard $dashboard): NavigationItem => NavigationItem::make(filled($dashboard->navigation_label) ? $dashboard->navigation_label : $dashboard->name)
                 ->url(DashboardResource::getUrl('view', ['record' => $dashboard]))
                 ->icon($dashboard->navigation_icon)
-                ->group($dashboard->navigation_group)
+                ->group($dashboard->navigation_group === null ? null : ($groups[$dashboard->navigation_group] ?? $dashboard->navigation_group))
                 ->sort($dashboard->navigation_position === NavigationPosition::Start ? -1000 : 1000)
                 ->isActiveWhen(fn (): bool => $request->routeIs(DashboardResource::getRouteBaseName().'.view')
                     && $request->route('record') === $dashboard->slug))

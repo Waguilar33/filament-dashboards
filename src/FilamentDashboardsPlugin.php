@@ -10,11 +10,14 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Field;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\Schemas\Schema;
 use Filament\Widgets\Widget;
 use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Auth\EloquentUserProvider;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -61,6 +64,16 @@ final class FilamentDashboardsPlugin implements Plugin
      * @var (Closure(?Model): Builder<covariant Model>)|null
      */
     protected ?Closure $shareableUsersUsing = null;
+
+    /**
+     * @var (Closure(string): Field)|null
+     */
+    protected ?Closure $navigationIconFieldUsing = null;
+
+    /**
+     * @var (Closure(): array<string, string>)|null
+     */
+    protected ?Closure $navigationGroupsUsing = null;
 
     /**
      * @var (Closure(Schema): Schema)|null
@@ -415,5 +428,53 @@ final class FilamentDashboardsPlugin implements Plugin
     public function modifyAddWidgetAction(Action $action): Action
     {
         return $this->modifyAddWidgetActionUsing === null ? $action : ($this->modifyAddWidgetActionUsing)($action);
+    }
+
+    /**
+     * @param  (Closure(string): Field)|null  $callback
+     */
+    public function navigationIconFieldUsing(?Closure $callback): static
+    {
+        $this->navigationIconFieldUsing = $callback;
+
+        return $this;
+    }
+
+    public function getNavigationIconField(string $name): ?Field
+    {
+        return $this->navigationIconFieldUsing === null ? null : ($this->navigationIconFieldUsing)($name);
+    }
+
+    /**
+     * @param  (Closure(): array<string, string>)|null  $callback
+     */
+    public function navigationGroupsUsing(?Closure $callback): static
+    {
+        $this->navigationGroupsUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getNavigationGroups(Panel $panel): array
+    {
+        if ($this->navigationGroupsUsing !== null) {
+            return ($this->navigationGroupsUsing)();
+        }
+
+        $groups = [];
+
+        foreach ($panel->getNavigationGroups() as $index => $group) {
+            $label = $group instanceof NavigationGroup ? $group->getLabel() : $group;
+            $label = $label instanceof Htmlable ? $label->toHtml() : $label;
+
+            if (filled($label)) {
+                $groups[is_string($index) ? $index : $label] = $label;
+            }
+        }
+
+        return $groups;
     }
 }
