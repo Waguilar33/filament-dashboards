@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Filament\Facades\Filament;
+use Filament\Support\Enums\Width;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
@@ -28,6 +29,18 @@ it('lists the dashboards the user can see, by kind', function (): void {
         ->assertTableColumnStateSet('kind', 'Mine', $mine)
         ->assertTableColumnStateSet('kind', 'Shared with me', $shared)
         ->assertTableColumnStateSet('kind', 'System', $system);
+});
+
+it('creates dashboards in a medium centered modal', function (): void {
+    $this->actingAs(user());
+
+    $action = Livewire::test(ListDashboards::class)
+        ->mountAction('create')
+        ->instance()
+        ->getMountedAction();
+
+    expect($action?->isModalSlideOver())->toBeFalse()
+        ->and($action?->getModalWidth())->toBe(Width::Medium);
 });
 
 it('creates a private dashboard owned by the user in the current panel', function (): void {

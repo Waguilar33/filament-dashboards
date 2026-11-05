@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Resources\Dashboards\Pages;
 use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
@@ -19,7 +20,7 @@ class ListDashboards extends ListRecords
     {
         return [
             CreateAction::make()
-                ->slideOver()
+                ->modalWidth(Width::Medium)
                 ->mutateDataUsing(fn (array $data): array => [
                     ...$data,
                     'panel' => FilamentDashboardsPlugin::currentPanel()->getId(),

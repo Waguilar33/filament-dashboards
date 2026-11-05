@@ -23,7 +23,7 @@ class DashboardForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema->components([
+        return $schema->columns(1)->components([
             TextInput::make('name')
                 ->label(__('filament-dashboards::dashboards.fields.name'))
                 ->required()
