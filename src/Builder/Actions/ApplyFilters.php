@@ -12,17 +12,27 @@ use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Enums\Operator;
 use Waguilar\FilamentDashboards\Builder\Field;
+use Waguilar\FilamentDashboards\Dates\DateRange;
 
 class ApplyFilters
 {
+    public function __construct(protected ResolveField $resolveField) {}
+
     /**
      * @param  Builder<covariant Model>  $query
      * @param  list<list<array{field: string, operator: string, value?: mixed}>>  $filters
      * @return Builder<covariant Model>
      */
-    public function handle(Builder $query, DataSource $source, array $filters): Builder
+    public function handle(Builder $query, DataSource $source, array $filters, ?string $dateField = null, ?DateRange $dates = null): Builder
     {
         $fields = Collection::make($source->fields())->keyBy('name');
+
+        if ($dateField !== null && $dates !== null) {
+            $column = $query->qualifyColumn($this->resolveField->handle($source, $dateField, FieldType::Date)->name);
+            $timezone = date_default_timezone_get();
+
+            $query->whereBetween($column, [$dates->start->setTimezone($timezone), $dates->end->setTimezone($timezone)]);
+        }
 
         $groups = Collection::make($filters)
             ->map(fn (array $rules): Collection => Collection::make($rules)

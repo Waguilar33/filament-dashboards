@@ -173,7 +173,7 @@ class SalesByCategory extends TableWidget implements DashboardWidget
 }
 ```
 
-`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters` (`preset`, `startDate`, `endDate`). Change the presets, the default and the time zone:
+`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. Builder widgets follow the dates too: pick a *Dashboard date field* (stats cards, tables, breakdown and scatter charts), or the *Dashboard dates* period on line and bar charts, which then span the chosen range. Without it they ignore the bar. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters` (`preset`, `startDate`, `endDate`). Change the presets, the default and the time zone:
 
 ```php
 FilamentDashboardsPlugin::make()

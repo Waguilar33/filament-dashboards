@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Builder\Actions;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
+use Waguilar\FilamentDashboards\Dates\DateRange;
 
 class CalculateScatter
 {
@@ -28,11 +29,13 @@ class CalculateScatter
         string $yField,
         array $filters,
         int $limit = 500,
+        ?string $dateField = null,
+        ?DateRange $dates = null,
     ): array {
         $x = $this->resolveField->handle($source, $xField, FieldType::Number);
         $y = $this->resolveField->handle($source, $yField, FieldType::Number);
 
-        $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters);
+        $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
         $xColumn = $query->qualifyColumn($x->name);
         $yColumn = $query->qualifyColumn($y->name);
 

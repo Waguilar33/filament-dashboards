@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Builder\AggregateExpression;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\Dates\DateRange;
 
 class CalculateBreakdown
 {
@@ -31,11 +32,13 @@ class CalculateBreakdown
         ?string $field,
         array $filters,
         int $limit = 10,
+        ?string $dateField = null,
+        ?DateRange $dates = null,
     ): array {
         $group = $this->resolveField->handle($source, $groupField);
         $numberField = $this->resolveMetricField->handle($source, $metric, $field);
 
-        $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters);
+        $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
         $groupColumn = $query->qualifyColumn($group->name);
         $function = match ($metric) {
             Metric::Count => 'count',

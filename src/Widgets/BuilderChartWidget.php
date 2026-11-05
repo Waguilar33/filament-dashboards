@@ -6,6 +6,7 @@ namespace Waguilar\FilamentDashboards\Widgets;
 
 use Filament\Widgets\ChartWidget;
 use InvalidArgumentException;
+use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateBreakdown;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateScatter;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateTrend;
@@ -75,12 +76,20 @@ class BuilderChartWidget extends ChartWidget
      */
     protected function trend(array $config, DataSource $source, Metric $metric, string $label): array
     {
-        [$from, $grouping] = match ($this->configString($config, 'period') ?? '12m') {
-            '7d' => [now()->subDays(6), TimeGrouping::Day],
-            '30d' => [now()->subDays(29), TimeGrouping::Day],
-            '90d' => [now()->subDays(89), TimeGrouping::Week],
-            'ytd' => [now()->startOfYear(), TimeGrouping::Month],
-            default => [now()->subMonths(11), TimeGrouping::Month],
+        $dates = app(ResolveDateRange::class)->handle($this->pageFilters);
+        $days = (int) $dates->start->diffInDays($dates->end) + 1;
+
+        [$from, $to, $grouping] = match ($this->configString($config, 'period') ?? '12m') {
+            'dashboard' => [$dates->start, $dates->end, match (true) {
+                $days <= 31 => TimeGrouping::Day,
+                $days <= 180 => TimeGrouping::Week,
+                default => TimeGrouping::Month,
+            }],
+            '7d' => [now()->subDays(6), now(), TimeGrouping::Day],
+            '30d' => [now()->subDays(29), now(), TimeGrouping::Day],
+            '90d' => [now()->subDays(89), now(), TimeGrouping::Week],
+            'ytd' => [now()->startOfYear(), now(), TimeGrouping::Month],
+            default => [now()->subMonths(11), now(), TimeGrouping::Month],
         };
 
         $grouping = TimeGrouping::tryFrom($this->configString($config, 'grouping') ?? '') ?? $grouping;
@@ -92,7 +101,7 @@ class BuilderChartWidget extends ChartWidget
             $this->configString($config, 'date_field') ?? '',
             $grouping,
             $from,
-            now(),
+            $to,
             $metric,
             $this->configString($config, 'field'),
             $this->filters($config),
@@ -121,6 +130,8 @@ class BuilderChartWidget extends ChartWidget
             $this->configString($config, 'field'),
             $this->filters($config),
             is_numeric($limit) ? max(1, min(20, (int) $limit)) : 10,
+            $this->configString($config, 'dates_field'),
+            $this->dashboardDates($config),
         );
 
         return [
@@ -150,6 +161,9 @@ class BuilderChartWidget extends ChartWidget
                     $this->configString($config, 'x_field') ?? '',
                     $this->configString($config, 'y_field') ?? '',
                     $this->filters($config),
+                    500,
+                    $this->configString($config, 'dates_field'),
+                    $this->dashboardDates($config),
                 ),
             ]],
         ];

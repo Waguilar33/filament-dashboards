@@ -109,6 +109,7 @@ class BuilderWidgetForm
                     ->schema([
                         self::sourceSelect(),
                         ...self::metricFields(),
+                        self::datesField(),
                         self::filters(),
                         TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                     ]),
@@ -138,6 +139,7 @@ class BuilderWidgetForm
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                     self::fieldSelect('x_field', FieldType::Number)->label(__(self::T.'x_field'))->required(),
                     self::fieldSelect('y_field', FieldType::Number)->label(__(self::T.'y_field'))->required(),
+                    self::datesField(),
                 ]),
                 self::filters(),
             ],
@@ -153,6 +155,7 @@ class BuilderWidgetForm
                         ->default('desc')
                         ->selectablePlaceholder(false)
                         ->live(),
+                    self::datesField(),
                 ]),
                 self::filters(),
             ],
@@ -163,6 +166,7 @@ class BuilderWidgetForm
                     ...self::metricFields(),
                     TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(20)->default(10)->live(onBlur: true),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
+                    self::datesField(),
                 ]),
                 self::filters(),
             ],
@@ -204,6 +208,13 @@ class BuilderWidgetForm
                 ->required()
                 ->visible(fn (Get $get): bool => self::metric($get('metric'))?->requiresNumberField() ?? false),
         ];
+    }
+
+    protected static function datesField(): Select
+    {
+        return self::fieldSelect('dates_field', FieldType::Date)
+            ->label(__(self::T.'dates_field'))
+            ->helperText(__(self::T.'dates_field_helper'));
     }
 
     protected static function fieldSelect(string $name, FieldType ...$types): Select

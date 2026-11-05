@@ -43,7 +43,7 @@ class BuilderStatsWidget extends StatsOverviewWidget
             }
 
             try {
-                $value = app(CalculateMetric::class)->handle($source, $this->viewer(), $this->tenant(), $metric, $this->configString($card, 'field'), $this->filters($card));
+                $value = app(CalculateMetric::class)->handle($source, $this->viewer(), $this->tenant(), $metric, $this->configString($card, 'field'), $this->filters($card), $this->configString($card, 'dates_field'), $this->dashboardDates($card));
             } catch (InvalidArgumentException) {
                 continue;
             }

@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Builder\Actions;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\Dates\DateRange;
 
 class CalculateMetric
 {
@@ -19,10 +20,10 @@ class CalculateMetric
     /**
      * @param  list<list<array{field: string, operator: string, value?: mixed}>>  $filters
      */
-    public function handle(DataSource $source, Model $user, ?Model $tenant, Metric $metric, ?string $field, array $filters): float|int
+    public function handle(DataSource $source, Model $user, ?Model $tenant, Metric $metric, ?string $field, array $filters, ?string $dateField = null, ?DateRange $dates = null): float|int
     {
         $numberField = $this->resolveMetricField->handle($source, $metric, $field);
-        $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters);
+        $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
         $column = $numberField === null ? '*' : $query->qualifyColumn($numberField->name);
 
         $value = $this->parseNumber->handle(match ($metric) {

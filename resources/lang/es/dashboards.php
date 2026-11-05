@@ -128,6 +128,8 @@ return [
             'metric' => 'Cálculo',
             'field' => 'Campo',
             'label' => 'Etiqueta',
+            'dates_field' => 'Campo de fecha',
+            'dates_field_helper' => 'Filtra esta fecha con las fechas del escritorio.',
             'date_field' => 'Fecha',
             'grouping' => 'Agrupar por',
             'period' => 'Periodo',
@@ -147,6 +149,7 @@ return [
             'value' => 'Valor',
         ],
         'periods' => [
+            'dashboard' => 'Fechas del escritorio',
             '7d' => 'Últimos 7 días',
             '30d' => 'Últimos 30 días',
             '90d' => 'Últimos 90 días',

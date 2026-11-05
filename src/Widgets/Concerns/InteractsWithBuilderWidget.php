@@ -5,17 +5,22 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Widgets\Concerns;
 
 use Filament\Facades\Filament;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Locked;
 use Waguilar\FilamentDashboards\Actions\BuildFilters;
 use Waguilar\FilamentDashboards\Actions\FindBuilderWidget;
+use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Field;
+use Waguilar\FilamentDashboards\Dates\DateRange;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 
 trait InteractsWithBuilderWidget
 {
+    use InteractsWithPageFilters;
+
     #[Locked]
     public ?int $builderWidgetId = null;
 
@@ -95,6 +100,14 @@ trait InteractsWithBuilderWidget
         $value = $config[$key] ?? null;
 
         return is_string($value) && filled($value) ? $value : null;
+    }
+
+    /**
+     * @param  array<mixed>  $config
+     */
+    protected function dashboardDates(array $config): ?DateRange
+    {
+        return $this->configString($config, 'dates_field') === null ? null : app(ResolveDateRange::class)->handle($this->pageFilters);
     }
 
     protected function getPollingInterval(): ?string

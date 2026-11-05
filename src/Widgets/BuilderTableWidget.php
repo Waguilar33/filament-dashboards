@@ -46,6 +46,8 @@ class BuilderTableWidget extends TableWidget
                         $this->configString($config, 'sort_direction') ?? 'desc',
                         $this->filters($config),
                         is_numeric($limit) ? max(1, min(100, (int) $limit)) : 10,
+                        $this->configString($config, 'dates_field'),
+                        $this->dashboardDates($config),
                     );
                 } catch (InvalidArgumentException) {
                     return [];

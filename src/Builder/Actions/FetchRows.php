@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Field;
+use Waguilar\FilamentDashboards\Dates\DateRange;
 
 class FetchRows
 {
@@ -28,6 +29,8 @@ class FetchRows
         string $sortDirection,
         array $filters,
         int $limit = 10,
+        ?string $dateField = null,
+        ?DateRange $dates = null,
     ): array {
         $fields = Collection::make($source->fields())->keyBy('name');
 
@@ -41,7 +44,7 @@ class FetchRows
             return [];
         }
 
-        $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters);
+        $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
 
         if ($sortField !== null && $fields->has($sortField)) {
             $query->orderBy($query->qualifyColumn($sortField), strtolower($sortDirection) === 'desc' ? 'desc' : 'asc');

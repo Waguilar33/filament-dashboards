@@ -62,6 +62,19 @@ class BuilderWidget extends Model
         )));
     }
 
+    public function followsDashboardDates(): bool
+    {
+        $parts = is_array($this->config['cards'] ?? null) ? $this->config['cards'] : [$this->config];
+
+        foreach ($parts as $part) {
+            if (is_array($part) && (filled($part['dates_field'] ?? null) || ($part['period'] ?? null) === 'dashboard')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @return Attribute<string, never>
      */

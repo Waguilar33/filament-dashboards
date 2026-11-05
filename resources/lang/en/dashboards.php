@@ -128,6 +128,8 @@ return [
             'metric' => 'Metric',
             'field' => 'Field',
             'label' => 'Label',
+            'dates_field' => 'Dashboard date field',
+            'dates_field_helper' => 'Filters this date with the dashboard dates.',
             'date_field' => 'Date',
             'grouping' => 'Group by',
             'period' => 'Period',
@@ -147,6 +149,7 @@ return [
             'value' => 'Value',
         ],
         'periods' => [
+            'dashboard' => 'Dashboard dates',
             '7d' => 'Last 7 days',
             '30d' => 'Last 30 days',
             '90d' => 'Last 90 days',
