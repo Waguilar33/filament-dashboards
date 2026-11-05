@@ -40,7 +40,7 @@ class BuilderFiguresWidget extends TableWidget
             $this->rowDefinitions($config),
         );
 
-        $columns = [TextColumn::make('label')->label('')->weight(FontWeight::Medium)];
+        $columns = [TextColumn::make('label')->label('')->translateLabel(false)->weight(FontWeight::Medium)];
 
         foreach ($definitions as $index => $definition) {
             $share = $figures['shares'][$definition['key']];
@@ -48,6 +48,7 @@ class BuilderFiguresWidget extends TableWidget
 
             $columns[] = TextColumn::make("value_{$index}")
                 ->label($share === null ? $definition['label'] : new HtmlString('<span class="fi-dashboards-figures-share">'.e(number_format($share, 1).'%').'</span><br>'.e($definition['label'])))
+                ->translateLabel(false)
                 ->alignment(Alignment::End)
                 ->formatStateUsing(fn (int|float $state): string => $format($state));
         }

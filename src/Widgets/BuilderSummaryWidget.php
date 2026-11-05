@@ -33,6 +33,7 @@ class BuilderSummaryWidget extends TableWidget
         $columns = [
             TextColumn::make('group')
                 ->label($groupField->label ?? '')
+                ->translateLabel(false)
                 ->weight(fn (array $record): ?FontWeight => $record['total'] ? FontWeight::Bold : null),
         ];
 
@@ -40,6 +41,7 @@ class BuilderSummaryWidget extends TableWidget
             $field = $source === null ? null : $this->field($source, $metric['field']);
             $columns[] = TextColumn::make("value_{$index}")
                 ->label($metric['label'] ?? implode(' · ', array_filter([$metric['metric']->getLabel(), $field?->label])))
+                ->translateLabel(false)
                 ->alignment(Alignment::End)
                 ->weight(fn (array $record): ?FontWeight => $record['total'] ? FontWeight::Bold : null)
                 ->formatStateUsing(fn (int|float $state): string => $field?->format($state) ?? $this->formatNumber($state));
@@ -47,6 +49,7 @@ class BuilderSummaryWidget extends TableWidget
             if ($metric['percent']) {
                 $columns[] = TextColumn::make("percent_{$index}")
                     ->label(__('filament-dashboards::dashboards.builder.summary.percent'))
+                    ->translateLabel(false)
                     ->alignment(Alignment::End)
                     ->weight(fn (array $record): ?FontWeight => $record['total'] ? FontWeight::Bold : null)
                     ->formatStateUsing(fn (int|float $state): string => number_format($state, 1).'%');

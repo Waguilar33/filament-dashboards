@@ -73,6 +73,7 @@ class BuilderStatsWidget extends StatsOverviewWidget
             $title = implode(' · ', array_filter([$metric->getLabel(), $field?->label, $source->label()]));
 
             $stats[] = DashboardStat::make($this->configString($card, 'label') ?? $title, $field?->format($value) ?? $this->formatNumber($value))
+                ->translateLabel(false)
                 ->cardKey($this->configString($card, 'key') ?? (string) $index)
                 ->resizable($this->resizableCards);
         }
