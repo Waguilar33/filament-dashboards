@@ -29,7 +29,7 @@ export default function dashboardGrid({ editable }) {
 
             // Widgets load lazily and charts draw after mount, so heights settle after Gridstack measured them.
             this.observer = new ResizeObserver((entries) => {
-                entries.forEach((entry) => this.grid.resizeToContent(entry.target.closest('.grid-stack-item')))
+                new Set(entries.map((entry) => entry.target.closest('.grid-stack-item'))).forEach((item) => item && this.fit(item))
             })
 
             this.$refs.grid.querySelectorAll('.fi-dashboards-item').forEach((item) => this.observer.observe(item))
@@ -39,6 +39,51 @@ export default function dashboardGrid({ editable }) {
             if (editable) {
                 this.$refs.grid.addEventListener('pointerdown', (event) => this.resizeCard(event))
             }
+        },
+
+        fit(gridItem) {
+            const item = gridItem.querySelector('.fi-dashboards-item')
+            const card = this.card(item)
+
+            if (card) {
+                card.style.minHeight = ''
+            }
+
+            this.grid.resizeToContent(gridItem)
+
+            if (!card) {
+                return
+            }
+
+            Array.from(card.children).forEach((child) => this.observer.observe(child))
+
+            const { marginTop, marginBottom } = this.grid.opts
+            const extra = gridItem.gridstackNode.h * this.grid.getCellHeight(true) - marginTop - marginBottom - item.offsetHeight
+
+            if (extra > 0) {
+                card.style.minHeight = `${card.offsetHeight + extra}px`
+            }
+        },
+
+        // Gridstack sizes a cell from its content, so the widget's card, or its innermost layout without one, is stretched to fill the cell's last partial row.
+        card(item) {
+            let element = item
+
+            while (element) {
+                if (getComputedStyle(element).backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                    return element
+                }
+
+                const shown = Array.from(element.children).filter((child) => child.offsetHeight > 0)
+
+                if (shown.length !== 1) {
+                    return element === item ? null : element
+                }
+
+                element = shown[0]
+            }
+
+            return null
         },
 
         resizeCard(event) {
