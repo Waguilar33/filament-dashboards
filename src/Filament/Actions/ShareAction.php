@@ -10,6 +10,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -74,6 +75,7 @@ class ShareAction extends Action
                             ->default($userType)
                             ->selectablePlaceholder(false)
                             ->live()
+                            ->afterStateUpdated(fn (Set $set): mixed => $set('shareable_id', null))
                             ->visible($roleType !== null)
                             ->required(),
                         Select::make('shareable_id')

@@ -136,6 +136,24 @@ it('replaces who the dashboard is shared with', function (): void {
         ->toBe([[$teammate->getMorphClass(), $teammate->getKey(), ShareLevel::Edit], [$role->getMorphClass(), $role->getKey(), ShareLevel::Read]]);
 });
 
+it('clears who a share row names when its type changes', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $teammate = user();
+    $role = Role::create(['name' => 'sales']);
+    share($dashboard, $teammate, ShareLevel::Read);
+
+    $page = viewAs($owner, $dashboard)->mountAction('share');
+    $row = array_key_first($page->instance()->mountedActions[0]['data']['shares']);
+
+    $page->set("mountedActions.0.data.shares.{$row}.shareable_type", $role->getMorphClass())
+        ->assertSet("mountedActions.0.data.shares.{$row}.shareable_id", null)
+        ->callMountedAction()
+        ->assertHasActionErrors(["shares.{$row}.shareable_id" => 'required']);
+
+    expect($dashboard->shares()->sole()->shareable_id)->toEqual($teammate->getKey());
+});
+
 it('fills the share form with the current shares', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);
