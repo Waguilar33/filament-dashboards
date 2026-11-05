@@ -186,6 +186,50 @@ FilamentDashboardsPlugin::make()
     ->timezoneUsing(fn (): string => auth()->user()->timezone);
 ```
 
+## Coded table widgets
+
+For a table in your own widget, [waguilar33/filament-data-grid](https://github.com/Waguilar33/filament-data-grid) adds search, pagination, totals and child rows in the browser. The plugin does not need it; the builder's tables keep using Filament tables. Render a `DataGridEntry` from a plain `Widget`:
+
+```php
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Schema;
+use Filament\Widgets\Widget;
+use Waguilar\FilamentDataGrid\DataGridEntry;
+
+class SalesByCategory extends Widget implements DashboardWidget, HasActions, HasSchemas
+{
+    use InteractsWithActions;
+    use InteractsWithDashboard;
+    use InteractsWithDashboardDates;
+    use InteractsWithSchemas {
+        InteractsWithSchemas::__get insteadof InteractsWithDashboardDates;
+    }
+
+    protected string $view = 'widgets.data-grid-widget';
+
+    public function content(Schema $schema): Schema
+    {
+        return $schema->components([
+            DataGridEntry::make('categories')
+                ->state(fn (): array => $this->rows())
+                ->table([...])
+                ->schema([...]),
+        ]);
+    }
+}
+```
+
+```blade
+<x-filament-widgets::widget>
+    {{ $this->content }}
+</x-filament-widgets::widget>
+```
+
+Both `InteractsWithSchemas` and `InteractsWithDashboardDates` (through Filament's `InteractsWithPageFilters`) define `__get`, so PHP refuses the class until you pick one; take the schemas one, as above, so `$this->content` renders. `dateRange()` still works, because it reads the page filters directly.
+
 ## Who can do what
 
 | | Who |
