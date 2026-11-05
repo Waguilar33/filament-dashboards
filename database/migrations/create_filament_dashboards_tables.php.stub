@@ -1,0 +1,98 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $tables = config('filament-dashboards.tables');
+
+        $morphs = fn (Blueprint $table, string $name, string $keys, bool $nullable = false) => $table->{match (config("filament-dashboards.key_types.{$keys}")) {
+            'int' => $nullable ? 'nullableNumericMorphs' : 'numericMorphs',
+            'uuid' => $nullable ? 'nullableUuidMorphs' : 'uuidMorphs',
+            'ulid' => $nullable ? 'nullableUlidMorphs' : 'ulidMorphs',
+            default => $nullable ? 'nullableMorphs' : 'morphs',
+        }}($name);
+
+        Schema::create($tables['dashboards'], function (Blueprint $table) use ($morphs): void {
+            $table->id();
+            $table->string('panel');
+            $morphs($table, 'tenant', 'tenants', nullable: true);
+            $morphs($table, 'owner', 'users', nullable: true);
+            $table->string('system_key')->nullable();
+            $table->string('name');
+            $table->string('slug');
+            $table->boolean('show_in_navigation')->default(false);
+            $table->string('navigation_icon')->nullable();
+            $table->string('navigation_label')->nullable();
+            $table->string('navigation_group')->nullable();
+            $table->string('navigation_position')->default('end');
+            $table->timestamps();
+
+            $table->unique(['panel', 'system_key']);
+            $table->index(['panel', 'slug']);
+        });
+
+        Schema::create($tables['items'], function (Blueprint $table) use ($tables): void {
+            $table->id();
+            $table->foreignId('dashboard_id')->constrained($tables['dashboards'])->cascadeOnDelete();
+            $table->string('widget');
+            $table->unsignedSmallInteger('x');
+            $table->unsignedSmallInteger('y');
+            $table->unsignedSmallInteger('w');
+            $table->unsignedSmallInteger('h');
+            $table->json('options')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create($tables['widgets'], function (Blueprint $table) use ($morphs): void {
+            $table->id();
+            $table->string('panel');
+            $morphs($table, 'tenant', 'tenants', nullable: true);
+            $morphs($table, 'owner', 'users', nullable: true);
+            $table->string('system_key')->nullable();
+            $table->string('name');
+            $table->string('type');
+            $table->json('config');
+            $table->unsignedInteger('refresh_interval')->nullable();
+            $table->timestamps();
+
+            $table->unique(['panel', 'system_key']);
+        });
+
+        Schema::create($tables['shares'], function (Blueprint $table) use ($morphs): void {
+            $table->id();
+            $table->numericMorphs('subject');
+            $morphs($table, 'shareable', 'users');
+            $table->string('level');
+            $table->timestamps();
+
+            $table->unique(['subject_type', 'subject_id', 'shareable_type', 'shareable_id']);
+        });
+
+        Schema::create($tables['homes'], function (Blueprint $table) use ($tables, $morphs): void {
+            $table->id();
+            $table->string('panel');
+            $morphs($table, 'tenant', 'tenants', nullable: true);
+            $morphs($table, 'user', 'users');
+            $table->foreignId('dashboard_id')->constrained($tables['dashboards'])->cascadeOnDelete();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        $tables = config('filament-dashboards.tables');
+
+        Schema::dropIfExists($tables['homes']);
+        Schema::dropIfExists($tables['shares']);
+        Schema::dropIfExists($tables['widgets']);
+        Schema::dropIfExists($tables['items']);
+        Schema::dropIfExists($tables['dashboards']);
+    }
+};

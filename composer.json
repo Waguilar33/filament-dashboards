@@ -36,7 +36,8 @@
         "spatie/laravel-permission": "^6.0 || ^7.0"
     },
     "suggest": {
-        "waguilar33/filament-guardian": "Manage who can add each dashboard widget and who can create dashboards from the role screen, and share dashboards with whole roles."
+        "waguilar33/filament-guardian": "Manage who can add each dashboard widget and who can create dashboards from the role screen, and share dashboards with whole roles.",
+        "waguilar33/filament-data-grid": "Client-side data grids (search, pagination, totals, child rows) for your own coded dashboard widgets."
     },
     "autoload": {
         "psr-4": {
@@ -71,6 +72,12 @@
             "Composer\\Config::disableProcessTimeout",
             "@build",
             "@php vendor/bin/testbench serve --ansi"
+        ],
+        "demo": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench dashboards:sync --ansi",
+            "@php vendor/bin/testbench serve --port=8765 --ansi"
         ],
         "test": "vendor/bin/pest",
         "analyse": "vendor/bin/phpstan analyse",

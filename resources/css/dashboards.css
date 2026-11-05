@@ -1,0 +1,213 @@
+@import 'gridstack/dist/gridstack.min.css';
+
+.fi-dashboards-grid .grid-stack {
+    margin: calc(-1 * var(--gs-item-margin-top)) calc(-1 * var(--gs-item-margin-right)) calc(-1 * var(--gs-item-margin-bottom)) calc(-1 * var(--gs-item-margin-left));
+}
+
+.fi-dashboards-grid .grid-stack-item-content {
+    overflow: hidden;
+}
+
+.fi-dashboards-grid .grid-stack-placeholder > .placeholder-content {
+    border: 2px dashed var(--primary-500);
+    border-radius: 0.75rem;
+    background: transparent;
+}
+
+.fi-dashboards-grid[data-editable='true'] .grid-stack-item-content {
+    cursor: grab;
+}
+
+.fi-dashboards-grid[data-editable='true'] .ui-draggable-dragging .grid-stack-item-content {
+    cursor: grabbing;
+}
+
+.fi-dashboards-grid .ui-resizable-e,
+.fi-dashboards-grid .ui-resizable-w {
+    cursor: ew-resize;
+}
+
+.fi-dashboards-stat {
+    position: relative;
+}
+
+.fi-dashboards-stat-resize {
+    position: absolute;
+    top: 0;
+    right: -0.5rem;
+    bottom: 0;
+    width: 1rem;
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.fi-dashboards-stat-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.25rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background: var(--gray-300);
+    transform: translate(-50%, -50%);
+}
+
+.dark .fi-dashboards-stat-resize::after {
+    background: var(--gray-600);
+}
+
+@container (width < 24rem) {
+    .fi-dashboards-stat-resize {
+        display: none;
+    }
+}
+
+.fi-dashboards-figures-share {
+    font-weight: 400;
+    color: var(--gray-500);
+}
+
+.fi-dashboards-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: default;
+}
+
+.fi-dashboards-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fi-dashboards-picker-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.fi-dashboards-picker-heading {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+.fi-dashboards-picker-description {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.fi-dashboards-picker-arrows {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.fi-dashboards-picker-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(14rem, calc((100% - 3rem) / 4));
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: 0.125rem;
+}
+
+.fi-dashboards-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 1rem;
+}
+
+.fi-dashboards-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    text-align: start;
+    border-radius: 0.75rem;
+    border: 1px solid var(--gray-200);
+    background: var(--white, #fff);
+    scroll-snap-align: start;
+    transition: border-color 0.15s;
+}
+
+.fi-dashboards-card:hover {
+    border-color: var(--gray-300);
+}
+
+.fi-dashboards-card.fi-selected {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 1px var(--primary-500);
+}
+
+.fi-dashboards-card-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 9;
+    border-radius: 0.5rem;
+    background: var(--gray-50);
+    color: var(--gray-400);
+    overflow: hidden;
+}
+
+.fi-dashboards-card-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fi-dashboards-card-preview svg {
+    width: 60%;
+    height: 70%;
+}
+
+.fi-dashboards-card-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+.fi-dashboards-card-description {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.fi-dashboards-card-check {
+    position: absolute;
+    top: 0.5rem;
+    inset-inline-end: 0.5rem;
+    color: var(--primary-500);
+}
+
+.dark .fi-dashboards-picker-heading,
+.dark .fi-dashboards-card-title {
+    color: var(--white, #fff);
+}
+
+.dark .fi-dashboards-picker-description,
+.dark .fi-dashboards-card-description {
+    color: var(--gray-400);
+}
+
+.dark .fi-dashboards-card {
+    border-color: color-mix(in oklab, var(--white, #fff) 10%, transparent);
+    background: color-mix(in oklab, var(--white, #fff) 3%, transparent);
+}
+
+.dark .fi-dashboards-card.fi-selected {
+    border-color: var(--primary-500);
+}
+
+.dark .fi-dashboards-card-preview {
+    background: var(--gray-950);
+    color: var(--gray-500);
+}

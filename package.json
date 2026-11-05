@@ -1,0 +1,12 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "node bin/build.js",
+        "dev": "node bin/build.js --watch"
+    },
+    "devDependencies": {
+        "esbuild": "^0.28.2",
+        "gridstack": "^14.0.0"
+    }
+}
