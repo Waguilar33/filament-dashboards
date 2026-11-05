@@ -12,6 +12,7 @@ use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
+use Waguilar\FilamentDashboards\Enums\NavigationPosition;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
@@ -248,6 +249,20 @@ it('lets the app replace the navigation icon field', function (): void {
 
     expect($field)->toBeInstanceOf(TextInput::class)
         ->and($field->getLabel())->toBe('Navigation icon');
+});
+
+it('shows and changes the saved navigation position in settings', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner, ['show_in_navigation' => true, 'navigation_position' => NavigationPosition::Start]);
+
+    viewAs($owner, $dashboard)
+        ->mountAction('settings')
+        ->assertSchemaStateSet(['navigation_position' => NavigationPosition::Start], 'mountedActionSchema0')
+        ->setActionData(['navigation_position' => NavigationPosition::End])
+        ->callMountedAction()
+        ->assertHasNoActionErrors();
+
+    expect($dashboard->refresh()->navigation_position)->toBe(NavigationPosition::End);
 });
 
 it('updates the settings and follows a changed slug', function (): void {

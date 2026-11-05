@@ -59,11 +59,8 @@ class DashboardForm
                 ->visible(fn (Get $get): bool => (bool) $get('show_in_navigation')),
             ToggleButtons::make('navigation_position')
                 ->label(__('filament-dashboards::dashboards.fields.navigation_position'))
-                ->options([
-                    NavigationPosition::Start->value => __('filament-dashboards::dashboards.navigation_positions.start'),
-                    NavigationPosition::End->value => __('filament-dashboards::dashboards.navigation_positions.end'),
-                ])
-                ->default(NavigationPosition::End->value)
+                ->options(NavigationPosition::class)
+                ->default(NavigationPosition::End)
                 ->inline()
                 ->visible(fn (Get $get): bool => (bool) $get('show_in_navigation')),
         ]));
