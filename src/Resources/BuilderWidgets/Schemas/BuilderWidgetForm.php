@@ -135,6 +135,7 @@ class BuilderWidgetForm
                     ->defaultItems(1)
                     ->itemLabel(fn (array $state): ?string => is_string($state['label'] ?? null) ? $state['label'] : null)
                     ->collapsible()
+                    ->grid(2)
                     ->columns(2)
                     ->schema([
                         Hidden::make('key')->default(fn (): string => (string) Str::uuid()),

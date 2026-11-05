@@ -38,11 +38,6 @@ class BuilderStatsWidget extends StatsOverviewWidget
         return ['@sm' => self::COLUMNS, '!@md' => self::COLUMNS];
     }
 
-    protected function getHeading(): ?string
-    {
-        return $this->builderWidget()?->name;
-    }
-
     /**
      * @return array<DashboardStat>
      */

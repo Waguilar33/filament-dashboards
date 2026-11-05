@@ -179,6 +179,16 @@ it('shows a resize handle on each card only when the dashboard is being edited',
         ->{$resizable ? 'assertSeeHtml' : 'assertDontSeeHtml'}('fi-dashboards-stat-resize');
 })->with(['editing' => true, 'viewing' => false]);
 
+it('shows stats cards without a widget heading', function (): void {
+    demoOrders();
+    $owner = user();
+    $this->actingAs($owner);
+
+    Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => builderWidget($owner, ['name' => 'Sales at a glance'])->id])
+        ->assertSee('Count · Orders')
+        ->assertDontSee('Sales at a glance');
+});
+
 it('charts a breakdown with one colour per slice', function (): void {
     demoOrders();
     $this->actingAs(user());
@@ -238,7 +248,7 @@ it('shows a saved widget only to people the widget itself is shared with', funct
 
     share($widget, $teammate, ShareLevel::Read);
 
-    Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertSee('Team numbers');
+    Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertOk()->assertSee('Count · Orders');
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets yet');
 });
 
@@ -431,5 +441,6 @@ it('lays each stats card out in two collapsible columns with its label on top', 
 
     expect($cards?->getColumns('lg'))->toBe(2)
         ->and($cards?->isCollapsible())->toBeTrue()
+        ->and($cards?->getGridColumns('lg'))->toBe(2)
         ->and(array_map(fn (Component $field): ?string => $field instanceof Field ? $field->getName() : null, $cards?->getDefaultChildComponents() ?? []))->toBe(['key', 'label', 'source', 'metric', 'field', 'dates_field', 'filters']);
 });
