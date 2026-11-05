@@ -129,12 +129,13 @@ class BuilderWidgetForm
                     ->minItems(1)
                     ->defaultItems(1)
                     ->itemLabel(fn (array $state): ?string => is_string($state['label'] ?? null) ? $state['label'] : null)
+                    ->columns(2)
                     ->schema([
+                        TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255)->columnSpanFull(),
                         self::sourceSelect(),
                         ...self::metricFields(),
                         self::datesField(),
                         self::filters(),
-                        TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                     ]),
             ],
             BuilderWidgetType::Line, BuilderWidgetType::Bar => [

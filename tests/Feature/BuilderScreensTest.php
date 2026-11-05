@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Field;
+use Filament\Forms\Components\Repeater;
+use Filament\Schemas\Components\Component;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -360,4 +363,18 @@ it('saves shares with a save button', function (): void {
     $page = Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->mountAction('share');
 
     expect($page->instance()->getMountedAction()?->getModalSubmitActionLabel())->toBe('Save');
+});
+
+it('lays each stats card out in two columns with its label on top', function (): void {
+    $owner = user();
+    $this->actingAs($owner);
+
+    $page = Livewire::test(ViewDashboard::class, ['record' => dashboard($owner)->slug])
+        ->mountAction('buildWidget', ['type' => 'stats'])
+        ->instance();
+
+    $cards = $page->getSchema($page->getMountedActionSchemaName())?->getComponent(fn (Component $component): bool => $component instanceof Repeater && $component->getName() === 'cards');
+
+    expect($cards?->getColumns('lg'))->toBe(2)
+        ->and(array_map(fn (Component $field): ?string => $field instanceof Field ? $field->getName() : null, $cards?->getDefaultChildComponents() ?? []))->toBe(['label', 'source', 'metric', 'field', 'dates_field', 'filters']);
 });
