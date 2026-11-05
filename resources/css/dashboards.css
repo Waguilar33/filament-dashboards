@@ -1,5 +1,9 @@
 @import 'gridstack/dist/gridstack.min.css';
 
+.fi-dashboards-grid .grid-stack {
+    margin: calc(-1 * var(--gs-item-margin-top)) calc(-1 * var(--gs-item-margin-right)) calc(-1 * var(--gs-item-margin-bottom)) calc(-1 * var(--gs-item-margin-left));
+}
+
 .fi-dashboards-grid .grid-stack-item-content {
     overflow: hidden;
 }
