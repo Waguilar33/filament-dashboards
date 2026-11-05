@@ -52,7 +52,11 @@ class BuilderTableWidget extends TableWidget
                 }
             })
             ->columns(array_values(array_filter(array_map(
-                fn (string $column): ?TextColumn => $fields->has($column) ? TextColumn::make($column)->label($fields->get($column)?->label) : null,
+                fn (string $column): ?TextColumn => $fields->has($column)
+                    ? TextColumn::make($column)
+                        ->label($fields->get($column)?->label)
+                        ->formatStateUsing(fn (mixed $state): mixed => is_int($state) || is_float($state) ? ($fields->get($column)?->format($state) ?? $state) : $state)
+                    : null,
                 $columns,
             ))))
             ->paginated(false)

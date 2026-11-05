@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Builder;
 
+use Closure;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 
 final readonly class Field
 {
     /**
      * @param  array<string, string>  $options
+     * @param  (Closure(int|float): string)|null  $formatter
      */
     public function __construct(
         public string $name,
@@ -17,6 +19,7 @@ final readonly class Field
         public FieldType $type,
         public array $options = [],
         public int|float $divisor = 1,
+        public ?Closure $formatter = null,
     ) {}
 
     public static function number(string $name, string $label): self
@@ -49,7 +52,20 @@ final readonly class Field
 
     public function divideBy(int|float $divisor): self
     {
-        return new self($this->name, $this->label, $this->type, $this->options, $divisor);
+        return new self($this->name, $this->label, $this->type, $this->options, $divisor, $this->formatter);
+    }
+
+    /**
+     * @param  Closure(int|float): string  $formatter
+     */
+    public function formatUsing(Closure $formatter): self
+    {
+        return new self($this->name, $this->label, $this->type, $this->options, $this->divisor, $formatter);
+    }
+
+    public function format(int|float $value): ?string
+    {
+        return $this->formatter === null ? null : ($this->formatter)($value);
     }
 
     public function fromStored(int|float $value): int|float

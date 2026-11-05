@@ -116,7 +116,7 @@ class OrdersSource extends DataSource
 FilamentDashboardsPlugin::make()->dataSources([OrdersSource::class]);
 ```
 
-A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too.
+A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too. Format how its values read on cards and in tables with `->formatUsing(fn (int|float $value): string => Number::currency($value, 'GTQ'))`.
 
 Hide a source from users who may not use it; they are not offered it in the builder, and widgets built on it are left off their dashboards:
 
@@ -159,7 +159,8 @@ A system dashboard can place a system widget by listing its class in `items()`.
 | View | The owner, users and roles it is shared with, everyone for system dashboards |
 | Edit (widgets, layout, settings) | The owner and Edit shares |
 | Share and delete | The owner only |
-| Clone, set as home | Anyone who can view it and may create dashboards |
+| Clone | Anyone who can view it and may create dashboards |
+| Set as home | Anyone who can view it |
 
 Without any other package, every signed-in user can create dashboards and add any widget whose `canView()` passes. Narrow it with:
 

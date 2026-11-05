@@ -34,7 +34,7 @@ final class CentsOrdersSource extends DataSource
     public function fields(): array
     {
         return array_map(
-            fn (Field $field): Field => $field->name === 'total' ? $field->divideBy(10) : $field,
+            fn (Field $field): Field => $field->name === 'total' ? $field->divideBy(10)->formatUsing(fn (int|float $value): string => 'Q'.number_format($value, 2)) : $field,
             (new OrdersSource)->fields(),
         );
     }

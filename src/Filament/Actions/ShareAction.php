@@ -44,6 +44,7 @@ class ShareAction extends Action
             ->modalWidth(Width::TwoExtraLarge)
             ->modalHeading(__('filament-dashboards::dashboards.modals.share.heading'))
             ->modalDescription(__('filament-dashboards::dashboards.modals.share.description'))
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.save'))
             ->fillForm(fn (Dashboard|BuilderWidget $record): array => [
                 'shares' => $record->shares->map(fn (DashboardShare $share): array => [
                     'shareable_type' => $share->shareable_type,

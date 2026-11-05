@@ -63,6 +63,7 @@ None yet.
 | FDP20 | A number field can be stored scaled (`->divideBy(100)` for cents). Metrics, trends, breakdowns, scatter points and table cells show the value divided; number filters are multiplied before comparing, so users always work in the shown units. | Sortivo, 2026-11-04: order totals are stored in cents; a sum showed 12345 for Q123.45. |
 | FDP21 | System dashboards and system widgets show the name their class gives in the viewer's language; the stored name is only a fallback for a class no longer registered. | Sortivo, 2026-11-04: `dashboards:sync` runs in the CLI's language, so Spanish companies saw the English name. |
 | FDP22 | Owner, share, home and tenant keys follow the app's key type: `key_types.users` and `key_types.tenants` in the config (`int`, `uuid`, `ulid`), else Laravel's default morph type. Roles share the users' key type. The subject of a share is always numeric, as the plugin's own ids are. | Sortivo, 2026-11-04: users, roles and tenants have uuid keys and every insert failed. |
+| FDP23 | A number field can format its value (`formatUsing`) for stats cards and table cells; a stats card without its own label is titled metric · field · source. Charts show plain numbers. | Sortivo, 2026-11-04: a money card read "544,909" with no currency, titled "Suma · Órdenes" without the field. |
 
 ## Open decisions
 

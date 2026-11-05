@@ -14,6 +14,7 @@ use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Pages\ListBuilderWidgets;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ViewDashboard;
+use Waguilar\FilamentDashboards\Tests\Fixtures\CentsOrdersSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\GatedOrdersSource;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
@@ -319,4 +320,31 @@ it('leaves widgets built on a source the viewer may not view off the dashboard',
 
     $this->actingAs($allowed);
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets yet');
+});
+
+it('formats a field value and names the field on a stats card and in a table', function (): void {
+    demoOrders();
+    FilamentDashboardsPlugin::get()->dataSources([CentsOrdersSource::class]);
+    $this->actingAs(user());
+
+    Livewire::test(BuilderStatsWidget::class, ['previewType' => 'stats', 'previewConfig' => ['cards' => [
+        ['source' => 'cents-orders', 'metric' => 'sum', 'field' => 'total'],
+        ['source' => 'cents-orders', 'metric' => 'count'],
+    ]]])
+        ->assertSee('Sum · Total · Orders in cents')
+        ->assertSee('Q17.50')
+        ->assertSee('Count · Orders in cents');
+
+    Livewire::test(BuilderTableWidget::class, ['previewType' => 'table', 'previewConfig' => ['source' => 'cents-orders', 'columns' => ['customer', 'total'], 'sort_field' => 'total', 'sort_direction' => 'desc']])
+        ->assertSeeInOrder(['Ana', 'Q10.00', 'Luis', 'Q5.00']);
+});
+
+it('saves shares with a save button', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $this->actingAs($owner);
+
+    $page = Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->mountAction('share');
+
+    expect($page->instance()->getMountedAction()?->getModalSubmitActionLabel())->toBe('Save');
 });

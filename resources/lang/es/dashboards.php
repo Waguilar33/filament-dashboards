@@ -52,6 +52,7 @@ return [
     'actions' => [
         'add_widget' => 'Agregar widget',
         'share' => 'Compartir',
+        'save' => 'Guardar',
         'settings' => 'Configurar',
         'clone' => 'Clonar',
         'set_home' => 'Usar como inicio',

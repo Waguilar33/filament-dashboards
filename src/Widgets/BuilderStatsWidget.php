@@ -48,7 +48,10 @@ class BuilderStatsWidget extends StatsOverviewWidget
                 continue;
             }
 
-            $stats[] = Stat::make($this->configString($card, 'label') ?? "{$metric->getLabel()} · {$source->label()}", $this->formatNumber($value));
+            $field = $metric->requiresNumberField() ? $this->field($source, $this->configString($card, 'field')) : null;
+            $title = implode(' · ', array_filter([$metric->getLabel(), $field?->label, $source->label()]));
+
+            $stats[] = Stat::make($this->configString($card, 'label') ?? $title, $field?->format($value) ?? $this->formatNumber($value));
         }
 
         return $stats;

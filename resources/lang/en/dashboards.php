@@ -52,6 +52,7 @@ return [
     'actions' => [
         'add_widget' => 'Add widget',
         'share' => 'Share',
+        'save' => 'Save',
         'settings' => 'Settings',
         'clone' => 'Clone',
         'set_home' => 'Set as home',

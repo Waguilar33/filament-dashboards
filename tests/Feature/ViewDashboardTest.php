@@ -280,3 +280,20 @@ it('refuses a widget the user is not offered', function (): void {
         ->callAction('addWidget', data: ['widget' => 'hidden-widget'])
         ->assertHasActionErrors(['widget']);
 });
+
+it('leaves widgets an editor cannot see where they are', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $hidden = $dashboard->items()->create(['widget' => builderWidget($owner)->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
+    $visible = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 6, 'y' => 0, 'w' => 6, 'h' => 2]);
+    $removed = $dashboard->items()->create(['widget' => 'signups-chart', 'x' => 0, 'y' => 4, 'w' => 6, 'h' => 4]);
+    $editor = user();
+    share($dashboard, $editor, ShareLevel::Edit);
+
+    viewAs($editor, $dashboard)
+        ->call('saveDashboardLayout', [['id' => $visible->id, 'x' => 0, 'y' => 0, 'w' => 12, 'h' => 2]])
+        ->call('removeDashboardItem', $removed->id);
+
+    expect($hidden->refresh()->only(['x', 'y', 'w', 'h']))->toBe(['x' => 0, 'y' => 0, 'w' => 6, 'h' => 4])
+        ->and($dashboard->items()->pluck('id')->sort()->values()->all())->toBe([$hidden->id, $visible->id]);
+});

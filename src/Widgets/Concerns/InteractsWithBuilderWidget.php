@@ -10,6 +10,7 @@ use Livewire\Attributes\Locked;
 use Waguilar\FilamentDashboards\Actions\BuildFilters;
 use Waguilar\FilamentDashboards\Actions\FindBuilderWidget;
 use Waguilar\FilamentDashboards\Builder\DataSource;
+use Waguilar\FilamentDashboards\Builder\Field;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 
@@ -64,6 +65,17 @@ trait InteractsWithBuilderWidget
     protected function source(mixed $key): ?DataSource
     {
         return is_string($key) ? (FilamentDashboardsPlugin::get()->getDataSourcesFor($this->viewer(), $this->tenant())[$key] ?? null) : null;
+    }
+
+    protected function field(DataSource $source, ?string $name): ?Field
+    {
+        foreach ($source->fields() as $field) {
+            if ($field->name === $name) {
+                return $field;
+            }
+        }
+
+        return null;
     }
 
     /**
