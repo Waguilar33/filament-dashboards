@@ -6,6 +6,7 @@ namespace Waguilar\FilamentDashboards;
 
 use Closure;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Contracts\Plugin;
@@ -66,6 +67,11 @@ final class FilamentDashboardsPlugin implements Plugin
      * @var (Closure(?Model): Builder<covariant Model>)|null
      */
     protected ?Closure $shareableUsersUsing = null;
+
+    /**
+     * @var (Closure(array<string, Action>): array<Action|ActionGroup>)|null
+     */
+    protected ?Closure $headerActionsUsing = null;
 
     /**
      * @var list<int>
@@ -535,5 +541,38 @@ final class FilamentDashboardsPlugin implements Plugin
     public function getTimezone(): string
     {
         return $this->timezoneUsing === null ? Config::string('app.timezone') : ($this->timezoneUsing)();
+    }
+
+    /**
+     * @param  (Closure(array<string, Action>): array<Action|ActionGroup>)|null  $callback
+     */
+    public function headerActionsUsing(?Closure $callback): static
+    {
+        $this->headerActionsUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, Action>  $actions
+     * @return array<Action|ActionGroup>
+     */
+    public function arrangeHeaderActions(array $actions): array
+    {
+        if ($this->headerActionsUsing !== null) {
+            return ($this->headerActionsUsing)($actions);
+        }
+
+        return [
+            $actions['edit'],
+            $actions['share'],
+            ActionGroup::make([
+                $actions['settings'],
+                $actions['duplicate'],
+                $actions['setAsHome'],
+                $actions['removeHome'],
+                $actions['delete'],
+            ]),
+        ];
     }
 }

@@ -216,6 +216,18 @@ FilamentDashboardsPlugin::make()
     ->modifyAddWidgetActionUsing(fn (Action $action): Action => $action);
 ```
 
+The dashboard page's header shows Edit and Share, and a menu with Settings, Duplicate, Set as home (or Remove as home) and Delete. Rearrange, regroup or drop them; the hook receives the built actions keyed by `edit`, `share`, `settings`, `duplicate`, `setAsHome`, `removeHome` and `delete`, and returns the header:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->headerActionsUsing(fn (array $actions): array => [
+        $actions['edit'],
+        ActionGroup::make([$actions['share'], $actions['settings'], $actions['delete']]),
+    ]);
+```
+
+Add widget lives in the Edit mode banner; Edit hides itself while editing.
+
 The dashboard form is used by both create and settings. The share hook applies to dashboards and saved widgets.
 
 Users pick a dashboard's navigation group from the panel's registered groups. When your group labels are translated, give each a stable key so a dashboard saved in one language shows in another:

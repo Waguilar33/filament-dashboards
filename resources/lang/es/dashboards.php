@@ -69,7 +69,6 @@ return [
         'set_home' => 'Usar como inicio',
         'remove_home' => 'Quitar como inicio',
         'delete' => 'Eliminar',
-        'edit_layout' => 'Editar diseño',
         'remove' => 'Quitar',
         'edit' => 'Editar',
         'previous' => 'Anterior',

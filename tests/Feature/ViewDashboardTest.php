@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
@@ -63,10 +64,10 @@ it('gives the owner every action', function (): void {
     viewAs($owner, dashboard($owner))
         ->assertActionVisible('addWidget')
         ->assertActionVisible('share')
-        ->assertActionVisible('editLayout')
+        ->assertActionVisible('edit')
         ->assertActionVisible('settings')
-        ->assertActionVisible('clone')
-        ->assertActionVisible('setHome')
+        ->assertActionVisible('duplicate')
+        ->assertActionVisible('setAsHome')
         ->assertActionVisible('delete');
 });
 
@@ -89,11 +90,11 @@ it('gives a read share and a system dashboard only clone and set as home', funct
     viewAs($reader, $dashboard)
         ->assertActionHidden('addWidget')
         ->assertActionHidden('share')
-        ->assertActionHidden('editLayout')
+        ->assertActionHidden('edit')
         ->assertActionHidden('settings')
         ->assertActionHidden('delete')
-        ->assertActionVisible('clone')
-        ->assertActionVisible('setHome');
+        ->assertActionVisible('duplicate')
+        ->assertActionVisible('setAsHome');
 })->with([
     'read share' => [function (User $reader): Dashboard {
         $dashboard = dashboard(user());
@@ -147,7 +148,7 @@ it('clones the dashboard and opens the copy', function (): void {
     $source = dashboard(attributes: ['system_key' => 'sales']);
 
     viewAs($me, $source)
-        ->callAction('clone', data: ['name' => 'Mine', 'slug' => 'mine'])
+        ->callAction('duplicate', data: ['name' => 'Mine', 'slug' => 'mine'])
         ->assertHasNoActionErrors()
         ->assertRedirect('/demo/custom-dashboards/mine');
 
@@ -159,14 +160,14 @@ it('refuses a slug another dashboard in the panel already uses', function (): vo
     $source = dashboard($me);
     dashboard(user(), ['slug' => 'taken']);
 
-    viewAs($me, $source)->callAction('clone', data: ['name' => 'Mine', 'slug' => 'taken'])->assertHasActionErrors(['slug']);
+    viewAs($me, $source)->callAction('duplicate', data: ['name' => 'Mine', 'slug' => 'taken'])->assertHasActionErrors(['slug']);
 });
 
 it('sets the dashboard as the user home', function (): void {
     $me = user();
     $dashboard = dashboard(attributes: ['system_key' => 'sales']);
 
-    viewAs($me, $dashboard)->callAction('setHome')->assertNotified();
+    viewAs($me, $dashboard)->callAction('setAsHome')->assertNotified();
 
     expect(DashboardHome::query()->sole()->dashboard_id)->toBe($dashboard->id);
 });
@@ -176,8 +177,8 @@ it('hides set as home on the user home dashboard only', function (): void {
     $home = dashboard($me);
     $other = dashboard($me, ['slug' => 'other']);
 
-    viewAs($me, $home)->callAction('setHome')->assertActionHidden('setHome');
-    viewAs($me, $other)->assertActionVisible('setHome');
+    viewAs($me, $home)->callAction('setAsHome')->assertActionHidden('setAsHome');
+    viewAs($me, $other)->assertActionVisible('setAsHome');
 });
 
 it('removes the home from the home dashboard only', function (): void {
@@ -186,13 +187,13 @@ it('removes the home from the home dashboard only', function (): void {
     $other = dashboard($me, ['slug' => 'other']);
 
     viewAs($me, $home)->assertActionHidden('removeHome')
-        ->callAction('setHome')
+        ->callAction('setAsHome')
         ->assertActionVisible('removeHome');
     viewAs($me, $other)->assertActionHidden('removeHome');
     viewAs($me, $home)->callAction('removeHome')
         ->assertNotified()
         ->assertActionHidden('removeHome')
-        ->assertActionVisible('setHome');
+        ->assertActionVisible('setAsHome');
 
     expect(DashboardHome::query()->exists())->toBeFalse();
 });
@@ -291,11 +292,60 @@ it('deletes the dashboard', function (): void {
     expect(Dashboard::query()->count())->toBe(0);
 });
 
+/**
+ * @param  array<Action|ActionGroup>  $actions
+ * @return list<string|list<string>>
+ */
+function headerLayout(array $actions): array
+{
+    return array_values(array_map(
+        fn (Action|ActionGroup $action): string|array => $action instanceof ActionGroup
+            ? array_values(array_map(fn (Action $grouped): string => $grouped->getName().':'.($grouped->getIcon() === null ? 'no-icon' : 'icon'), $action->getActions()))
+            : $action->getName().':'.$action->getColor().':'.($action->getIcon() === null ? 'no-icon' : 'icon'),
+        $actions,
+    ));
+}
+
+it('lays out the header as edit, share and a menu by default, without add widget', function (): void {
+    $owner = user();
+
+    $actions = viewAs($owner, dashboard($owner))->instance()->getCachedHeaderActions();
+
+    expect(headerLayout($actions))->toBe([
+        'edit:primary:no-icon',
+        'share:gray:no-icon',
+        ['settings:icon', 'duplicate:icon', 'setAsHome:icon', 'removeHome:icon', 'delete:icon'],
+    ]);
+});
+
+it('lets the app rearrange and drop the header actions', function (): void {
+    FilamentDashboardsPlugin::get()->headerActionsUsing(fn (array $actions): array => [
+        $actions['share'],
+        ActionGroup::make([$actions['edit'], $actions['delete']]),
+    ]);
+    $owner = user();
+
+    expect(headerLayout(viewAs($owner, dashboard($owner))->instance()->getCachedHeaderActions()))->toBe([
+        'share:gray:no-icon',
+        ['edit:no-icon', 'delete:icon'],
+    ]);
+});
+
+it('hides edit from the header while editing', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $this->actingAs($owner);
+
+    Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertActionHidden('edit')
+        ->assertActionVisible('share');
+});
+
 it('toggles layout editing', function (): void {
     $owner = user();
 
     viewAs($owner, dashboard($owner))
-        ->callAction('editLayout')
+        ->callAction('edit')
         ->assertSet('isEditingLayout', true)
         ->assertRedirect('/demo/custom-dashboards/sales?editing=1');
 });
@@ -308,13 +358,13 @@ it('shows the edit banner with finish and add widget only while editing', functi
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
         ->assertDontSee('Edit mode')
         ->assertActionVisible('addWidget')
-        ->assertActionVisible('editLayout');
+        ->assertActionVisible('edit');
 
     Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
         ->assertSee('Edit mode')
         ->assertSee('Finish editing')
         ->assertSee('Add widget')
-        ->assertActionHidden('editLayout')
+        ->assertActionHidden('edit')
         ->callAction(TestAction::make('doneEditing')->schemaComponent('editMode', schema: 'content'))
         ->assertSet('isEditingLayout', false)
         ->assertRedirect('/demo/custom-dashboards/sales');

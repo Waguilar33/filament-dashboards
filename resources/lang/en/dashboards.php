@@ -69,7 +69,6 @@ return [
         'set_home' => 'Set as home',
         'remove_home' => 'Remove as home',
         'delete' => 'Delete',
-        'edit_layout' => 'Edit layout',
         'remove' => 'Remove',
         'edit' => 'Edit',
         'previous' => 'Previous',

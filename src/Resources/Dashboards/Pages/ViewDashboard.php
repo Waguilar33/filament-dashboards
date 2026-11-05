@@ -6,7 +6,6 @@ namespace Waguilar\FilamentDashboards\Resources\Dashboards\Pages;
 
 use Closure;
 use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
@@ -161,18 +160,15 @@ class ViewDashboard extends Page
 
     protected function getHeaderActions(): array
     {
-        return [
-            ...($this->isEditingLayout ? [] : [$this->addWidgetAction()]),
-            $this->shareAction(),
-            ActionGroup::make([
-                $this->editLayoutAction(),
-                $this->settingsAction(),
-                $this->cloneAction(),
-                $this->setHomeAction(),
-                $this->removeHomeAction(),
-                $this->deleteAction(),
-            ]),
-        ];
+        return FilamentDashboardsPlugin::get()->arrangeHeaderActions([
+            'edit' => $this->editLayoutAction(),
+            'share' => $this->shareAction(),
+            'settings' => $this->settingsAction(),
+            'duplicate' => $this->cloneAction(),
+            'setAsHome' => $this->setHomeAction(),
+            'removeHome' => $this->removeHomeAction(),
+            'delete' => $this->deleteAction(),
+        ]);
     }
 
     protected function addWidgetAction(): Action
@@ -317,13 +313,14 @@ class ViewDashboard extends Page
 
     protected function shareAction(): ShareAction
     {
-        return FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->record($this->getDashboard()));
+        return FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->record($this->getDashboard())->color('gray'));
     }
 
     protected function editLayoutAction(): Action
     {
-        return Action::make('editLayout')
-            ->label(__('filament-dashboards::dashboards.actions.edit_layout'))
+        return Action::make('edit')
+            ->label(__('filament-dashboards::dashboards.actions.edit'))
+            ->color('primary')
             ->visible($this->canEdit() && ! $this->isEditingLayout)
             ->action(function (): void {
                 $this->isEditingLayout = true;
@@ -348,7 +345,7 @@ class ViewDashboard extends Page
     {
         return FilamentDashboardsPlugin::get()->modifySettingsAction(EditAction::make('settings')
             ->label(__('filament-dashboards::dashboards.actions.settings'))
-            ->icon(null)
+            ->icon(Heroicon::OutlinedCog6Tooth)
             ->visible($this->canEdit())
             ->slideOver()
             ->modalWidth(Width::Medium)
@@ -359,8 +356,9 @@ class ViewDashboard extends Page
 
     protected function cloneAction(): Action
     {
-        return Action::make('clone')
+        return Action::make('duplicate')
             ->label(__('filament-dashboards::dashboards.actions.clone'))
+            ->icon(Heroicon::OutlinedDocumentDuplicate)
             ->visible(DashboardResource::canCreate())
             ->modalWidth(Width::Medium)
             ->modalHeading(__('filament-dashboards::dashboards.modals.clone.heading'))
@@ -390,8 +388,9 @@ class ViewDashboard extends Page
 
     protected function setHomeAction(): Action
     {
-        return Action::make('setHome')
+        return Action::make('setAsHome')
             ->label(__('filament-dashboards::dashboards.actions.set_home'))
+            ->icon(Heroicon::OutlinedHome)
             ->hidden(fn (): bool => $this->isHome())
             ->action(function (): void {
                 app(SetHomeDashboard::class)->handle($this->getDashboard(), DashboardResource::user(), Filament::getTenant());
@@ -404,6 +403,7 @@ class ViewDashboard extends Page
     {
         return Action::make('removeHome')
             ->label(__('filament-dashboards::dashboards.actions.remove_home'))
+            ->icon(Heroicon::OutlinedHome)
             ->visible(fn (): bool => $this->isHome())
             ->action(function (): void {
                 app(RemoveHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant());
@@ -420,6 +420,7 @@ class ViewDashboard extends Page
     protected function deleteAction(): DeleteAction
     {
         return DeleteAction::make()
+            ->icon(Heroicon::OutlinedTrash)
             ->record($this->getDashboard())
             ->visible($this->getDashboard()->canBeDeletedBy(DashboardResource::user()))
             ->successRedirectUrl(DashboardResource::getUrl());
