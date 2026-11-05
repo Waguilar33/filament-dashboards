@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Utilities\Get;
@@ -58,7 +59,12 @@ class ShareAction extends Action
                     ->defaultItems(0)
                     ->reorderable(false)
                     ->addActionLabel(__('filament-dashboards::dashboards.modals.share.add'))
-                    ->columns(3)
+                    ->compact()
+                    ->table([
+                        ...($roleType === null ? [] : [TableColumn::make(__('filament-dashboards::dashboards.fields.shareable_type'))->markAsRequired()]),
+                        TableColumn::make(__('filament-dashboards::dashboards.fields.shareable'))->markAsRequired(),
+                        TableColumn::make(__('filament-dashboards::dashboards.fields.level'))->markAsRequired(),
+                    ])
                     ->schema([
                         Select::make('shareable_type')
                             ->label(__('filament-dashboards::dashboards.fields.shareable_type'))

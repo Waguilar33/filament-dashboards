@@ -7,6 +7,8 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\View;
@@ -516,6 +518,17 @@ it('refuses layout changes from someone who cannot edit', function (): void {
     viewAs($reader, $dashboard)->assertActionHidden('removeItem')->assertActionHidden('duplicateItem');
 
     expect($item->refresh()->x)->toBe(0);
+});
+
+it('lays the shares out as a compact table with required column headers', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+
+    $page = viewAs($owner, $dashboard)->mountAction('share')->instance();
+    $shares = $page->getSchema($page->getMountedActionSchemaName())?->getComponent(fn (mixed $component): bool => $component instanceof Repeater && $component->getName() === 'shares');
+
+    expect($shares?->isCompact())->toBeTrue()
+        ->and(array_map(fn (TableColumn $column): bool => $column->isMarkedAsRequired(), $shares?->getTableColumns() ?? []))->toBe([true, true, true]);
 });
 
 it('offers the users the app chooses to share with', function (): void {
