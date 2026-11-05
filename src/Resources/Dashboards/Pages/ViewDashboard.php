@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Resources\Dashboards\Pages;
 
-use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Section;
@@ -22,18 +19,17 @@ use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
-use Waguilar\FilamentDashboards\Actions\CloneDashboard;
 use Waguilar\FilamentDashboards\Actions\DuplicateDashboardItem;
-use Waguilar\FilamentDashboards\Actions\FindHomeDashboard;
-use Waguilar\FilamentDashboards\Actions\RemoveHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveCardWidths;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
-use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
 use Waguilar\FilamentDashboards\Filament\Actions\BuildWidgetAction;
+use Waguilar\FilamentDashboards\Filament\Actions\DashboardSettingsAction;
+use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
+use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
+use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
@@ -44,7 +40,6 @@ use Waguilar\FilamentDashboards\Pages\Concerns\HasDashboardDates;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
-use Waguilar\FilamentDashboards\Resources\Dashboards\Schemas\DashboardForm;
 
 class ViewDashboard extends Page
 {
@@ -330,78 +325,24 @@ class ViewDashboard extends Page
 
     protected function settingsAction(): EditAction
     {
-        return FilamentDashboardsPlugin::get()->modifySettingsAction(EditAction::make('settings')
-            ->label(__('filament-dashboards::dashboards.actions.settings'))
-            ->icon(Heroicon::OutlinedCog6Tooth)
-            ->visible($this->canEdit())
-            ->slideOver()
-            ->modalWidth(Width::Medium)
+        return FilamentDashboardsPlugin::get()->modifySettingsAction(DashboardSettingsAction::make()
             ->record($this->getDashboard())
-            ->schema(fn (Schema $schema): Schema => DashboardForm::configure($schema))
             ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record])));
     }
 
     protected function cloneAction(): Action
     {
-        return Action::make('duplicate')
-            ->label(__('filament-dashboards::dashboards.actions.clone'))
-            ->icon(Heroicon::OutlinedDocumentDuplicate)
-            ->visible(DashboardResource::canCreate())
-            ->modalWidth(Width::Medium)
-            ->modalHeading(__('filament-dashboards::dashboards.modals.clone.heading'))
-            ->modalDescription(__('filament-dashboards::dashboards.modals.clone.description'))
-            ->fillForm(fn (): array => [
-                'name' => __('filament-dashboards::dashboards.modals.clone.name', ['name' => $this->getDashboard()->name]),
-                'slug' => $this->getDashboard()->slug.'-'.Str::lower(Str::random(4)),
-            ])
-            ->schema([
-                TextInput::make('name')
-                    ->label(__('filament-dashboards::dashboards.fields.name'))
-                    ->required()
-                    ->maxLength(255),
-                TextInput::make('slug')
-                    ->label(__('filament-dashboards::dashboards.fields.slug'))
-                    ->required()
-                    ->alphaDash()
-                    ->maxLength(255)
-                    ->rule(fn (): Closure => DashboardForm::uniqueSlug(null)),
-            ])
-            ->action(function (array $data): void {
-                $clone = app(CloneDashboard::class)->handle($this->getDashboard(), DashboardResource::user(), Filament::getTenant(), Arr::string($data, 'name'), Arr::string($data, 'slug'));
-
-                $this->redirect(DashboardResource::getUrl('view', ['record' => $clone]), navigate: true);
-            });
+        return DuplicateDashboardAction::make()->record($this->getDashboard());
     }
 
     protected function setHomeAction(): Action
     {
-        return Action::make('setAsHome')
-            ->label(__('filament-dashboards::dashboards.actions.set_home'))
-            ->icon(Heroicon::OutlinedHome)
-            ->hidden(fn (): bool => $this->isHome())
-            ->action(function (): void {
-                app(SetHomeDashboard::class)->handle($this->getDashboard(), DashboardResource::user(), Filament::getTenant());
-
-                Notification::make()->success()->title(__('filament-dashboards::dashboards.notifications.home_set'))->send();
-            });
+        return SetHomeAction::make()->record($this->getDashboard());
     }
 
     protected function removeHomeAction(): Action
     {
-        return Action::make('removeHome')
-            ->label(__('filament-dashboards::dashboards.actions.remove_home'))
-            ->icon(Heroicon::OutlinedHome)
-            ->visible(fn (): bool => $this->isHome())
-            ->action(function (): void {
-                app(RemoveHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant());
-
-                Notification::make()->success()->title(__('filament-dashboards::dashboards.notifications.home_removed'))->send();
-            });
-    }
-
-    protected function isHome(): bool
-    {
-        return app(FindHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())?->is($this->getDashboard()) === true;
+        return RemoveHomeAction::make()->record($this->getDashboard());
     }
 
     protected function deleteAction(): DeleteAction

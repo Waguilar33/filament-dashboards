@@ -15,6 +15,7 @@ use Filament\Forms\Components\Field;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\Schemas\Schema;
+use Filament\Tables\Table;
 use Filament\Widgets\Widget;
 use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Auth\EloquentUserProvider;
@@ -74,9 +75,14 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $headerActionsUsing = null;
 
     /**
-     * @var (Closure(array<string, Action>): array<Action|ActionGroup>)|null
+     * @var (Closure(Table, array<string, Action>): Table)|null
      */
-    protected ?Closure $widgetRecordActionsUsing = null;
+    protected ?Closure $modifyDashboardsTableUsing = null;
+
+    /**
+     * @var (Closure(Table, array<string, Action>): Table)|null
+     */
+    protected ?Closure $modifyWidgetsTableUsing = null;
 
     /**
      * @var list<int>
@@ -582,28 +588,38 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @param  (Closure(array<string, Action>): array<Action|ActionGroup>)|null  $callback
+     * @param  (Closure(Table, array<string, Action>): Table)|null  $callback
      */
-    public function widgetRecordActionsUsing(?Closure $callback): static
+    public function modifyDashboardsTableUsing(?Closure $callback): static
     {
-        $this->widgetRecordActionsUsing = $callback;
+        $this->modifyDashboardsTableUsing = $callback;
 
         return $this;
     }
 
     /**
      * @param  array<string, Action>  $actions
-     * @return array<Action|ActionGroup>
      */
-    public function arrangeWidgetRecordActions(array $actions): array
+    public function modifyDashboardsTable(Table $table, array $actions): Table
     {
-        if ($this->widgetRecordActionsUsing !== null) {
-            return ($this->widgetRecordActionsUsing)($actions);
-        }
+        return $this->modifyDashboardsTableUsing === null ? $table : ($this->modifyDashboardsTableUsing)($table, $actions);
+    }
 
-        return [
-            $actions['edit'],
-            ActionGroup::make([$actions['share'], $actions['duplicate'], $actions['delete']]),
-        ];
+    /**
+     * @param  (Closure(Table, array<string, Action>): Table)|null  $callback
+     */
+    public function modifyWidgetsTableUsing(?Closure $callback): static
+    {
+        $this->modifyWidgetsTableUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, Action>  $actions
+     */
+    public function modifyWidgetsTable(Table $table, array $actions): Table
+    {
+        return $this->modifyWidgetsTableUsing === null ? $table : ($this->modifyWidgetsTableUsing)($table, $actions);
     }
 }

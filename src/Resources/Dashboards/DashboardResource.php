@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Resources\Dashboards;
 
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,6 +19,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use UnitEnum;
+use Waguilar\FilamentDashboards\Filament\Actions\DashboardSettingsAction;
+use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
+use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
+use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
+use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ListDashboards;
@@ -76,7 +84,9 @@ class DashboardResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        $actions = self::recordActions();
+
+        return FilamentDashboardsPlugin::get()->modifyDashboardsTable($table
             ->columns([
                 TextColumn::make('name')
                     ->label(__('filament-dashboards::dashboards.fields.name'))
@@ -92,7 +102,31 @@ class DashboardResource extends Resource
                     }),
             ])
             ->defaultSort('name')
-            ->recordUrl(fn (Dashboard $record): string => static::getUrl('view', ['record' => $record]));
+            ->recordUrl(fn (Dashboard $record): string => static::getUrl('view', ['record' => $record]))
+            ->recordActions([
+                $actions['setAsHome'],
+                $actions['removeHome'],
+                ActionGroup::make([$actions['share'], $actions['settings'], $actions['duplicate'], $actions['delete']]),
+            ]), self::recordActions());
+    }
+
+    /**
+     * @return array<string, Action>
+     */
+    protected static function recordActions(): array
+    {
+        $plugin = FilamentDashboardsPlugin::get();
+
+        return [
+            'setAsHome' => SetHomeAction::make(),
+            'removeHome' => RemoveHomeAction::make(),
+            'share' => $plugin->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
+            'settings' => $plugin->modifySettingsAction(DashboardSettingsAction::make()),
+            'duplicate' => DuplicateDashboardAction::make(),
+            'delete' => DeleteAction::make()
+                ->icon(Heroicon::OutlinedTrash)
+                ->visible(fn (Dashboard $record): bool => $record->canBeDeletedBy(self::user())),
+        ];
     }
 
     public static function getPages(): array

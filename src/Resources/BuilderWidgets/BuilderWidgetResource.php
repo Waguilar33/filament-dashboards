@@ -6,6 +6,7 @@ namespace Waguilar\FilamentDashboards\Resources\BuilderWidgets;
 
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
@@ -78,7 +79,9 @@ class BuilderWidgetResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        $actions = self::recordActions();
+
+        return FilamentDashboardsPlugin::get()->modifyWidgetsTable($table
             ->columns([
                 TextColumn::make('name')
                     ->label(__('filament-dashboards::dashboards.fields.name'))
@@ -97,31 +100,42 @@ class BuilderWidgetResource extends Resource
                     }),
             ])
             ->defaultSort('name')
-            ->recordActions(FilamentDashboardsPlugin::get()->arrangeWidgetRecordActions([
-                'edit' => Action::make('edit')
-                    ->label(__('filament-dashboards::dashboards.actions.edit'))
-                    ->icon(Heroicon::OutlinedPencilSquare)
-                    ->visible(fn (BuilderWidget $record): bool => $record->canBeEditedBy(DashboardResource::user()))
-                    ->slideOver()
-                    ->modalWidth(Width::FourExtraLarge)
-                    ->fillForm(fn (BuilderWidget $record): array => BuilderWidgetForm::fill($record))
-                    ->schema(fn (BuilderWidget $record): array => BuilderWidgetForm::components($record->type))
-                    ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data)),
-                'duplicate' => Action::make('duplicate')
-                    ->label(__('filament-dashboards::dashboards.actions.duplicate'))
-                    ->icon(Heroicon::OutlinedDocumentDuplicate)
-                    ->modalWidth(Width::Medium)
-                    ->fillForm(fn (BuilderWidget $record): array => ['name' => __('filament-dashboards::dashboards.modals.clone.name', ['name' => $record->name])])
-                    ->schema([
-                        TextInput::make('name')
-                            ->label(__('filament-dashboards::dashboards.fields.name'))
-                            ->required()
-                            ->maxLength(255),
-                    ])
-                    ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(CloneBuilderWidget::class)->handle($record, DashboardResource::user(), Filament::getTenant(), Arr::string($data, 'name'))),
-                'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
-                'delete' => DeleteAction::make(),
-            ]));
+            ->recordActions([
+                $actions['edit'],
+                ActionGroup::make([$actions['share'], $actions['duplicate'], $actions['delete']]),
+            ]), self::recordActions());
+    }
+
+    /**
+     * @return array<string, Action>
+     */
+    protected static function recordActions(): array
+    {
+        return [
+            'edit' => Action::make('edit')
+                ->label(__('filament-dashboards::dashboards.actions.edit'))
+                ->icon(Heroicon::OutlinedPencilSquare)
+                ->visible(fn (BuilderWidget $record): bool => $record->canBeEditedBy(DashboardResource::user()))
+                ->slideOver()
+                ->modalWidth(Width::FourExtraLarge)
+                ->fillForm(fn (BuilderWidget $record): array => BuilderWidgetForm::fill($record))
+                ->schema(fn (BuilderWidget $record): array => BuilderWidgetForm::components($record->type))
+                ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data)),
+            'duplicate' => Action::make('duplicate')
+                ->label(__('filament-dashboards::dashboards.actions.duplicate'))
+                ->icon(Heroicon::OutlinedDocumentDuplicate)
+                ->modalWidth(Width::Medium)
+                ->fillForm(fn (BuilderWidget $record): array => ['name' => __('filament-dashboards::dashboards.modals.clone.name', ['name' => $record->name])])
+                ->schema([
+                    TextInput::make('name')
+                        ->label(__('filament-dashboards::dashboards.fields.name'))
+                        ->required()
+                        ->maxLength(255),
+                ])
+                ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(CloneBuilderWidget::class)->handle($record, DashboardResource::user(), Filament::getTenant(), Arr::string($data, 'name'))),
+            'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
+            'delete' => DeleteAction::make()->icon(Heroicon::OutlinedTrash),
+        ];
     }
 
     public static function getPages(): array

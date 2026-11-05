@@ -276,18 +276,29 @@ FilamentDashboardsPlugin::make()
 
 Add widget lives in the Edit mode banner; Edit hides itself while editing.
 
-The Widgets list shows Edit on each row, with Share, Duplicate and Delete in a menu. Arrange them the same way; the hook receives the row actions keyed by `edit`, `duplicate`, `share` and `delete`:
+The Dashboards and Widgets lists are yours to shape. The plugin builds each table (columns, sort, row actions), then hands it to your hook with its ready-made row actions, keyed by name:
+
+| Hook | Action keys | Default row actions |
+|---|---|---|
+| `modifyDashboardsTableUsing` | `setAsHome`, `removeHome`, `share`, `settings`, `duplicate`, `delete` | Set as home (or Remove as home), then a menu with Share, Settings, Duplicate and Delete |
+| `modifyWidgetsTableUsing` | `edit`, `duplicate`, `share`, `delete` | Edit, then a menu with Share, Duplicate and Delete |
 
 ```php
 FilamentDashboardsPlugin::make()
-    ->widgetRecordActionsUsing(fn (array $actions): array => [
+    ->modifyDashboardsTableUsing(fn (Table $table, array $actions): Table => $table->recordActions([
+        $actions['setAsHome'],
+        $actions['removeHome'],
+        $actions['share']->color('gray'),
+        ActionGroup::make([$actions['settings'], $actions['duplicate'], $actions['delete']]),
+    ]))
+    ->modifyWidgetsTableUsing(fn (Table $table, array $actions): Table => $table->recordActions([
         $actions['edit'],
-        $actions['duplicate'],
+        $actions['duplicate']->color('gray'),
         ActionGroup::make([$actions['share'], $actions['delete']]),
-    ]);
+    ]));
 ```
 
-Each action keeps its own visibility and permission checks; the hook only places them. The Dashboards list has no row actions; a row opens its dashboard.
+Each action keeps its own visibility and permission checks, so you only place them. A dashboard row still opens the dashboard; editing its widgets stays on that page.
 
 The dashboard form is used by both create and settings. The share hook applies to dashboards and saved widgets.
 

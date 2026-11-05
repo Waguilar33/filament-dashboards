@@ -10,6 +10,8 @@ use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\Width;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
@@ -354,39 +356,38 @@ it('hides creating widgets from the list without any data source', function (): 
 });
 
 it('shows edit with share, duplicate and delete in a menu by default', function (): void {
-    $actions = FilamentDashboardsPlugin::get()->arrangeWidgetRecordActions(widgetRecordActions());
+    $this->actingAs(user());
+
+    $table = Livewire::test(ListBuilderWidgets::class)->instance()->getTable();
+    $actions = $table->getRecordActions();
 
     expect($actions[0]->getName())->toBe('edit')
         ->and($actions[1])->toBeInstanceOf(ActionGroup::class)
-        ->and(array_map(fn (Action $action): ?string => $action->getName(), $actions[1]->getActions()))->toBe(['share', 'duplicate', 'delete']);
+        ->and(array_map(fn (Action $action): ?string => $action->getName(), $actions[1]->getActions()))->toBe(['share', 'duplicate', 'delete'])
+        ->and(array_keys($table->getColumns()))->toBe(['name', 'type', 'kind']);
 });
 
-it('lets the app arrange the widget row actions', function (): void {
-    FilamentDashboardsPlugin::get()->widgetRecordActionsUsing(fn (array $actions): array => [
-        $actions['edit'],
-        $actions['duplicate'],
-        ActionGroup::make([$actions['share'], $actions['delete']]),
-    ]);
+it('lets the app take over the widgets table with the plugin actions', function (): void {
+    FilamentDashboardsPlugin::get()->modifyWidgetsTableUsing(fn (Table $table, array $actions): Table => $table
+        ->columns([TextColumn::make('name')])
+        ->recordActions([
+            $actions['edit'],
+            $actions['duplicate']->color('gray'),
+            ActionGroup::make([$actions['share'], $actions['delete']]),
+        ]));
     $me = user();
     $mine = builderWidget($me, ['name' => 'Mine']);
     $this->actingAs($me);
 
-    Livewire::test(ListBuilderWidgets::class)
+    $page = Livewire::test(ListBuilderWidgets::class)
         ->assertTableActionVisible('edit', $mine)
         ->assertTableActionVisible('duplicate', $mine)
         ->callTableAction('duplicate', $mine, data: ['name' => 'Copy'])
         ->assertHasNoTableActionErrors();
 
-    expect(BuilderWidget::query()->where('name', 'Copy')->exists())->toBeTrue();
+    expect(array_keys($page->instance()->getTable()->getColumns()))->toBe(['name'])
+        ->and(BuilderWidget::query()->where('name', 'Copy')->exists())->toBeTrue();
 });
-
-/**
- * @return array<string, Action>
- */
-function widgetRecordActions(): array
-{
-    return collect(['edit', 'duplicate', 'share', 'delete'])->mapWithKeys(fn (string $name): array => [$name => Action::make($name)])->all();
-}
 
 it('lets the app modify the widget share action', function (): void {
     FilamentDashboardsPlugin::get()->modifyShareActionUsing(fn (ShareAction $action): ShareAction => $action->modalWidth(Width::Medium));
