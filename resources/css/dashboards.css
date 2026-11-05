@@ -57,7 +57,7 @@
     background: var(--gray-600);
 }
 
-@container (width < 36rem) {
+@container (width < 24rem) {
     .fi-dashboards-stat-resize {
         display: none;
     }

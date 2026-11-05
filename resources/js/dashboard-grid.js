@@ -2,6 +2,8 @@ import { GridStack } from 'gridstack'
 
 const COLUMNS = 12
 
+const SPAN_VARIABLES = ['--col-span-csm', '--col-span-ncmd', '--col-span-cxl', '--col-span-nclg']
+
 export default function dashboardGrid({ editable }) {
     return {
         grid: null,
@@ -61,8 +63,7 @@ export default function dashboardGrid({ editable }) {
             const move = (moveEvent) => {
                 const span = Math.min(COLUMNS, Math.max(1, Math.round((startWidth + gap + moveEvent.clientX - startX) / step)))
 
-                column.style.setProperty('--col-span-cxl', `span ${span} / span ${span}`)
-                column.style.setProperty('--col-span-nlg', `span ${span} / span ${span}`)
+                SPAN_VARIABLES.forEach((variable) => column.style.setProperty(variable, `span ${span} / span ${span}`))
             }
 
             const stop = () => {

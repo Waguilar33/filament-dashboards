@@ -135,11 +135,11 @@ it('sizes stats cards from the widths saved on the placement', function (): void
         ['key' => 'c', 'source' => 'orders', 'metric' => 'count'],
     ]]])->instance()->getSectionContentComponent();
 
-    expect($section->getColumns())->toBe(['@xl' => 12, '!@lg' => 12])
+    expect($section->getColumns())->toBe(['@sm' => 12, '!@md' => 12])
         ->and(array_map(fn (Component $stat): mixed => $stat->getColumnSpan(), $section->getDefaultChildComponents()))->toBe([
-            ['@xl' => 8, '!@lg' => 8],
-            ['@xl' => 4, '!@lg' => 4],
-            ['@xl' => 4, '!@lg' => 4],
+            ['@sm' => 8, '!@md' => 8],
+            ['@sm' => 4, '!@md' => 4],
+            ['@sm' => 12, '!@md' => 12, '@xl' => 4, '!@lg' => 4],
         ]);
 });
 
@@ -151,7 +151,7 @@ it('matches the default stats layout when no card has a saved width', function (
         ->instance()
         ->getSectionContentComponent();
 
-    expect(array_map(fn (Component $stat): mixed => $stat->getColumnSpan(), $section->getDefaultChildComponents()))->each->toBe(['@xl' => $span, '!@lg' => $span]);
+    expect(array_map(fn (Component $stat): mixed => $stat->getColumnSpan(), $section->getDefaultChildComponents()))->each->toBe(['@sm' => 12, '!@md' => 12, '@xl' => $span, '!@lg' => $span]);
 })->with([
     'two cards in thirds' => [2, 4],
     'three cards in thirds' => [3, 4],

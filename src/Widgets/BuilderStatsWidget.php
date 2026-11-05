@@ -35,7 +35,7 @@ class BuilderStatsWidget extends StatsOverviewWidget
      */
     protected function getColumns(): array
     {
-        return ['@xl' => self::COLUMNS, '!@lg' => self::COLUMNS];
+        return ['@sm' => self::COLUMNS, '!@md' => self::COLUMNS];
     }
 
     protected function getHeading(): ?string
@@ -80,8 +80,10 @@ class BuilderStatsWidget extends StatsOverviewWidget
         $defaultSpan = intdiv(self::COLUMNS, count($stats) >= 3 && count($stats) % 3 === 1 ? 4 : 3);
 
         foreach ($stats as $stat) {
-            $span = $this->cardWidths[$stat->getCardKey()] ?? $defaultSpan;
-            $stat->columnSpan(['@xl' => $span, '!@lg' => $span]);
+            $span = $this->cardWidths[$stat->getCardKey()] ?? null;
+            $stat->columnSpan($span === null
+                ? ['@sm' => self::COLUMNS, '!@md' => self::COLUMNS, '@xl' => $defaultSpan, '!@lg' => $defaultSpan]
+                : ['@sm' => $span, '!@md' => $span]);
         }
 
         return $stats;
