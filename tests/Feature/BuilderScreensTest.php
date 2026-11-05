@@ -6,6 +6,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -179,14 +180,45 @@ it('shows a resize handle on each card only when the dashboard is being edited',
         ->{$resizable ? 'assertSeeHtml' : 'assertDontSeeHtml'}('fi-dashboards-stat-resize');
 })->with(['editing' => true, 'viewing' => false]);
 
-it('shows stats cards without a widget heading', function (): void {
+it('shows stats cards without a widget heading unless the title is switched on', function (bool $showTitle): void {
     demoOrders();
     $owner = user();
     $this->actingAs($owner);
+    $widget = builderWidget($owner, ['name' => 'Sales at a glance', 'config' => ['show_title' => $showTitle, 'cards' => [['source' => 'orders', 'metric' => 'count']]]]);
 
-    Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => builderWidget($owner, ['name' => 'Sales at a glance'])->id])
-        ->assertSee('Count · Orders')
-        ->assertDontSee('Sales at a glance');
+    $component = Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertSee('Count · Orders');
+    $section = $component->instance()->getSectionContentComponent();
+
+    $component->{$showTitle ? 'assertSee' : 'assertDontSee'}('Sales at a glance');
+
+    expect($section)->toBeInstanceOf(Section::class)
+        ->and($section->isContained())->toBe($showTitle);
+})->with(['title on' => true, 'title off' => false]);
+
+it('saves the stats title switch, offered only on stats widgets', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $this->actingAs($owner);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->mountAction('buildWidget', ['type' => 'summary'])
+        ->assertFormFieldHidden('show_title')
+        ->unmountAction()
+        ->mountAction('buildWidget', ['type' => 'stats'])
+        ->assertFormFieldVisible('show_title')
+        ->fillForm(['name' => 'Grouped', 'show_title' => true, 'cards' => [['source' => 'orders', 'metric' => 'count']]])
+        ->callMountedAction()
+        ->assertHasNoActionErrors();
+
+    expect(BuilderWidget::query()->sole()->config['show_title'])->toBeTrue();
+});
+
+it('titles the stats preview with the name being typed', function (): void {
+    demoOrders();
+    $this->actingAs(user());
+
+    Livewire::test(BuilderStatsWidget::class, ['previewType' => 'stats', 'previewName' => 'Draft numbers', 'previewConfig' => ['show_title' => true, 'cards' => [['source' => 'orders', 'metric' => 'count']]]])
+        ->assertSee('Draft numbers');
 });
 
 it('charts a breakdown with one colour per slice', function (): void {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Widgets;
 
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
 use Filament\Widgets\StatsOverviewWidget;
 use InvalidArgumentException;
 use Livewire\Attributes\Locked;
@@ -36,6 +38,19 @@ class BuilderStatsWidget extends StatsOverviewWidget
     protected function getColumns(): array
     {
         return ['@sm' => self::COLUMNS, '!@md' => self::COLUMNS];
+    }
+
+    public function getSectionContentComponent(): Component
+    {
+        $section = parent::getSectionContentComponent();
+
+        if (! $section instanceof Section || ! (bool) ($this->widgetConfig()['show_title'] ?? false)) {
+            return $section;
+        }
+
+        return $section
+            ->heading($this->builderWidget()->name ?? $this->previewName)
+            ->contained();
     }
 
     /**

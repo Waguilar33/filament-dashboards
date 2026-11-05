@@ -55,6 +55,11 @@ class BuilderWidgetForm
                             ->default($type->getLabel())
                             ->required()
                             ->maxLength(255),
+                        Toggle::make('show_title')
+                            ->label(__(self::T.'show_title'))
+                            ->inline(false)
+                            ->live()
+                            ->visible($type === BuilderWidgetType::Stats),
                         TextInput::make('refresh_interval')
                             ->label(__(self::T.'refresh_interval'))
                             ->helperText(__(self::T.'refresh_interval_helper'))
@@ -68,7 +73,7 @@ class BuilderWidgetForm
                 Tab::make(__('filament-dashboards::dashboards.builder.tabs.preview'))->schema([
                     Livewire::make(
                         self::component($type),
-                        fn (Component $component): array => ['previewConfig' => self::config($component->getRootContainer()->getRawState()), 'previewType' => $type->value],
+                        fn (Component $component): array => ['previewConfig' => self::config($component->getRootContainer()->getRawState()), 'previewType' => $type->value, 'previewName' => self::stringOrEmpty(self::state($component->getRootContainer()->getRawState())['name'] ?? null)],
                     )->key(fn (Component $component): string => 'builder-preview-'.md5((string) json_encode(self::config($component->getRootContainer()->getRawState())))),
                 ]),
             ]),

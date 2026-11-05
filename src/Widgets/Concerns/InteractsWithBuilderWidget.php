@@ -31,6 +31,8 @@ trait InteractsWithBuilderWidget
 
     public ?string $previewType = null;
 
+    public ?string $previewName = null;
+
     protected ?BuilderWidget $resolvedBuilderWidget = null;
 
     protected function builderWidget(): ?BuilderWidget

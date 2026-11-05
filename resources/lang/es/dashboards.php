@@ -124,6 +124,7 @@ return [
         'fields' => [
             'name' => 'Nombre',
             'name_helper' => 'Se muestra en el widget y en la lista de widgets.',
+            'show_title' => 'Mostrar título',
             'refresh_interval' => 'Actualizar cada',
             'refresh_interval_helper' => 'Déjalo vacío para actualizar solo al cargar la página.',
             'seconds' => 'segundos',
