@@ -12,6 +12,7 @@ use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Support\Htmlable;
@@ -19,11 +20,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use UnitEnum;
+use Waguilar\FilamentDashboards\Builders\DashboardBuilder;
 use Waguilar\FilamentDashboards\Filament\Actions\DashboardSettingsAction;
 use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
 use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\TransferOwnershipAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
@@ -73,9 +76,9 @@ class DashboardResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
-        return Dashboard::query()
-            ->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())
-            ->visibleTo(self::user());
+        $query = Dashboard::query()->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant());
+
+        return FilamentDashboardsPlugin::get()->canManageAny(self::user(), Filament::getTenant()) ? $query : $query->visibleTo(self::user());
     }
 
     public static function getAuthorizationResponse(string|UnitEnum $action, ?Model $record = null): Response
@@ -121,11 +124,18 @@ class DashboardResource extends Resource
                     }),
             ])
             ->defaultSort('name')
+            ->filters([
+                Filter::make('mine')
+                    ->label(__('filament-dashboards::dashboards.filters.mine'))
+                    ->default()
+                    ->visible(fn (): bool => FilamentDashboardsPlugin::get()->canManageAny(self::user(), Filament::getTenant()))
+                    ->query(fn (DashboardBuilder $query): DashboardBuilder => $query->visibleTo(self::user())),
+            ])
             ->recordUrl(fn (Dashboard $record): string => static::getUrl('view', ['record' => $record]))
             ->recordActions([
                 $actions['setAsHome'],
                 $actions['removeHome'],
-                ActionGroup::make([$actions['share'], $actions['settings'], $actions['duplicate'], $actions['delete']]),
+                ActionGroup::make([$actions['share'], $actions['settings'], $actions['duplicate'], $actions['transfer'], $actions['delete']]),
             ]), self::recordActions());
     }
 
@@ -142,6 +152,7 @@ class DashboardResource extends Resource
             'share' => $plugin->modifyShareAction(ShareAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::SHARE))),
             'settings' => $plugin->modifySettingsAction(DashboardSettingsAction::make()),
             'duplicate' => DuplicateDashboardAction::make(),
+            'transfer' => TransferOwnershipAction::make(),
             'delete' => DeleteAction::make()
                 ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE))
                 ->visible(fn (Dashboard $record): bool => $record->canBeDeletedBy(self::user())),

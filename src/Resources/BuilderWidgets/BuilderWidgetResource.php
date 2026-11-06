@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Support\Htmlable;
@@ -23,7 +24,9 @@ use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 use Waguilar\FilamentDashboards\Actions\CloneBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
+use Waguilar\FilamentDashboards\Builders\BuilderWidgetBuilder;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\TransferOwnershipAction;
 use Waguilar\FilamentDashboards\Filament\Actions\WidgetHistoryAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
@@ -77,9 +80,9 @@ class BuilderWidgetResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
-        return BuilderWidget::query()
-            ->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())
-            ->visibleTo(DashboardResource::user());
+        $query = BuilderWidget::query()->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant());
+
+        return FilamentDashboardsPlugin::get()->canManageAny(DashboardResource::user(), Filament::getTenant()) ? $query : $query->visibleTo(DashboardResource::user());
     }
 
     public static function getAuthorizationResponse(string|UnitEnum $action, ?Model $record = null): Response
@@ -119,10 +122,17 @@ class BuilderWidgetResource extends Resource
                     }),
             ])
             ->defaultSort('name')
+            ->filters([
+                Filter::make('mine')
+                    ->label(__('filament-dashboards::dashboards.filters.mine'))
+                    ->default()
+                    ->visible(fn (): bool => FilamentDashboardsPlugin::get()->canManageAny(DashboardResource::user(), Filament::getTenant()))
+                    ->query(fn (BuilderWidgetBuilder $query): BuilderWidgetBuilder => $query->visibleTo(DashboardResource::user())),
+            ])
             ->recordAction('edit')
             ->recordActions([
                 $actions['edit'],
-                ActionGroup::make([$actions['share'], $actions['history'], $actions['duplicate'], $actions['delete']]),
+                ActionGroup::make([$actions['share'], $actions['history'], $actions['duplicate'], $actions['transfer'], $actions['delete']]),
             ]), self::recordActions());
     }
 
@@ -157,6 +167,7 @@ class BuilderWidgetResource extends Resource
                 ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(CloneBuilderWidget::class)->handle($record, DashboardResource::user(), Filament::getTenant(), Arr::string($data, 'name'))),
             'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::SHARE))),
             'history' => WidgetHistoryAction::make(),
+            'transfer' => TransferOwnershipAction::make(),
             'delete' => DeleteAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE)),
         ]);
     }

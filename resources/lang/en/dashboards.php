@@ -61,6 +61,7 @@ return [
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'transfer' => 'Transfer',
         'email_me' => 'Email me',
         'alerts' => 'Alerts',
         'close' => 'Close',
@@ -88,6 +89,10 @@ return [
         'next' => 'Next',
     ],
     'modals' => [
+        'transfer' => [
+            'description' => 'Give this to someone else. They become its owner, and you keep Edit access.',
+            'owner' => 'New owner',
+        ],
         'drill_down' => [
             'description' => 'Up to :count records, newest first.',
             'empty' => 'No records.',
@@ -283,7 +288,11 @@ return [
     'exports' => [
         'csv' => 'CSV',
     ],
+    'filters' => [
+        'mine' => 'Mine and shared with me',
+    ],
     'notifications' => [
+        'transferred' => 'Ownership transferred.',
         'saved' => 'Saved.',
         'version_restored' => 'Version restored.',
         'shares_saved' => 'Sharing saved.',

@@ -40,6 +40,7 @@ use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
 use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\TransferOwnershipAction;
 use Waguilar\FilamentDashboards\Filament\Actions\WidgetHistoryAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
@@ -215,6 +216,7 @@ class ViewDashboard extends Page
                 ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::PRINT))
                 ->url(fn (): string => DashboardResource::getUrl('view', ['record' => $this->getDashboard(), 'print' => 1])), 'dashboard.print'),
             'duplicate' => $this->cloneAction(),
+            'transfer' => FilamentDashboardsPlugin::get()->modifyAction(TransferOwnershipAction::make()->record($this->getDashboard()), 'dashboard.transfer'),
             'setAsHome' => $this->setHomeAction(),
             'removeHome' => $this->removeHomeAction(),
             'delete' => $this->deleteAction(),

@@ -91,6 +91,11 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $shareableRolesUsing = null;
 
     /**
+     * @var (Closure(Model, ?Model): bool)|null
+     */
+    protected ?Closure $canManageAnyUsing = null;
+
+    /**
      * @var (Closure(Builder<covariant Model>, string): Builder<covariant Model>)|null
      */
     protected ?Closure $searchShareableUsersUsing = null;
@@ -317,6 +322,21 @@ final class FilamentDashboardsPlugin implements Plugin
         $roles = method_exists($user, 'roles') ? $user->roles() : null;
 
         return $roles instanceof BelongsToMany ? $roles : null;
+    }
+
+    /**
+     * @param  (Closure(Model, ?Model): bool)|null  $callback
+     */
+    public function canManageAnyUsing(?Closure $callback): static
+    {
+        $this->canManageAnyUsing = $callback;
+
+        return $this;
+    }
+
+    public function canManageAny(Model $user, ?Model $tenant): bool
+    {
+        return $this->canManageAnyUsing !== null && ($this->canManageAnyUsing)($user, $tenant);
     }
 
     /**
@@ -1121,6 +1141,7 @@ final class FilamentDashboardsPlugin implements Plugin
                 $actions['alerts'],
                 $actions['print'],
                 $actions['duplicate'],
+                $actions['transfer'],
                 $actions['setAsHome'],
                 $actions['removeHome'],
                 $actions['delete'],

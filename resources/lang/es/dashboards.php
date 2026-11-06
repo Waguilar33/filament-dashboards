@@ -61,6 +61,7 @@ return [
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'transfer' => 'Transferir',
         'email_me' => 'Enviarme por correo',
         'alerts' => 'Alertas',
         'close' => 'Cerrar',
@@ -88,6 +89,10 @@ return [
         'next' => 'Siguiente',
     ],
     'modals' => [
+        'transfer' => [
+            'description' => 'Entrégalo a otra persona. Se vuelve su dueño y tú conservas acceso para editar.',
+            'owner' => 'Nuevo dueño',
+        ],
         'drill_down' => [
             'description' => 'Hasta :count registros, los más recientes primero.',
             'empty' => 'Sin registros.',
@@ -283,7 +288,11 @@ return [
     'exports' => [
         'csv' => 'CSV',
     ],
+    'filters' => [
+        'mine' => 'Míos y compartidos conmigo',
+    ],
     'notifications' => [
+        'transferred' => 'Se transfirió.',
         'saved' => 'Guardado.',
         'version_restored' => 'Versión restaurada.',
         'shares_saved' => 'Se guardó el acceso compartido.',

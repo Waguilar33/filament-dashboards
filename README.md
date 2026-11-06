@@ -318,6 +318,15 @@ FilamentDashboardsPlugin::make()
 
 A policy you register for the dashboard model decides who sees the Dashboards list (`viewAny`) and who creates dashboards (`create`); anyone who owns a dashboard or has one shared with them sees the list and opens it regardless. Register a policy for `BuilderWidget` with `viewAny` and `create` to gate the Widgets list and building widgets from roles the same way; users still need at least one data source. Viewing, editing, sharing and deleting a given dashboard or widget always follow ownership and shares. With no policy, every user with a data source can use the Widgets list and build widgets.
 
+Name managers who can open, edit, share, delete and transfer anyone's dashboards and widgets in their panel and company (system ones stay read-only). In the lists they turn off *Mine and shared with me* to see everyone's:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->canManageAnyUsing(fn (Model $user, ?Model $tenant): bool => $user->hasRole('admin'));
+```
+
+*Transfer* hands a dashboard or widget to someone else; the previous owner keeps Edit access.
+
 ## Changing the plugin's screens
 
 Create dashboard and Settings open in a medium slide-over with the form in one column. Each hook receives the plugin's configured form or action and returns it; your changes win:
