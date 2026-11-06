@@ -190,6 +190,10 @@ class ViewDashboard extends Page
             'edit' => $this->editLayoutAction(),
             'share' => $this->shareAction(),
             'settings' => $this->settingsAction(),
+            'print' => Action::make('print')
+                ->label(__('filament-dashboards::dashboards.actions.print'))
+                ->icon(Heroicon::OutlinedPrinter)
+                ->alpineClickHandler('window.print()'),
             'duplicate' => $this->cloneAction(),
             'setAsHome' => $this->setHomeAction(),
             'removeHome' => $this->removeHomeAction(),

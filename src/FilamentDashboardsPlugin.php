@@ -579,6 +579,7 @@ final class FilamentDashboardsPlugin implements Plugin
             $actions['share'],
             ActionGroup::make([
                 $actions['settings'],
+                $actions['print'],
                 $actions['duplicate'],
                 $actions['setAsHome'],
                 $actions['removeHome'],

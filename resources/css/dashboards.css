@@ -248,3 +248,56 @@
         opacity: 0.5;
     }
 }
+
+.fi-dashboards-print-range {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: letter;
+        margin: 12mm;
+    }
+
+    .fi-sidebar,
+    .fi-topbar,
+    .fi-header-actions,
+    .fi-dashboards-dates,
+    .fi-dashboards-item-actions,
+    .fi-dashboards-stat-resize,
+    .fi-ta-header-toolbar,
+    .fi-ta-header .fi-ac {
+        display: none !important;
+    }
+
+    .fi-main {
+        max-width: none !important;
+        padding: 0 !important;
+    }
+
+    .fi-dashboards-print-range {
+        display: block;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+    }
+
+    .fi-dashboards-grid .grid-stack {
+        height: auto !important;
+        margin: 0 !important;
+    }
+
+    .fi-dashboards-grid .grid-stack-item {
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        transform: none !important;
+        margin-bottom: 1rem;
+        break-inside: avoid;
+    }
+
+    .fi-dashboards-grid .grid-stack-item-content {
+        position: static !important;
+        inset: auto !important;
+        overflow: visible !important;
+    }
+}

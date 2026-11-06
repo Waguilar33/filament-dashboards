@@ -61,6 +61,7 @@ return [
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'print' => 'Print',
         'export' => 'Export',
         'open' => 'Open',
         'resize_card' => 'Resize card (left and right arrows)',

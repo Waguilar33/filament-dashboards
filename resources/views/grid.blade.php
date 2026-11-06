@@ -13,6 +13,12 @@
     class="fi-dashboards-grid"
     data-editable="{{ $editable ? 'true' : 'false' }}"
 >
+    @if ($printRange)
+        <p class="fi-dashboards-print-range">
+            {{ $printRange->start->translatedFormat('j M Y') }} – {{ $printRange->end->translatedFormat('j M Y') }}
+        </p>
+    @endif
+
     <div x-ref="grid" class="grid-stack">
         @foreach ($items as $item)
             <div

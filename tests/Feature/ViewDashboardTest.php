@@ -339,7 +339,7 @@ it('lays out the header as edit, share and a menu by default, without add widget
     expect(headerLayout($actions))->toBe([
         'edit:primary:no-icon',
         'share:gray:no-icon',
-        ['settings:icon', 'duplicate:icon', 'setAsHome:icon', 'removeHome:icon', 'delete:icon'],
+        ['settings:icon', 'print:icon', 'duplicate:icon', 'setAsHome:icon', 'removeHome:icon', 'delete:icon'],
     ]);
 });
 
@@ -684,4 +684,18 @@ it('tells editors that narrow screens do not change the layout', function (): vo
     Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
         ->assertSeeHtml('fi-dashboards-narrow-notice')
         ->assertSee(__('filament-dashboards::dashboards.edit_mode.narrow'));
+});
+
+it('prints the dashboard on letter paper with the range it shows', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+
+    $page = viewAs($owner, $dashboard)->assertSeeHtml('fi-dashboards-print-range');
+    $print = collect($page->instance()->getCachedHeaderActions())
+        ->flatMap(fn (mixed $action): array => $action instanceof ActionGroup ? $action->getActions() : [$action])
+        ->first(fn (Action $action): bool => $action->getName() === 'print');
+
+    expect($print?->getAlpineClickHandler())->toBe('window.print()')
+        ->and(file_get_contents(__DIR__.'/../../resources/dist/dashboards.css'))->toContain('size:letter');
 });
