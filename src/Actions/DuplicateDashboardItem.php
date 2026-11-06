@@ -27,7 +27,7 @@ class DuplicateDashboardItem
                 __('filament-dashboards::dashboards.modals.clone.name', ['name' => $builderWidget->name]),
             )->dashboardKey();
 
-        $copy = $this->addDashboardWidget->handle($dashboard, $widget, ['w' => $item->w, 'h' => $item->h]);
+        $copy = $this->addDashboardWidget->handle($dashboard, $widget, ['w' => $item->w, 'h' => $item->h], $owner);
         $copy->update(['options' => $item->options]);
 
         return $copy;

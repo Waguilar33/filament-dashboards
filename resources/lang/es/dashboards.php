@@ -77,6 +77,10 @@ return [
         'next' => 'Siguiente',
     ],
     'modals' => [
+        'remove_item' => [
+            'heading' => 'Quitar widget',
+            'description' => 'El widget sale de este tablero. Un widget guardado sigue en la lista de widgets.',
+        ],
         'add_widget' => [
             'heading' => 'Agregar widget',
             'description' => 'Los widgets son tarjetas con cifras, gráficas o listas.',

@@ -118,7 +118,7 @@ FilamentDashboardsPlugin::make()->dataSources([OrdersSource::class]);
 
 A field can read through the source model's relationships with dot notation, as a Filament column does: `Field::text('product.family.name', 'Family')` joins `product` and its `family` for grouping, filters, sorting and figures. Each step must be a belongs-to or has-one relationship; a has-many or belongs-to-many step is refused, because grouping by it would count a row once per related record. The joins ignore the related models' own scopes (such as soft deletes), so filter those in `query()` when they matter.
 
-A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too. Format how its values read on cards and in tables with `->formatUsing(fn (int|float $value): string => Number::currency($value, 'GTQ'))`.
+A `date` column with no time is compared by its date when its field is marked `->dateOnly()`. A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too. Format how its values read on cards and in tables with `->formatUsing(fn (int|float $value): string => Number::currency($value, 'GTQ'))`.
 
 Hide a source from users who may not use it; they are not offered it in the builder, and widgets built on it are left off their dashboards:
 
@@ -240,7 +240,7 @@ Both `InteractsWithSchemas` and `InteractsWithDashboardDates` (through Filament'
 | Clone | Anyone who can view it and may create dashboards |
 | Set as home | Anyone who can view it |
 
-Sharing a dashboard also shares the owner's saved widgets on it at the same level, and so does adding one of the owner's widgets to a dashboard that is already shared. A widget share is raised from Read to Edit but never lowered, and it stays when the dashboard is unshared or the widget removed. Widgets owned by someone else are not shared.
+Anyone who can open a dashboard can see the saved widgets its owner placed on it, and edit them with an Edit share on the dashboard; the access ends when the dashboard is unshared or the widget removed from it. A widget placed by someone other than its owner gives no extra access. Deleting a saved widget removes it from every dashboard.
 
 Without any other package, every signed-in user can create dashboards and add any widget whose `canView()` passes. Narrow it with:
 

@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $tables = config('filament-dashboards.tables');
+
+        Schema::table($tables['items'], function (Blueprint $table): void {
+            $table->unsignedBigInteger('builder_widget_id')->nullable()->index();
+            $table->boolean('shares_widget')->default(false);
+        });
+
+        DB::table($tables['items'])
+            ->join($tables['dashboards'], "{$tables['dashboards']}.id", '=', "{$tables['items']}.dashboard_id")
+            ->where("{$tables['items']}.widget", 'like', 'custom:%')
+            ->select([
+                "{$tables['items']}.id",
+                "{$tables['items']}.widget",
+                "{$tables['dashboards']}.owner_type",
+                "{$tables['dashboards']}.owner_id",
+            ])
+            ->orderBy("{$tables['items']}.id")
+            ->chunk(500, function ($items) use ($tables): void {
+                foreach ($items as $item) {
+                    $widget = DB::table($tables['widgets'])->where('id', substr($item->widget, strlen('custom:')))->first(['id', 'owner_type', 'owner_id']);
+
+                    if ($widget === null) {
+                        continue;
+                    }
+
+                    DB::table($tables['items'])->where('id', $item->id)->update([
+                        'builder_widget_id' => $widget->id,
+                        'shares_widget' => $widget->owner_type !== null
+                            && $widget->owner_type === $item->owner_type
+                            && (string) $widget->owner_id === (string) $item->owner_id,
+                    ]);
+                }
+            });
+    }
+
+    public function down(): void
+    {
+        Schema::table(config('filament-dashboards.tables.items'), function (Blueprint $table): void {
+            $table->dropIndex(['builder_widget_id']);
+            $table->dropColumn(['builder_widget_id', 'shares_widget']);
+        });
+    }
+};

@@ -27,10 +27,13 @@ trait InteractsWithBuilderWidget
     /**
      * @var array<string, mixed>|null
      */
+    #[Locked]
     public ?array $previewConfig = null;
 
+    #[Locked]
     public ?string $previewType = null;
 
+    #[Locked]
     public ?string $previewName = null;
 
     protected ?BuilderWidget $resolvedBuilderWidget = null;

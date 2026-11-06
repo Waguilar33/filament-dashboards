@@ -77,6 +77,10 @@ return [
         'next' => 'Next',
     ],
     'modals' => [
+        'remove_item' => [
+            'heading' => 'Remove widget',
+            'description' => 'The widget leaves this dashboard. A saved widget stays in the Widgets list.',
+        ],
         'add_widget' => [
             'heading' => 'Add widget',
             'description' => 'Widgets are cards that show figures, charts or lists.',

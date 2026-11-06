@@ -15,6 +15,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Actions\BuildFilters;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
@@ -411,6 +412,11 @@ it('lets a registered widget policy gate the list and creating, keeping record r
         ->assertTableActionHidden('duplicate', $mine);
     expect(BuilderWidgetResource::canCreate())->toBeFalse();
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertActionHidden(TestAction::make('buildWidget')->arguments(['type' => 'stats']));
+    $placed = $dashboard->items()->create(['widget' => $mine->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertDontSeeHtml("mountAction('duplicateItem', { item: {$placed->id} })")
+        ->call('mountAction', 'duplicateItem', ['item' => $placed->id])
+        ->assertForbidden();
 
     WidgetListPolicy::$create = true;
     Livewire::test(ListBuilderWidgets::class)->assertActionVisible('create');
@@ -423,6 +429,24 @@ it('keeps the widgets list open to everyone with a source when no policy is regi
     expect(BuilderWidgetResource::canViewAny())->toBeTrue()
         ->and(BuilderWidgetResource::canCreate())->toBeTrue()
         ->and(BuilderWidgetResource::shouldRegisterNavigation())->toBeTrue();
+});
+
+it('refuses preview settings sent from the browser', function (string $property): void {
+    $this->actingAs(user());
+
+    Livewire::test(BuilderStatsWidget::class, ['previewType' => 'stats', 'previewConfig' => ['cards' => []]])
+        ->set($property, null);
+})->with(['previewConfig', 'previewType', 'previewName'])->throws(CannotUpdateLockedPropertyException::class);
+
+it('edits from a dashboard only widgets in its own panel and tenant', function (): void {
+    $me = user();
+    $dashboard = dashboard($me);
+    $elsewhere = builderWidget($me, ['panel' => 'teams']);
+    $this->actingAs($me);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->call('mountAction', 'editWidget', ['widget' => $elsewhere->id])
+        ->assertForbidden();
 });
 
 final class WidgetListPolicy

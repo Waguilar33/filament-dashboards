@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Enums\Operator;
@@ -31,10 +32,13 @@ class ApplyFilters
         $fields = Collection::make($source->fields())->keyBy('name');
 
         if ($dateField !== null && $dates !== null) {
-            $column = $this->resolveColumn->handle($query, $this->resolveField->handle($source, $dateField, FieldType::Date));
+            $field = $this->resolveField->handle($source, $dateField, FieldType::Date);
+            $column = $this->resolveColumn->handle($query, $field);
             $timezone = date_default_timezone_get();
 
-            $query->whereBetween($column, [$dates->start->setTimezone($timezone), $dates->end->setTimezone($timezone)]);
+            $query->whereBetween($column, $field->dateOnly
+                ? [$dates->start->toDateString(), $dates->end->toDateString()]
+                : [$dates->start->setTimezone($timezone), $dates->end->setTimezone($timezone)]);
         }
 
         $groups = Collection::make($filters)
@@ -67,7 +71,7 @@ class ApplyFilters
         $operator = Operator::tryFrom($rule['operator']);
 
         if ($field === null || $operator === null || ! in_array($operator, Operator::forType($field->type), true)) {
-            return null;
+            throw new InvalidArgumentException("The filter on [{$rule['field']}] no longer matches its data source.");
         }
 
         if (! $operator->requiresValue()) {

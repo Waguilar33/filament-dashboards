@@ -18,6 +18,7 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardItem;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 
@@ -44,12 +45,14 @@ trait RendersDashboard
             ->filter(fn (BuilderWidget $widget): bool => array_diff($widget->sourceKeys(), array_keys($sources)) === [])
             ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
 
+        $canCreateWidgets = BuilderWidgetResource::canCreate();
+
         $items = $dashboard->items()
             ->orderBy('y')
             ->orderBy('x')
             ->orderBy('id')
             ->get()
-            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $user): ?array {
+            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $user, $canCreateWidgets): ?array {
                 $builderWidget = $builderWidgets->get($item->widget);
                 $component = $builderWidget instanceof BuilderWidget
                     ? BuilderWidgetForm::component($builderWidget->type)
@@ -65,6 +68,7 @@ trait RendersDashboard
                     'props' => $builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [],
                     'version' => $builderWidget?->updated_at?->timestamp,
                     'builderWidgetId' => $builderWidget instanceof BuilderWidget && $builderWidget->canBeEditedBy($user) ? $builderWidget->id : null,
+                    'duplicable' => ! $builderWidget instanceof BuilderWidget || $canCreateWidgets,
                     'label' => $builderWidget instanceof BuilderWidget ? $builderWidget->name : $component::dashboardLabel(),
                     'followsDates' => $builderWidget instanceof BuilderWidget
                         ? $builderWidget->followsDashboardDates()

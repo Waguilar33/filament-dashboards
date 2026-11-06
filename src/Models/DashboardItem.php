@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $dashboard_id
  * @property string $widget
+ * @property int|null $builder_widget_id
+ * @property bool $shares_widget
  * @property int $x
  * @property int $y
  * @property int $w
@@ -22,6 +25,31 @@ use Illuminate\Support\Carbon;
 class DashboardItem extends Model
 {
     protected $guarded = [];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $item): void {
+            $item->builder_widget_id = str_starts_with($item->widget, BuilderWidget::KEY_PREFIX)
+                ? (int) substr($item->widget, strlen(BuilderWidget::KEY_PREFIX))
+                : null;
+        });
+    }
+
+    /**
+     * @return BelongsTo<Dashboard, $this>
+     */
+    public function dashboard(): BelongsTo
+    {
+        return $this->belongsTo(Dashboard::class);
+    }
+
+    /**
+     * @return BelongsTo<BuilderWidget, $this>
+     */
+    public function builderWidget(): BelongsTo
+    {
+        return $this->belongsTo(BuilderWidget::class);
+    }
 
     public function getTable(): string
     {
@@ -50,6 +78,7 @@ class DashboardItem extends Model
             'w' => 'integer',
             'h' => 'integer',
             'options' => 'array',
+            'shares_widget' => 'boolean',
         ];
     }
 }

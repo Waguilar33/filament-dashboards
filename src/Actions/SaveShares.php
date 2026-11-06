@@ -11,10 +11,6 @@ use Waguilar\FilamentDashboards\Models\Dashboard;
 
 class SaveShares
 {
-    public function __construct(
-        protected ShareDashboardWidgets $shareDashboardWidgets,
-    ) {}
-
     /**
      * @param  list<array{shareable_type: string, shareable_id: int|string, level: ShareLevel|string}>  $shares
      */
@@ -32,10 +28,6 @@ class SaveShares
                     ['shareable_type' => $share['shareable_type'], 'shareable_id' => $share['shareable_id']],
                     ['level' => $share['level']],
                 );
-            }
-
-            if ($subject instanceof Dashboard) {
-                $this->shareDashboardWidgets->handle($subject->unsetRelation('shares'));
             }
         });
     }

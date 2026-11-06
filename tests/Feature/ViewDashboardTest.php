@@ -623,3 +623,19 @@ final class NoDashboardsListPolicy
         return false;
     }
 }
+
+it('asks before removing a widget from the dashboard, then removes only that placement', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+
+    $page = viewAs($owner, $dashboard)->mountAction(TestAction::make('removeItem')->arguments(['item' => $item->id]));
+    $action = $page->instance()->getMountedAction();
+
+    expect($action?->isConfirmationRequired())->toBeTrue()
+        ->and($action?->getModalDescription())->toBe(__('filament-dashboards::dashboards.modals.remove_item.description'));
+
+    $page->callMountedAction();
+
+    expect($dashboard->items()->count())->toBe(0);
+});

@@ -8,9 +8,11 @@ use Waguilar\FilamentDashboards\FilamentDashboardsServiceProvider;
 
 function rebuildTables(): void
 {
-    $migration = include __DIR__.'/../../database/migrations/create_filament_dashboards_tables.php.stub';
-    $migration->down();
-    $migration->up();
+    $create = include __DIR__.'/../../database/migrations/create_filament_dashboards_tables.php.stub';
+    $link = include __DIR__.'/../../database/migrations/link_filament_dashboards_items_to_widgets.php.stub';
+    $create->down();
+    $create->up();
+    $link->up();
 }
 
 it('keys owners, shares, homes and tenants the way the app keys its users and tenants', function (): void {
@@ -66,5 +68,6 @@ it('suggests Filament Guardian only when it is missing', function (): void {
         ->assertSuccessful();
 
     expect(File::exists("{$published}/filament-dashboards.php"))->toBeTrue()
-        ->and(File::glob("{$published}/migrations/*_create_filament_dashboards_tables.php"))->toHaveCount(1);
+        ->and(File::glob("{$published}/migrations/*_create_filament_dashboards_tables.php"))->toHaveCount(1)
+        ->and(File::glob("{$published}/migrations/*_link_filament_dashboards_items_to_widgets.php"))->toHaveCount(1);
 });

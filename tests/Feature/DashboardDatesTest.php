@@ -55,6 +55,14 @@ it('reads the dates only for a custom range', function (): void {
         ->and(rangeOf(['preset' => 'custom', 'startDate' => null, 'endDate' => '2026-01-31']))->toBe('2026-10-06 00:00:00 - 2026-11-04 23:59:59');
 });
 
+it('falls back to the default preset for custom dates that are not real days', function (mixed $start): void {
+    expect(rangeOf(['preset' => 'custom', 'startDate' => $start, 'endDate' => '2026-01-31']))->toBe('2026-10-06 00:00:00 - 2026-11-04 23:59:59');
+})->with(['foo', '2026-02-30', '2026-1-1', 20260101]);
+
+it('keeps a custom range to the last five years before its end', function (): void {
+    expect(rangeOf(['preset' => 'custom', 'startDate' => '0001-01-01', 'endDate' => '2026-01-31']))->toBe('2021-01-31 00:00:00 - 2026-01-31 23:59:59');
+});
+
 it('falls back to the default preset without filters or with an unknown preset', function (): void {
     expect(rangeOf(null))->toBe('2026-10-06 00:00:00 - 2026-11-04 23:59:59')
         ->and(rangeOf(['preset' => 7]))->toBe('2026-10-06 00:00:00 - 2026-11-04 23:59:59');

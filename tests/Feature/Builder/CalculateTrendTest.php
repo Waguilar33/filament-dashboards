@@ -7,7 +7,9 @@ use Waguilar\FilamentDashboards\Builder\Actions\CalculateTrend;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Tests\Fixtures\CentsOrdersSource;
+use Waguilar\FilamentDashboards\Tests\Fixtures\DateOnlyOrdersSource;
 use Waguilar\FilamentDashboards\Tests\Fixtures\WebOrdersSource;
 use Workbench\App\DataSources\OrdersSource;
 use Workbench\App\Models\DemoOrder;
@@ -48,18 +50,19 @@ it('fills every day of the range with zero', function (): void {
     ]);
 });
 
-it('groups by week starting on Monday', function (): void {
+it('groups by week starting on Monday, counting only days inside the range', function (): void {
     order('2026-03-02 00:00:00');
     order('2026-03-08 23:00:00');
     order('2026-03-16 10:00:00');
+    order('2026-03-23 10:00:00');
 
     expect(trend(TimeGrouping::Week, '2026-03-04', '2026-03-22'))->toBe([
         'labels' => ['Mar 2', 'Mar 9', 'Mar 16'],
-        'values' => [2, 0, 1],
+        'values' => [1, 0, 1],
     ]);
 });
 
-it('groups by month', function (): void {
+it('groups by month, counting only days inside the range', function (): void {
     order('2025-12-31 23:00:00');
     order('2026-01-15 10:00:00');
     order('2026-01-31 23:59:59');
@@ -67,7 +70,7 @@ it('groups by month', function (): void {
 
     expect(trend(TimeGrouping::Month, '2026-01-20', '2026-04-02'))->toBe([
         'labels' => ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026'],
-        'values' => [2, 0, 1, 0],
+        'values' => [1, 0, 1, 0],
     ]);
 });
 
@@ -78,11 +81,11 @@ it('groups by year', function (): void {
 
     expect(trend(TimeGrouping::Year, '2024-02-01', '2026-02-01'))->toBe([
         'labels' => ['2024', '2025', '2026'],
-        'values' => [1, 0, 2],
+        'values' => [1, 0, 1],
     ]);
 });
 
-it('includes the whole last period of the range and nothing after it', function (): void {
+it('counts whole days of the range and nothing after it', function (): void {
     order('2026-03-05 23:59:59');
     order('2026-03-06 00:00:00');
 
@@ -133,4 +136,21 @@ it('divides a scaled number field per bucket', function (): void {
 
     expect(trend(TimeGrouping::Day, '2026-03-01', '2026-03-02', Metric::Sum, 'total', source: new CentsOrdersSource)['values'])->toEqual([4.5, 0])
         ->and(trend(TimeGrouping::Day, '2026-03-01', '2026-03-02', source: new CentsOrdersSource)['values'])->toEqual([2, 0]);
+});
+
+it('cuts days at midnight in the plugin time zone', function (): void {
+    Filament\Facades\Filament::setCurrentPanel('demo');
+    FilamentDashboardsPlugin::get()->timezoneUsing(fn (): string => 'Pacific/Kiritimati');
+    order('2026-03-01 09:00:00');
+    order('2026-03-01 11:00:00');
+
+    expect(trend(TimeGrouping::Day, '2026-03-01 00:00:00 Pacific/Kiritimati', '2026-03-02 00:00:00 Pacific/Kiritimati')['values'])->toBe([1, 1]);
+});
+
+it('buckets a date-only field by its own date', function (): void {
+    Filament\Facades\Filament::setCurrentPanel('demo');
+    FilamentDashboardsPlugin::get()->timezoneUsing(fn (): string => 'Pacific/Kiritimati');
+    DemoOrder::factory()->create(['ordered_at' => '2026-03-01 12:00:00']);
+
+    expect(trend(TimeGrouping::Day, '2026-03-01 00:00:00 Pacific/Kiritimati', '2026-03-02 00:00:00 Pacific/Kiritimati', source: new DateOnlyOrdersSource)['values'])->toBe([1, 0]);
 });

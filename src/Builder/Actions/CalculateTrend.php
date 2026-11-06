@@ -11,6 +11,7 @@ use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 
 class CalculateTrend
 {
@@ -41,20 +42,23 @@ class CalculateTrend
         $date = $this->resolveField->handle($source, $dateField, FieldType::Date);
         $numberField = $this->resolveMetricField->handle($source, $metric, $field);
 
-        $start = $grouping->start(CarbonImmutable::instance($from)->setTimezone(date_default_timezone_get()));
-        $end = $grouping->next($grouping->start(CarbonImmutable::instance($to)->setTimezone(date_default_timezone_get())));
+        $timezone = FilamentDashboardsPlugin::get()->getTimezone();
+        $appTimezone = date_default_timezone_get();
+        $from = CarbonImmutable::instance($from)->setTimezone($timezone)->startOfDay();
+        $to = CarbonImmutable::instance($to)->setTimezone($timezone)->endOfDay();
 
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters);
         $dateColumn = $this->resolveColumn->handle($query, $date);
         $columns = $numberField === null ? ["{$dateColumn} as bucket_date"] : ["{$dateColumn} as bucket_date", $this->resolveColumn->handle($query, $numberField).' as bucket_value'];
 
         $perBucket = $query
-            ->where($dateColumn, '>=', $start)
-            ->where($dateColumn, '<', $end)
+            ->whereBetween($dateColumn, $date->dateOnly
+                ? [$from->toDateString(), $to->toDateString()]
+                : [$from->setTimezone($appTimezone), $to->setTimezone($appTimezone)])
             ->toBase()
             ->get($columns)
             ->map(fn (object $row): array => (array) $row)
-            ->map(function (array $row) use ($numberField, $grouping): ?array {
+            ->map(function (array $row) use ($numberField, $grouping, $date, $timezone, $appTimezone): ?array {
                 $when = $row['bucket_date'];
                 $value = $numberField === null ? 1 : $row['bucket_value'];
 
@@ -62,8 +66,12 @@ class CalculateTrend
                     return null;
                 }
 
+                $moment = $date->dateOnly
+                    ? CarbonImmutable::parse(substr($when, 0, 10), $timezone)
+                    : CarbonImmutable::parse($when, $appTimezone)->setTimezone($timezone);
+
                 return [
-                    'bucket' => $grouping->start(CarbonImmutable::parse($when))->format('Y-m-d'),
+                    'bucket' => $grouping->start($moment)->format('Y-m-d'),
                     'value' => $numberField === null ? 1 : $numberField->fromStored($this->parseNumber->handle($value)),
                 ];
             })
@@ -72,7 +80,7 @@ class CalculateTrend
 
         $buckets = [];
 
-        for ($cursor = $start; $cursor < $end; $cursor = $grouping->next($cursor)) {
+        for ($cursor = $grouping->start($from); $cursor <= $to; $cursor = $grouping->next($cursor)) {
             $buckets[] = $cursor;
         }
 

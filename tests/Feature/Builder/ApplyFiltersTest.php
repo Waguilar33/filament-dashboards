@@ -115,19 +115,16 @@ it('never escapes the scoping of the source with an or group', function (): void
     expect(filteredNumbers($filters, new WebOrdersSource))->toBe(['A', 'D']);
 });
 
-it('ignores rules on fields the source does not expose', function (): void {
-    $filters = [[
-        ['field' => 'id', 'operator' => 'is', 'value' => 999],
-        ['field' => 'secret', 'operator' => 'is', 'value' => 'x'],
+it('refuses rules on fields the source does not expose rather than dropping them', function (string $field): void {
+    filteredNumbers([[
+        ['field' => $field, 'operator' => 'is', 'value' => 'x'],
         ['field' => 'channel', 'operator' => 'is', 'value' => 'web'],
-    ]];
+    ]]);
+})->with(['id', 'secret'])->throws(InvalidArgumentException::class);
 
-    expect(filteredNumbers($filters))->toBe(['A', 'D']);
-});
-
-it('ignores rules with an operator that does not apply to the field type', function (array $rule): void {
-    expect(filteredNumbers([[$rule]]))->toBe(['A', 'B', 'C', 'D']);
-})->with([
+it('refuses rules with an operator that does not apply to the field type', function (array $rule): void {
+    filteredNumbers([[$rule]]);
+})->throws(InvalidArgumentException::class)->with([
     'contains on a number' => [['field' => 'total', 'operator' => 'contains', 'value' => '1']],
     'before on a number' => [['field' => 'total', 'operator' => 'before', 'value' => 100]],
     'greater than on text' => [['field' => 'customer', 'operator' => 'greater_than', 'value' => 'a']],
@@ -146,15 +143,6 @@ it('ignores rules whose value does not fit the field', function (array $rule): v
     'invalid boolean' => [['field' => 'paid', 'operator' => 'is', 'value' => 'maybe']],
     'array text' => [['field' => 'customer', 'operator' => 'contains', 'value' => ['x']]],
 ]);
-
-it('drops a group whose rules are all ignored instead of matching everything', function (): void {
-    $filters = [
-        [['field' => 'status', 'operator' => 'is', 'value' => 'paid']],
-        [['field' => 'secret', 'operator' => 'is', 'value' => 'x']],
-    ];
-
-    expect(filteredNumbers($filters))->toBe(['A']);
-});
 
 it('treats null values as empty and keeps them for is not', function (): void {
     Record::createTable();

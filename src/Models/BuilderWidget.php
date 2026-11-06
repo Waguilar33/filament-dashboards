@@ -7,9 +7,11 @@ namespace Waguilar\FilamentDashboards\Models;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Waguilar\FilamentDashboards\Builders\BuilderWidgetBuilder;
+use Waguilar\FilamentDashboards\Builders\DashboardBuilder;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Concerns\HasOwnerAndShares;
@@ -32,7 +34,9 @@ use Waguilar\FilamentDashboards\Models\Concerns\HasOwnerAndShares;
 #[UseEloquentBuilder(BuilderWidgetBuilder::class)]
 class BuilderWidget extends Model
 {
-    use HasOwnerAndShares;
+    use HasOwnerAndShares {
+        canBeEditedBy as canBeEditedByOwnerOrShare;
+    }
 
     public const KEY_PREFIX = 'custom:';
 
@@ -42,6 +46,34 @@ class BuilderWidget extends Model
     {
         /** @var string */
         return config('filament-dashboards.tables.widgets');
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $widget): void {
+            $widget->placements()->delete();
+        });
+    }
+
+    /**
+     * @return HasMany<DashboardItem, $this>
+     */
+    public function placements(): HasMany
+    {
+        return $this->hasMany(DashboardItem::class);
+    }
+
+    public function canBeEditedBy(Model $user): bool
+    {
+        if ($this->isSystem()) {
+            return false;
+        }
+
+        return $this->canBeEditedByOwnerOrShare($user)
+            || $this->placements()
+                ->where('shares_widget', true)
+                ->whereHas('dashboard', fn (DashboardBuilder $dashboards): DashboardBuilder => $dashboards->editableBy($user))
+                ->exists();
     }
 
     public function dashboardKey(): string

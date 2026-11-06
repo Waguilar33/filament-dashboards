@@ -41,13 +41,15 @@
                                         </x-filament::link>
                                     @endif
 
-                                    <x-filament::link
-                                        tag="button"
-                                        :icon="\Filament\Support\Icons\Heroicon::OutlinedDocumentDuplicate"
-                                        wire:click="mountAction('duplicateItem', { item: {{ $item['id'] }} })"
-                                    >
-                                        {{ __('filament-dashboards::dashboards.actions.duplicate') }}
-                                    </x-filament::link>
+                                    @if ($item['duplicable'])
+                                        <x-filament::link
+                                            tag="button"
+                                            :icon="\Filament\Support\Icons\Heroicon::OutlinedDocumentDuplicate"
+                                            wire:click="mountAction('duplicateItem', { item: {{ $item['id'] }} })"
+                                        >
+                                            {{ __('filament-dashboards::dashboards.actions.duplicate') }}
+                                        </x-filament::link>
+                                    @endif
 
                                     <x-filament::link
                                         tag="button"

@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Builder\Actions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Builder\AggregateExpression;
+use Waguilar\FilamentDashboards\Builder\AggregateIsNull;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Field;
@@ -47,6 +48,7 @@ class CalculateSummary
         $rows = $this->aggregates(clone $query, $metrics, $numberFields)
             ->addSelect("{$groupColumn} as {$group->alias()}")
             ->groupBy($groupColumn)
+            ->orderBy(new AggregateIsNull($metrics[0]['metric']->sqlFunction(), $numberFields[0] === null ? null : $this->resolveColumn->handle($query, $numberFields[0])))
             ->orderByDesc('aggregate_0')
             ->orderBy($groupColumn)
             ->limit($limit)

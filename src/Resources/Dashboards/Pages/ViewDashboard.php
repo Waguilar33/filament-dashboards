@@ -131,6 +131,7 @@ class ViewDashboard extends Page
                     ->get()
                     ->first(fn (BuilderWidget $widget): bool => $widget->dashboardKey() === $item->widget);
 
+                abort_if($builderWidget instanceof BuilderWidget && ! BuilderWidgetResource::canCreate(), 403);
                 abort_unless(
                     $builderWidget instanceof BuilderWidget
                         || array_key_exists($item->widget, FilamentDashboardsPlugin::get()->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), $user)),
@@ -147,6 +148,11 @@ class ViewDashboard extends Page
     {
         return Action::make('removeItem')
             ->visible($this->canEdit())
+            ->requiresConfirmation()
+            ->color('danger')
+            ->modalHeading(__('filament-dashboards::dashboards.modals.remove_item.heading'))
+            ->modalDescription(__('filament-dashboards::dashboards.modals.remove_item.description'))
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.remove'))
             ->action(function (array $arguments): void {
                 $this->editableItem($arguments)->delete();
 
@@ -256,6 +262,7 @@ class ViewDashboard extends Page
                     $this->getDashboard(),
                     $key,
                     $builderWidget instanceof BuilderWidget ? $builderWidget->type->defaultSize() : $widgets[$key]::dashboardSize(),
+                    DashboardResource::user(),
                 );
 
                 $this->reloadDashboard();
@@ -268,7 +275,7 @@ class ViewDashboard extends Page
             ->visible($this->canEdit() && BuilderWidgetResource::canCreate())
             ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
             ->after(function (BuilderWidget $record): void {
-                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize());
+                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize(), DashboardResource::user());
 
                 $this->reloadDashboard();
             });
@@ -277,6 +284,7 @@ class ViewDashboard extends Page
     public function editWidgetAction(): Action
     {
         return Action::make('editWidget')
+            ->visible($this->canEdit())
             ->slideOver()
             ->modalWidth(Width::FourExtraLarge)
             ->modalHeading(fn (array $arguments): string => $this->editableWidget($arguments)->name)
@@ -296,7 +304,9 @@ class ViewDashboard extends Page
      */
     protected function editableWidget(array $arguments): BuilderWidget
     {
-        $widget = BuilderWidget::query()->find($arguments['widget'] ?? null);
+        $widget = BuilderWidget::query()
+            ->inScope($this->getDashboard()->panel, Filament::getTenant())
+            ->find($arguments['widget'] ?? null);
 
         abort_unless($widget instanceof BuilderWidget && $widget->canBeEditedBy(DashboardResource::user()), 403);
 
