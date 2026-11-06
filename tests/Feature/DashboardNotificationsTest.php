@@ -201,3 +201,22 @@ it('lets system widget cards take alerts by their fixed position', function (): 
     expect(array_keys($system->keyedCards()))->toBe([0])
         ->and($user->keyedCards())->toBe([]);
 });
+
+it('computes each recipient from a fresh user, so roles loaded for one company never carry over', function (): void {
+    $owner = user();
+    [$dashboard] = salesDashboard($owner);
+    subscribe($owner, $dashboard, DigestFrequency::Daily);
+    subscribe($owner, dashboard($owner, ['slug' => 'second']), DigestFrequency::Daily);
+    $instances = [];
+    FilamentDashboardsPlugin::get()->recipientContextUsing(function ($user, $tenant, Closure $next) use (&$instances): mixed {
+        $instances[] = $user;
+
+        return $next();
+    });
+    $this->travelTo(CarbonImmutable::parse('2026-11-05 09:00:00', 'UTC'));
+
+    $this->artisan('dashboards:notify');
+
+    expect($instances)->toHaveCount(2)
+        ->and($instances[0])->not->toBe($instances[1]);
+});

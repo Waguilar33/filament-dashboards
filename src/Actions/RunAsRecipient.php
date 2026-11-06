@@ -26,10 +26,11 @@ class RunAsRecipient
      */
     public function handle(string $panelId, Model $user, ?Model $tenant, Closure $callback): mixed
     {
+        $user = $user->fresh();
         $panel = Filament::getPanel($panelId, isStrict: false);
         $plugin = FilamentDashboardsPlugin::forPanel($panelId);
 
-        if ($panel === null || $plugin === null || ! $user instanceof Authenticatable) {
+        if ($panel === null || $plugin === null || ! $user instanceof Model || ! $user instanceof Authenticatable) {
             return null;
         }
 
