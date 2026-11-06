@@ -240,6 +240,8 @@ Both `InteractsWithSchemas` and `InteractsWithDashboardDates` (through Filament'
 | Clone | Anyone who can view it and may create dashboards |
 | Set as home | Anyone who can view it |
 
+Sharing a dashboard also shares the owner's saved widgets on it at the same level, and so does adding one of the owner's widgets to a dashboard that is already shared. A widget share is raised from Read to Edit but never lowered, and it stays when the dashboard is unshared or the widget removed. Widgets owned by someone else are not shared.
+
 Without any other package, every signed-in user can create dashboards and add any widget whose `canView()` passes. Narrow it with:
 
 ```php
