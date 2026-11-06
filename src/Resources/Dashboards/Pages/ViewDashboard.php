@@ -19,6 +19,8 @@ use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
+use Livewire\Attributes\Renderless;
 use Livewire\Attributes\Url;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\DuplicateDashboardItem;
@@ -51,6 +53,8 @@ class ViewDashboard extends Page
     use RendersDashboard;
 
     protected static string $resource = DashboardResource::class;
+
+    protected ?bool $canEdit = null;
 
     #[Url(as: 'editing')]
     public bool $isEditingLayout = false;
@@ -89,13 +93,14 @@ class ViewDashboard extends Page
                 Section::make(__('filament-dashboards::dashboards.edit_mode.heading'))
                     ->key('editMode')
                     ->compact()
+                    ->description(new HtmlString('<span class="fi-dashboards-narrow-notice">'.e(__('filament-dashboards::dashboards.edit_mode.narrow')).'</span>'))
                     ->icon(Heroicon::OutlinedPencilSquare)
                     ->headerActions([$this->doneEditingAction(), $this->addWidgetAction()]),
             ] : []),
             ...$this->dashboardComponents(
                 $this->getDashboard(),
                 fn (): bool => $this->isEditingLayout,
-                $this->canEdit() && ! $this->isEditingLayout ? $this->addWidgetAction() : null,
+                $this->canEdit() && ! $this->isEditingLayout ? $this->addWidgetAction(...) : null,
             ),
         ]);
     }
@@ -103,6 +108,7 @@ class ViewDashboard extends Page
     /**
      * @param  array<mixed>  $layout
      */
+    #[Renderless]
     public function saveDashboardLayout(array $layout): void
     {
         abort_unless($this->canEdit(), 403);
@@ -201,8 +207,8 @@ class ViewDashboard extends Page
             ->when($sources === [], fn (Builder $query): Builder => $query->whereKey([]))
             ->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())
             ->visibleTo($user)
-            ->orderBy('name')
             ->get()
+            ->sortBy(fn (BuilderWidget $widget): string => mb_strtolower($widget->name))
             ->filter(fn (BuilderWidget $widget): bool => array_diff($widget->sourceKeys(), array_keys($sources)) === [])
             ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
 
@@ -376,6 +382,6 @@ class ViewDashboard extends Page
 
     protected function canEdit(): bool
     {
-        return $this->getDashboard()->canBeEditedBy(DashboardResource::user());
+        return $this->canEdit ??= $this->getDashboard()->canBeEditedBy(DashboardResource::user());
     }
 }

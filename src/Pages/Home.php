@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Pages;
 
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Pages\Dashboard as FilamentDashboard;
 use Filament\Schemas\Schema;
@@ -17,6 +18,7 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Pages\Concerns\HasDashboardDates;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
+use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 
 class Home extends FilamentDashboard
 {
@@ -54,6 +56,18 @@ class Home extends FilamentDashboard
         }
 
         return $schema->components($this->dashboardComponents($home, false, null));
+    }
+
+    protected function getHeaderActions(): array
+    {
+        $home = $this->getHome();
+
+        return $home === null ? [] : [
+            Action::make('openHome')
+                ->label(__('filament-dashboards::dashboards.actions.open'))
+                ->color('gray')
+                ->url(DashboardResource::getUrl('view', ['record' => $home])),
+        ];
     }
 
     protected function getHome(): ?Dashboard

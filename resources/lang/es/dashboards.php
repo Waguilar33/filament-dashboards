@@ -57,9 +57,12 @@ return [
         'full' => 'Completo',
     ],
     'edit_mode' => [
+        'narrow' => 'En pantallas angostas los widgets se apilan. Usa una pantalla más ancha para moverlos o cambiar su tamaño.',
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'open' => 'Abrir',
+        'resize_card' => 'Cambiar ancho de la tarjeta (flechas izquierda y derecha)',
         'create' => 'Crear',
         'done_editing' => 'Terminar edición',
         'duplicate' => 'Duplicar',
@@ -79,7 +82,7 @@ return [
     'modals' => [
         'remove_item' => [
             'heading' => 'Quitar widget',
-            'description' => 'El widget sale de este tablero. Un widget guardado sigue en la lista de widgets.',
+            'description' => 'El widget sale de este escritorio. Un widget guardado sigue en la lista de widgets.',
         ],
         'add_widget' => [
             'heading' => 'Agregar widget',
@@ -213,11 +216,14 @@ return [
         ],
     ],
     'notifications' => [
+        'shares_saved' => 'Se guardó el acceso compartido.',
         'home_set' => 'Este escritorio ahora es tu página de inicio.',
         'home_removed' => 'Tu página de inicio vuelve a ser el escritorio predeterminado.',
         'read_only' => 'Puedes ver este escritorio. Clónalo para tener tu propia copia.',
     ],
     'empty' => [
+        'hidden_heading' => 'No hay widgets que puedas ver',
+        'hidden_description' => 'Los widgets de este escritorio usan datos o widgets a los que no tienes acceso. Pídeselos a su dueño si los necesitas.',
         'heading' => 'Aún no hay widgets',
         'description' => 'Agrega widgets para empezar a armar este escritorio.',
     ],

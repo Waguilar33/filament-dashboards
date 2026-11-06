@@ -102,6 +102,7 @@ class BuilderWidgetResource extends Resource
                     }),
             ])
             ->defaultSort('name')
+            ->recordAction('edit')
             ->recordActions([
                 $actions['edit'],
                 ActionGroup::make([$actions['share'], $actions['duplicate'], $actions['delete']]),

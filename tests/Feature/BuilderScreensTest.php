@@ -283,12 +283,12 @@ it('shows a saved widget only to people the widget itself is shared with', funct
 
     $this->actingAs($teammate);
     Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertNotFound();
-    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets yet');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets you can see');
 
     share($widget, $teammate, ShareLevel::Read);
 
     Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertOk()->assertSee('Count · Orders');
-    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets yet');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets you can see');
 });
 
 it('polls a saved widget at its refresh interval', function (): void {
@@ -389,6 +389,7 @@ it('lets the app take over the widgets table with the plugin actions', function 
         ->assertHasNoTableActionErrors();
 
     expect(array_keys($page->instance()->getTable()->getColumns()))->toBe(['name'])
+        ->and($page->instance()->getTable()->getRecordAction($mine))->toBe('edit')
         ->and(BuilderWidget::query()->where('name', 'Copy')->exists())->toBeTrue();
 });
 
@@ -574,10 +575,10 @@ it('leaves widgets built on a source the viewer may not view off the dashboard',
     share($widget, $allowed, ShareLevel::Read);
 
     $this->actingAs($owner);
-    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets yet');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets you can see');
 
     $this->actingAs($allowed);
-    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets yet');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets you can see');
 });
 
 it('formats a field value and names the field on a stats card and in a table', function (): void {

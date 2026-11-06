@@ -57,9 +57,12 @@ return [
         'full' => 'Full',
     ],
     'edit_mode' => [
+        'narrow' => 'Widgets stack on narrow screens. Use a wider screen to move or resize them.',
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'open' => 'Open',
+        'resize_card' => 'Resize card (left and right arrows)',
         'create' => 'Create',
         'done_editing' => 'Finish editing',
         'duplicate' => 'Duplicate',
@@ -213,11 +216,14 @@ return [
         ],
     ],
     'notifications' => [
+        'shares_saved' => 'Sharing saved.',
         'home_set' => 'This dashboard is now your home page.',
         'home_removed' => 'Your home page is back to the default dashboard.',
         'read_only' => 'You can view this dashboard. Clone it to make your own copy.',
     ],
     'empty' => [
+        'hidden_heading' => 'No widgets you can see',
+        'hidden_description' => 'The widgets on this dashboard use data or widgets you do not have access to. Ask its owner if you need them.',
         'heading' => 'No widgets yet',
         'description' => 'Add widgets to start building this dashboard.',
     ],

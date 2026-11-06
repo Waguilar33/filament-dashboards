@@ -8,10 +8,10 @@ use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
-use Waguilar\FilamentDashboards\Actions\FindHomeDashboard;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Models\DashboardHome;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 
 class SetHomeAction extends Action
@@ -23,7 +23,17 @@ class SetHomeAction extends Action
 
     public static function isHome(Dashboard $dashboard): bool
     {
-        return app(FindHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())?->is($dashboard) === true;
+        $user = DashboardResource::user();
+        $tenant = Filament::getTenant();
+
+        return DashboardHome::query()
+            ->where('panel', FilamentDashboardsPlugin::currentPanel()->getId())
+            ->where('tenant_type', $tenant?->getMorphClass())
+            ->where('tenant_id', $tenant?->getKey())
+            ->where('user_type', $user->getMorphClass())
+            ->where('user_id', $user->getKey())
+            ->where('dashboard_id', $dashboard->getKey())
+            ->exists();
     }
 
     protected function setUp(): void

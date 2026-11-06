@@ -37,6 +37,7 @@ class ShareAction extends Action
         $viewer = Filament::auth()->user();
         $userType = $viewer->getMorphClass();
         $roleType = $plugin->getRolesRelationship()?->getRelated()->getMorphClass();
+        $userOptions = null;
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.share'))
@@ -80,9 +81,10 @@ class ShareAction extends Action
                             ->required(),
                         Select::make('shareable_id')
                             ->label(__('filament-dashboards::dashboards.fields.shareable'))
-                            ->options(fn (Get $get): array => ($get('shareable_type') ?? $userType) === $roleType
+                            ->options(function (Get $get) use (&$userOptions, $plugin, $roleType, $userType, $viewer): array {
+                                return ($get('shareable_type') ?? $userType) === $roleType
                                 ? $plugin->getShareableRoles()?->pluck('name', 'id')->all() ?? []
-                                : $plugin->getShareableUsers(Filament::getTenant())
+                                : $userOptions ??= $plugin->getShareableUsers(Filament::getTenant())
                                     ->whereKeyNot($viewer->getKey())
                                     ->get()
                                     ->mapWithKeys(function (Model $user): array {
@@ -90,7 +92,8 @@ class ShareAction extends Action
 
                                         return is_int($key) || is_string($key) ? [$key => Filament::getUserName($user)] : [];
                                     })
-                                    ->all())
+                                    ->all();
+                            })
                             ->searchable()
                             ->required(),
                         Select::make('level')
@@ -104,7 +107,8 @@ class ShareAction extends Action
                             ->required(),
                     ]),
             ])
-            ->action(function (array $data, Dashboard|BuilderWidget $record) use ($userType): void {
+            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.shares_saved'))
+            ->action(function (array $data, Dashboard|BuilderWidget $record, Action $action) use ($userType): void {
                 $shares = [];
 
                 foreach (Arr::array($data, 'shares') as $share) {
@@ -122,6 +126,8 @@ class ShareAction extends Action
                 }
 
                 app(SaveShares::class)->handle($record, $shares);
+
+                $action->success();
             });
     }
 }

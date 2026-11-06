@@ -25,9 +25,10 @@ use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 trait RendersDashboard
 {
     /**
+     * @param  (Closure(): Action)|null  $addWidget
      * @return array<Component>
      */
-    protected function dashboardComponents(Dashboard $dashboard, bool|Closure $editing, ?Action $addWidget): array
+    protected function dashboardComponents(Dashboard $dashboard, bool|Closure $editing, ?Closure $addWidget): array
     {
         /** @var Model $user */
         $user = Filament::auth()->user();
@@ -65,7 +66,7 @@ trait RendersDashboard
                 return [
                     'id' => $item->id,
                     'widget' => $component,
-                    'props' => $builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [],
+                    'props' => [...$component::getDefaultProperties(), ...($builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [])],
                     'version' => $builderWidget?->updated_at?->timestamp,
                     'builderWidgetId' => $builderWidget instanceof BuilderWidget && $builderWidget->canBeEditedBy($user) ? $builderWidget->id : null,
                     'duplicable' => ! $builderWidget instanceof BuilderWidget || $canCreateWidgets,
@@ -84,11 +85,13 @@ trait RendersDashboard
             ->all();
 
         if ($items === []) {
+            $hidden = $dashboard->items()->exists();
+
             return [
-                EmptyState::make(__('filament-dashboards::dashboards.empty.heading'))
-                    ->description(__('filament-dashboards::dashboards.empty.description'))
+                EmptyState::make(__($hidden ? 'filament-dashboards::dashboards.empty.hidden_heading' : 'filament-dashboards::dashboards.empty.heading'))
+                    ->description(__($hidden ? 'filament-dashboards::dashboards.empty.hidden_description' : 'filament-dashboards::dashboards.empty.description'))
                     ->icon(Heroicon::OutlinedSquares2x2)
-                    ->footer($addWidget === null ? [] : [$addWidget]),
+                    ->footer($addWidget === null ? [] : [$addWidget()]),
             ];
         }
 
@@ -105,7 +108,7 @@ trait RendersDashboard
                         ...($item['widget'] === BuilderStatsWidget::class ? ['cardWidths' => $cardWidths[$item['id']] ?? [], 'resizableCards' => $editable] : []),
                     ]], $items),
                     'editable' => $editable,
-                    'signature' => md5((string) json_encode([$items, $editable])),
+                    'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version']], $items), $editable])),
                 ];
             }),
         ];
