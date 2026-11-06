@@ -41,6 +41,7 @@ export default function dashboardGrid({ editable, printing, options }) {
 
             this.reloadObserver = new MutationObserver(() => this.followReload())
             this.reloadObserver.observe(this.$root, { attributes: true, attributeFilter: ['class'] })
+            this.stopWidgetDatesHook = Livewire.hook('commit', ({ component, commit, succeed, fail }) => this.followWidgetDates(component, commit, succeed, fail))
 
             this.grid.on('resizestart', (event, item) => {
                 this.resizing = true
@@ -102,6 +103,24 @@ export default function dashboardGrid({ editable, printing, options }) {
                 this.reloadStartedAt = null
                 this.reloadTimer = setTimeout(() => this.$root.classList.remove('fi-dashboards-reloading'), Math.max(0, remaining))
             }
+        },
+
+        followWidgetDates(component, commit, succeed, fail) {
+            const item = component.el.closest('.grid-stack-item')
+            const calls = commit.calls.map((call) => call.method)
+            const changesDates = calls.includes('applyFilters') || calls.includes('resetFilters')
+                || (calls.includes('callMountedAction') && component.$wire.mountedActions?.at(-1)?.name === 'widgetDates')
+
+            if (!item || !this.$root.contains(item) || !changesDates) {
+                return
+            }
+
+            const startedAt = Date.now()
+            const done = () => setTimeout(() => item.classList.remove('fi-dashboards-item-reloading'), Math.max(0, MIN_RELOAD_MS - (Date.now() - startedAt)))
+
+            item.classList.add('fi-dashboards-item-reloading')
+            succeed(done)
+            fail(done)
         },
 
         followHeight(gridItem) {
@@ -304,6 +323,7 @@ export default function dashboardGrid({ editable, printing, options }) {
             this.wide?.removeEventListener('change', this.lockWhenNarrow)
             this.observer?.disconnect()
             this.reloadObserver?.disconnect()
+            this.stopWidgetDatesHook?.()
             this.grid?.destroy(false)
         },
     }

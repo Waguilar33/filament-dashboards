@@ -33,6 +33,11 @@ class BuilderFiguresWidget extends TableWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    protected function widgetDatesChanged(): void
+    {
+        $this->table = $this->table($this->makeTable());
+    }
+
     public function table(Table $table): Table
     {
         $config = $this->widgetConfig();
@@ -58,7 +63,7 @@ class BuilderFiguresWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
-            ->headerActions([$this->exportAction()])
+            ->headerActions([$this->widgetDatesAction(), $this->exportAction()])
             ->description(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : $this->ownRangeLabel(array_values(array_filter(is_array($config['columns'] ?? null) ? $config['columns'] : [], is_array(...)))))
             ->records(fn (): array => array_map(fn (array $row): array => [
                 'label' => $row['label'],

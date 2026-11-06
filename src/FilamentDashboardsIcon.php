@@ -43,6 +43,8 @@ final class FilamentDashboardsIcon
 
     public const FIT_HEIGHT = 'filament-dashboards::actions.fit-height';
 
+    public const WIDGET_DATES = 'filament-dashboards::actions.widget-dates';
+
     public const EMPTY = 'filament-dashboards::empty';
 
     public const INCREASE = 'filament-dashboards::stats.increase';
@@ -72,6 +74,7 @@ final class FilamentDashboardsIcon
         self::EXPORT => Heroicon::OutlinedArrowDownTray,
         self::TRANSFER => Heroicon::OutlinedArrowsRightLeft,
         self::FIT_HEIGHT => Heroicon::OutlinedArrowsUpDown,
+        self::WIDGET_DATES => Heroicon::OutlinedCalendarDays,
         self::EMPTY => Heroicon::OutlinedSquares2x2,
         self::INCREASE => Heroicon::ArrowTrendingUp,
         self::DECREASE => Heroicon::ArrowTrendingDown,

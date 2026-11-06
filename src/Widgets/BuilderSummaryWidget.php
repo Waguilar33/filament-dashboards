@@ -29,6 +29,11 @@ class BuilderSummaryWidget extends TableWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    protected function widgetDatesChanged(): void
+    {
+        $this->table = $this->table($this->makeTable());
+    }
+
     public function table(Table $table): Table
     {
         $config = $this->widgetConfig();
@@ -69,7 +74,7 @@ class BuilderSummaryWidget extends TableWidget
         return $table
             ->heading($this->builderWidget()?->name)
             ->description($this->ownRangeLabel([$config]))
-            ->headerActions([$this->exportAction()])
+            ->headerActions([$this->widgetDatesAction(), $this->exportAction()])
             ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(fn (): array => $source === null || $metrics === [] ? [] : $this->rows($config, $source, $metrics))
             ->columns($columns)

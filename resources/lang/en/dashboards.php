@@ -37,6 +37,10 @@ return [
         'until' => 'To',
         'apply' => 'Apply',
         'custom' => 'Custom',
+        'next_days' => 'Next :count d',
+        'widget' => 'Dates',
+        'widget_default' => 'Default',
+        'dashboard' => 'Dashboard dates',
     ],
     'navigation_positions' => [
         'start' => 'Start of group',

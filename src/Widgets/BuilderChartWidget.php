@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Widgets;
 
 use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
+use Filament\Schemas\Schema;
+use Filament\Support\Components\Attributes\Exposed;
 use Filament\Widgets\ChartWidget;
+use Filament\Widgets\ChartWidget\Concerns\HasFiltersSchema;
 use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
 use Waguilar\FilamentDashboards\Actions\ResolveWidgetRange;
@@ -16,14 +20,50 @@ use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
 use Waguilar\FilamentDashboards\Dates\DateRange;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderChartWidget extends ChartWidget
 {
+    use HasFiltersSchema;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
+
+    protected bool $hasDeferredFilters = true;
+
+    public function filtersSchema(Schema $schema): Schema
+    {
+        return $schema->components($this->offersWidgetDates() ? $this->widgetDatesComponents() : []);
+    }
+
+    public function getFiltersTriggerAction(): Action
+    {
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('filter')
+            ->label(__('filament-dashboards::dashboards.dates.widget'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::WIDGET_DATES))
+            ->iconButton()
+            ->color($this->widgetDates() === null ? 'gray' : 'primary')
+            ->visible($this->offersWidgetDates())
+            ->livewireClickHandlerEnabled(false), 'widget.dates');
+    }
+
+    #[Exposed]
+    public function resetFilters(): void
+    {
+        $this->keepWidgetDates([]);
+        $this->getFiltersSchema()->fill();
+        $this->applyFilters();
+    }
+
+    #[Exposed]
+    public function applyFilters(): void
+    {
+        $this->keepWidgetDates($this->getFiltersSchema()->getState());
+        $this->filters = $this->deferredFilters;
+        $this->cachedData = null;
+    }
 
     public function getHeading(): ?string
     {

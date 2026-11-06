@@ -36,6 +36,7 @@ use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
 use Waguilar\FilamentDashboards\Dates\DatePeriod;
 use Waguilar\FilamentDashboards\Dates\Periods\LastMonth;
 use Waguilar\FilamentDashboards\Dates\Periods\LastThirtyDays;
+use Waguilar\FilamentDashboards\Dates\Periods\NextDays;
 use Waguilar\FilamentDashboards\Dates\Periods\NextNinetyDays;
 use Waguilar\FilamentDashboards\Dates\Periods\NextSevenDays;
 use Waguilar\FilamentDashboards\Dates\Periods\NextSixtyDays;
@@ -127,6 +128,11 @@ final class FilamentDashboardsPlugin implements Plugin
     protected array $datePresets = [1, 15, 30, 60, 90];
 
     protected int|string $defaultDatePreset = 30;
+
+    /**
+     * @var list<int|string>|null
+     */
+    protected ?array $widgetDatePresets = null;
 
     /**
      * @var list<class-string<DatePeriod>|DatePeriod>
@@ -728,6 +734,38 @@ final class FilamentDashboardsPlugin implements Plugin
     public function getDatePresets(): array
     {
         return array_values(array_filter($this->datePresets, fn (int|string $preset): bool => is_int($preset) || $this->getDatePeriod($preset) !== null));
+    }
+
+    /**
+     * @param  list<int|string>  $presets
+     */
+    public function widgetDatePresets(array $presets): static
+    {
+        $this->widgetDatePresets = $presets;
+
+        return $this;
+    }
+
+    /**
+     * @return list<int|string>
+     */
+    public function getWidgetDatePresets(): array
+    {
+        $presets = $this->widgetDatePresets ?? [...$this->getDatePresets(), 'next_7d', 'next_30d', 'next_60d', 'next_90d'];
+
+        return array_values(array_filter($presets, fn (int|string $preset): bool => is_int($preset) || $this->getDatePeriod($preset) !== null));
+    }
+
+    public function getDatePresetLabel(int|string $preset): string
+    {
+        $period = is_string($preset) ? $this->getDatePeriod($preset) : null;
+
+        return match (true) {
+            $period instanceof NextDays => __('filament-dashboards::dashboards.dates.next_days', ['count' => $period->days()]),
+            $period !== null => $period->label(),
+            $preset === 1 => __('filament-dashboards::dashboards.dates.today'),
+            default => trans_choice('filament-dashboards::dashboards.dates.days', (int) $preset, ['count' => $preset]),
+        };
     }
 
     public function defaultDatePreset(int|string $preset): static
