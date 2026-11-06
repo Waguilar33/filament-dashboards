@@ -11,10 +11,10 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\EmptyState;
 use Filament\Schemas\Components\View;
-use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
@@ -92,7 +92,7 @@ trait RendersDashboard
             return [
                 EmptyState::make(__($hidden ? 'filament-dashboards::dashboards.empty.hidden_heading' : 'filament-dashboards::dashboards.empty.heading'))
                     ->description(__($hidden ? 'filament-dashboards::dashboards.empty.hidden_description' : 'filament-dashboards::dashboards.empty.description'))
-                    ->icon(Heroicon::OutlinedSquares2x2)
+                    ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EMPTY))
                     ->footer($addWidget === null ? [] : [$addWidget()]),
             ];
         }

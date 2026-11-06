@@ -7,8 +7,8 @@ namespace Waguilar\FilamentDashboards\Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
-use Filament\Support\Icons\Heroicon;
 use Waguilar\FilamentDashboards\Actions\RemoveHomeDashboard;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
@@ -26,7 +26,7 @@ class RemoveHomeAction extends Action
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.remove_home'))
-            ->icon(Heroicon::OutlinedHome)
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::HOME))
             ->visible(fn (Dashboard $record): bool => SetHomeAction::isHome($record))
             ->action(function (): void {
                 app(RemoveHomeDashboard::class)->handle(DashboardResource::user(), FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant());

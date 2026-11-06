@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Widgets\Stats;
 
-use Filament\Support\Icons\Heroicon;
+use BackedEnum;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 
 final readonly class StatCardResult
@@ -17,7 +17,7 @@ final readonly class StatCardResult
         public string $formatted,
         public ?string $description = null,
         public ?string $color = null,
-        public ?Heroicon $icon = null,
+        public string|BackedEnum|null $icon = null,
         public bool $needsAttention = false,
     ) {}
 }

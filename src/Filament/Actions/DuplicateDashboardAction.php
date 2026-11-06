@@ -9,11 +9,11 @@ use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Waguilar\FilamentDashboards\Actions\CloneDashboard;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Schemas\DashboardForm;
@@ -31,7 +31,7 @@ class DuplicateDashboardAction extends Action
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.duplicate'))
-            ->icon(Heroicon::OutlinedDocumentDuplicate)
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DUPLICATE))
             ->visible(fn (): bool => DashboardResource::canCreate())
             ->modalWidth(Width::Medium)
             ->modalHeading(__('filament-dashboards::dashboards.modals.clone.heading'))

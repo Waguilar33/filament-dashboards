@@ -12,10 +12,10 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -25,6 +25,7 @@ use Waguilar\FilamentDashboards\Actions\CloneBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\Filament\Actions\WidgetHistoryAction;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Pages\ListBuilderWidgets;
@@ -39,7 +40,10 @@ class BuilderWidgetResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
+    public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
+    {
+        return FilamentDashboardsIcon::get(FilamentDashboardsIcon::NAVIGATION_WIDGETS);
+    }
 
     public static function getModelLabel(): string
     {
@@ -118,7 +122,7 @@ class BuilderWidgetResource extends Resource
         return array_map(fn (Action $action): Action => FilamentDashboardsPlugin::get()->modifyAction($action, "widgets.{$action->getName()}"), [
             'edit' => Action::make('edit')
                 ->label(__('filament-dashboards::dashboards.actions.edit'))
-                ->icon(Heroicon::OutlinedPencilSquare)
+                ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EDIT))
                 ->visible(fn (BuilderWidget $record): bool => $record->canBeEditedBy(DashboardResource::user()))
                 ->slideOver()
                 ->modalWidth(Width::FourExtraLarge)
@@ -128,7 +132,7 @@ class BuilderWidgetResource extends Resource
                 ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data, DashboardResource::user())),
             'duplicate' => Action::make('duplicate')
                 ->label(__('filament-dashboards::dashboards.actions.duplicate'))
-                ->icon(Heroicon::OutlinedDocumentDuplicate)
+                ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DUPLICATE))
                 ->visible(fn (): bool => static::canCreate())
                 ->modalWidth(Width::Medium)
                 ->fillForm(fn (BuilderWidget $record): array => ['name' => __('filament-dashboards::dashboards.modals.clone.name', ['name' => $record->name])])
@@ -139,9 +143,9 @@ class BuilderWidgetResource extends Resource
                         ->maxLength(255),
                 ])
                 ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(CloneBuilderWidget::class)->handle($record, DashboardResource::user(), Filament::getTenant(), Arr::string($data, 'name'))),
-            'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
+            'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::SHARE))),
             'history' => WidgetHistoryAction::make(),
-            'delete' => DeleteAction::make()->icon(Heroicon::OutlinedTrash),
+            'delete' => DeleteAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE)),
         ]);
     }
 

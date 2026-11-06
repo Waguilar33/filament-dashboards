@@ -278,6 +278,15 @@ FilamentDashboardsPlugin::make()
     });
 ```
 
+Every icon the plugin draws has a Filament icon alias, so an app using another icon set swaps them the Filament way; the aliases are the constants on `FilamentDashboardsIcon`:
+
+```php
+FilamentIcon::register([
+    FilamentDashboardsIcon::NAVIGATION_DASHBOARDS => 'fas-table-columns',
+    FilamentDashboardsIcon::PRINT => 'fas-print',
+]);
+```
+
 The dashboard page's header shows Edit and Share, and a menu with Settings, Duplicate, Set as home (or Remove as home) and Delete. Rearrange, regroup or drop them; the hook receives the built actions keyed by `edit`, `share`, `settings`, `duplicate`, `setAsHome`, `removeHome` and `delete`, and returns the header:
 
 ```php

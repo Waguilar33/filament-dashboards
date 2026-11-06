@@ -11,10 +11,10 @@ use Filament\Actions\DeleteAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -24,6 +24,7 @@ use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
 use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ListDashboards;
@@ -40,7 +41,10 @@ class DashboardResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
+    public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
+    {
+        return FilamentDashboardsIcon::get(FilamentDashboardsIcon::NAVIGATION_DASHBOARDS);
+    }
 
     public static function getModelLabel(): string
     {
@@ -123,11 +127,11 @@ class DashboardResource extends Resource
         return array_map(fn (Action $action): Action => $plugin->modifyAction($action, "dashboards.{$action->getName()}"), [
             'setAsHome' => SetHomeAction::make(),
             'removeHome' => RemoveHomeAction::make(),
-            'share' => $plugin->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
+            'share' => $plugin->modifyShareAction(ShareAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::SHARE))),
             'settings' => $plugin->modifySettingsAction(DashboardSettingsAction::make()),
             'duplicate' => DuplicateDashboardAction::make(),
             'delete' => DeleteAction::make()
-                ->icon(Heroicon::OutlinedTrash)
+                ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE))
                 ->visible(fn (Dashboard $record): bool => $record->canBeDeletedBy(self::user())),
         ]);
     }

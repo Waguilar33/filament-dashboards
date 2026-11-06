@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Widgets\Concerns;
 
 use Filament\Actions\Action;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\Column;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 
 trait ExportsCsv
@@ -19,7 +19,7 @@ trait ExportsCsv
     {
         return FilamentDashboardsPlugin::get()->modifyAction(Action::make('export')
             ->label(__('filament-dashboards::dashboards.actions.export'))
-            ->icon(Heroicon::OutlinedArrowDownTray)
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EXPORT))
             ->color('gray')
             ->size('sm')
             ->action(fn (): StreamedResponse => $this->exportCsv()), 'widget.export');

@@ -40,7 +40,7 @@
                                     @if (filled($item['builderWidgetId']))
                                         <x-filament::link
                                             tag="button"
-                                            :icon="\Filament\Support\Icons\Heroicon::OutlinedPencilSquare"
+                                            :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::EDIT)"
                                             wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }}, item: {{ $item['id'] }} })"
                                         >
                                             {{ __('filament-dashboards::dashboards.actions.edit') }}
@@ -48,7 +48,7 @@
 
                                         <x-filament::link
                                             tag="button"
-                                            :icon="\Filament\Support\Icons\Heroicon::OutlinedClock"
+                                            :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::HISTORY)"
                                             wire:click="mountAction('widgetHistory', { widget: {{ $item['builderWidgetId'] }} })"
                                         >
                                             {{ __('filament-dashboards::dashboards.actions.history') }}
@@ -58,7 +58,7 @@
                                     @if ($item['duplicable'])
                                         <x-filament::link
                                             tag="button"
-                                            :icon="\Filament\Support\Icons\Heroicon::OutlinedDocumentDuplicate"
+                                            :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::DUPLICATE)"
                                             wire:click="mountAction('duplicateItem', { item: {{ $item['id'] }} })"
                                         >
                                             {{ __('filament-dashboards::dashboards.actions.duplicate') }}
@@ -68,7 +68,7 @@
                                     <x-filament::link
                                         tag="button"
                                         color="danger"
-                                        :icon="\Filament\Support\Icons\Heroicon::OutlinedTrash"
+                                        :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::REMOVE)"
                                         wire:click="mountAction('removeItem', { item: {{ $item['id'] }} })"
                                     >
                                         {{ __('filament-dashboards::dashboards.actions.remove') }}

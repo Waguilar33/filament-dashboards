@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Actions;
 
+use BackedEnum;
 use Carbon\CarbonImmutable;
 use Closure;
-use Filament\Support\Icons\Heroicon;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateMetric;
@@ -14,6 +15,7 @@ use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Field;
 use Waguilar\FilamentDashboards\Dates\DateRange;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Stats\StatCardResult;
 
@@ -90,7 +92,7 @@ class EvaluateStatsCards
      * @param  array<mixed>  $card
      * @param  Closure(int|float): string  $format
      * @param  Closure(?DateRange): (int|float)  $calculate
-     * @return array{description: ?string, color: ?string, icon: ?Heroicon}
+     * @return array{description: ?string, color: ?string, icon: string|BackedEnum|null}
      */
     protected function describe(array $card, ?DateRange $range, int|float $value, Closure $format, Closure $calculate): array
     {
@@ -121,7 +123,8 @@ class EvaluateStatsCards
                 $change = ($currentValue - $previous) / abs($previous) * 100;
                 $parts[] = __('filament-dashboards::builder.compare_change', ['change' => ($change > 0 ? '+' : '').number_format($change, 1).'%']);
                 $color = $change >= 0 ? 'success' : 'danger';
-                $icon = $change >= 0 ? Heroicon::ArrowTrendingUp : Heroicon::ArrowTrendingDown;
+                $resolved = FilamentDashboardsIcon::get($change >= 0 ? FilamentDashboardsIcon::INCREASE : FilamentDashboardsIcon::DECREASE);
+                $icon = $resolved instanceof Htmlable ? null : $resolved;
             }
         }
 
