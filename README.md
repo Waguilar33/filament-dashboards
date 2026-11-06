@@ -204,6 +204,10 @@ FilamentDashboardsPlugin::make()
     ->gridOptions(['cellHeight' => 40, 'margin' => 8, 'stackBelow' => 1024]);
 ```
 
+### Widget heights
+
+Widgets fit their content. A chart or table (any Filament `ChartWidget` or `TableWidget`, built or your own) can also be given a height in Edit layout by dragging its bottom edge; the plot or rows stretch to it, rows scroll inside, and Fit height returns it to its content. A new builder chart starts at its type's default height. Printing always shows full content.
+
 ## Dashboard dates
 
 A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and Custom, which shows a start and end date. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:

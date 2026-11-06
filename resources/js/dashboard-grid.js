@@ -2,11 +2,15 @@ import { GridStack } from 'gridstack'
 
 const COLUMNS = 12
 
+const MIN_STRETCH = 48
+
 const SPAN_VARIABLES = ['--col-span-csm', '--col-span-ncmd', '--col-span-cxl', '--col-span-nclg']
 
 export default function dashboardGrid({ editable, printing, options }) {
     return {
         grid: null,
+
+        resizing: false,
 
         observer: null,
 
@@ -18,7 +22,6 @@ export default function dashboardGrid({ editable, printing, options }) {
                     margin: options.margin,
                     float: false,
                     animate: true,
-                    sizeToContent: true,
                     staticGrid: !editable,
                     draggable: { cancel: 'input,textarea,button,select,option,a,.fi-dashboards-item-actions,.fi-dashboards-stat-resize' },
                     resizable: { handles: 'e, w', autoHide: false },
@@ -34,7 +37,22 @@ export default function dashboardGrid({ editable, printing, options }) {
 
             this.$refs.grid.querySelectorAll('.fi-dashboards-item').forEach((item) => this.observer.observe(item))
 
-            this.grid.on('dragstop resizestop', () => setTimeout(() => this.save()))
+            this.grid.on('resizestart', (event, item) => {
+                this.resizing = true
+                this.startHeight = item.gridstackNode.h
+            })
+            this.grid.on('resize', (event, item) => this.followHeight(item))
+            // Gridstack keeps one handler per event name, so resizestop does both jobs here.
+            this.grid.on('resizestop', (event, item) => {
+                this.resizing = false
+
+                if (item.hasAttribute('data-fixed-height')) {
+                    this.fill(item)
+                }
+
+                setTimeout(() => this.save())
+            })
+            this.grid.on('dragstop', () => setTimeout(() => this.save()))
 
             if (editable) {
                 this.wide = window.matchMedia(`(min-width: ${options.stackBelow}px)`)
@@ -63,12 +81,54 @@ export default function dashboardGrid({ editable, printing, options }) {
             }
         },
 
+        followHeight(gridItem) {
+            if (!gridItem.hasAttribute('data-adjustable-height') || gridItem.gridstackNode.h === this.startHeight) {
+                return
+            }
+
+            gridItem.setAttribute('data-fixed-height', '')
+            gridItem.stretchedCard?.style.removeProperty('min-height')
+            this.fill(gridItem)
+        },
+
+        // A chart or table with a chosen height stretches its plot or rows to the cell, which may shrink below its natural size.
+        fill(gridItem) {
+            const item = gridItem.querySelector('.fi-dashboards-item')
+            const stretch = item.querySelector('.fi-wi-chart-frame, .fi-ta-content-ctn')
+
+            if (!stretch) {
+                return
+            }
+
+            const { marginTop, marginBottom } = this.grid.opts
+            const cell = this.grid.getCellHeight(true)
+            const chrome = item.offsetHeight - stretch.offsetHeight
+            const height = gridItem.gridstackNode.h * cell - marginTop - marginBottom - chrome
+
+            if (height < MIN_STRETCH && !this.resizing) {
+                this.grid.update(gridItem, { h: Math.ceil((chrome + MIN_STRETCH + marginTop + marginBottom) / cell) })
+            }
+
+            const stretched = Math.max(MIN_STRETCH, height)
+
+            if (Math.abs(stretch.offsetHeight - stretched) > 1) {
+                stretch.style.height = `${stretched}px`
+            }
+        },
+
         fit(gridItem) {
+            if (gridItem.hasAttribute('data-fixed-height')) {
+                this.fill(gridItem)
+
+                return
+            }
+
             const item = gridItem.querySelector('.fi-dashboards-item')
             const card = this.card(item)
 
             if (card) {
                 card.style.minHeight = ''
+                gridItem.stretchedCard = card
             }
 
             this.grid.resizeToContent(gridItem)
@@ -206,7 +266,14 @@ export default function dashboardGrid({ editable, printing, options }) {
             }
 
             this.$wire.saveDashboardLayout(
-                this.grid.save(false).map((node) => ({ id: Number(node.id), x: node.x, y: node.y, w: node.w, h: node.h })),
+                this.grid.save(false).map((node) => ({
+                    id: Number(node.id),
+                    x: node.x,
+                    y: node.y,
+                    w: node.w,
+                    h: node.h,
+                    fitsContent: !this.$refs.grid.querySelector(`[gs-id="${node.id}"]`).hasAttribute('data-fixed-height'),
+                })),
             )
         },
 

@@ -14,7 +14,7 @@ class AddDashboardWidget
     /**
      * @param  array{w: int, h: int}  $size
      */
-    public function handle(Dashboard $dashboard, string $widget, array $size, Model $placedBy): DashboardItem
+    public function handle(Dashboard $dashboard, string $widget, array $size, Model $placedBy, bool $fitsContent = true): DashboardItem
     {
         return $dashboard->items()->create([
             'widget' => $widget,
@@ -22,6 +22,7 @@ class AddDashboardWidget
             'y' => $dashboard->items()->get(['y', 'h'])->max(fn (DashboardItem $item): int => $item->y + $item->h) ?? 0,
             'w' => $size['w'],
             'h' => $size['h'],
+            'fits_content' => $fitsContent,
             'shares_widget' => str_starts_with($widget, BuilderWidget::KEY_PREFIX)
                 && BuilderWidget::query()->whereKey(substr($widget, strlen(BuilderWidget::KEY_PREFIX)))->whereMorphedTo('owner', $placedBy)->exists(),
         ]);

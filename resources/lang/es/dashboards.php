@@ -83,6 +83,7 @@ return [
         'set_home' => 'Usar como inicio',
         'remove_home' => 'Quitar como inicio',
         'delete' => 'Eliminar',
+        'fit_height' => 'Ajustar altura',
         'remove' => 'Quitar',
         'edit' => 'Editar',
         'previous' => 'Anterior',

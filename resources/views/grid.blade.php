@@ -36,6 +36,15 @@
                 gs-y="{{ $item['y'] }}"
                 gs-w="{{ $item['w'] }}"
                 gs-h="{{ $item['h'] }}"
+                @if ($item['adjustableHeight'])
+                    gs-resize-handles="e,w,s"
+                    gs-min-h="{{ \Waguilar\FilamentDashboards\Actions\SaveDashboardLayout::MIN_FIXED_HEIGHT }}"
+                    gs-max-h="{{ \Waguilar\FilamentDashboards\Actions\SaveDashboardLayout::MAX_HEIGHT }}"
+                    data-adjustable-height
+                @endif
+                @if ($item['fixedHeight'])
+                    data-fixed-height
+                @endif
             >
                 <div class="grid-stack-item-content">
                     <div class="fi-dashboards-item">
@@ -48,6 +57,7 @@
                                     @foreach ([
                                         'editWidget' => filled($item['builderWidgetId']) ? "{ widget: {$item['builderWidgetId']}, item: {$item['id']} }" : null,
                                         'widgetHistory' => filled($item['builderWidgetId']) ? "{ widget: {$item['builderWidgetId']} }" : null,
+                                        'fitItemHeight' => $item['adjustableHeight'] ? "{ item: {$item['id']} }" : null,
                                         'duplicateItem' => $item['duplicable'] ? "{ item: {$item['id']} }" : null,
                                         'removeItem' => "{ item: {$item['id']} }",
                                     ] as $name => $arguments)
@@ -56,6 +66,7 @@
                                                 tag="button"
                                                 :color="$tool['color']"
                                                 :icon="$tool['icon']"
+                                                @class(['fi-dashboards-fit-height' => $name === 'fitItemHeight'])
                                                 wire:click="mountAction('{{ $name }}', {{ $arguments }})"
                                             >
                                                 {{ $tool['label'] }}

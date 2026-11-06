@@ -11,7 +11,9 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\EmptyState;
 use Filament\Schemas\Components\View;
+use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Widgets\TableWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
@@ -66,6 +68,8 @@ trait RendersDashboard
                     return null;
                 }
 
+                $adjustableHeight = is_a($component, ChartWidget::class, true) || is_a($component, TableWidget::class, true);
+
                 return [
                     'id' => $item->id,
                     'widget' => $component,
@@ -81,6 +85,8 @@ trait RendersDashboard
                     'y' => $item->y,
                     'w' => $item->w,
                     'h' => $item->h,
+                    'adjustableHeight' => $adjustableHeight,
+                    'fixedHeight' => $adjustableHeight && ! $item->fits_content,
                 ];
             })
             ->filter()
@@ -114,7 +120,7 @@ trait RendersDashboard
                     'printing' => $printing,
                     'toolbar' => $editable ? $this->itemToolbar() : [],
                     'printRange' => array_filter(array_column($items, 'followsDates')) === [] ? null : app(ResolveDateRange::class)->handle($this->filters),
-                    'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version']], $items), $editable])),
+                    'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version'], $item['fixedHeight']], $items), $editable])),
                 ];
             }),
         ];
@@ -144,7 +150,7 @@ trait RendersDashboard
     {
         $toolbar = [];
 
-        foreach (['editWidget', 'widgetHistory', 'duplicateItem', 'removeItem'] as $name) {
+        foreach (['editWidget', 'widgetHistory', 'fitItemHeight', 'duplicateItem', 'removeItem'] as $name) {
             $action = method_exists($this, $name.'Action') ? $this->getAction($name, isMounting: false) : null;
             $toolbar[$name] = $action === null || ($name !== 'widgetHistory' && $action->isHidden())
                 ? null

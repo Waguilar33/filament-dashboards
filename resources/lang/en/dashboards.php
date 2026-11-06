@@ -83,6 +83,7 @@ return [
         'set_home' => 'Set as home',
         'remove_home' => 'Remove as home',
         'delete' => 'Delete',
+        'fit_height' => 'Fit height',
         'remove' => 'Remove',
         'edit' => 'Edit',
         'previous' => 'Previous',

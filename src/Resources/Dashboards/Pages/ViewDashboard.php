@@ -167,6 +167,19 @@ class ViewDashboard extends Page
             }), 'dashboard.duplicateItem');
     }
 
+    public function fitItemHeightAction(): Action
+    {
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('fitItemHeight')
+            ->label(__('filament-dashboards::dashboards.actions.fit_height'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::FIT_HEIGHT))
+            ->visible($this->canEdit())
+            ->action(function (array $arguments): void {
+                $this->editableItem($arguments)->update(['fits_content' => true]);
+
+                $this->reloadDashboard();
+            }), 'dashboard.fitItemHeight');
+    }
+
     public function removeItemAction(): Action
     {
         return FilamentDashboardsPlugin::get()->modifyAction(Action::make('removeItem')
@@ -295,6 +308,7 @@ class ViewDashboard extends Page
                     $key,
                     $builderWidget instanceof BuilderWidget ? $builderWidget->type->defaultSize() : $widgets[$key]::dashboardSize(),
                     DashboardResource::user(),
+                    ! $builderWidget instanceof BuilderWidget || ! $builderWidget->type->isChart(),
                 );
 
                 $this->reloadDashboard();
@@ -307,7 +321,7 @@ class ViewDashboard extends Page
             ->visible($this->canEdit() && BuilderWidgetResource::canCreate())
             ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
             ->after(function (BuilderWidget $record): void {
-                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize(), DashboardResource::user());
+                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize(), DashboardResource::user(), ! $record->type->isChart());
 
                 $this->reloadDashboard();
             }), 'dashboard.buildWidget');

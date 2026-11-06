@@ -31,6 +31,7 @@ class CloneDashboard
                 'y' => $item->y,
                 'w' => $item->w,
                 'h' => $item->h,
+                'fits_content' => $item->fits_content,
                 'options' => $item->options,
             ]));
 

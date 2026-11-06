@@ -41,6 +41,8 @@ final class FilamentDashboardsIcon
 
     public const TRANSFER = 'filament-dashboards::actions.transfer';
 
+    public const FIT_HEIGHT = 'filament-dashboards::actions.fit-height';
+
     public const EMPTY = 'filament-dashboards::empty';
 
     public const INCREASE = 'filament-dashboards::stats.increase';
@@ -69,6 +71,7 @@ final class FilamentDashboardsIcon
         self::SETTINGS => Heroicon::OutlinedCog6Tooth,
         self::EXPORT => Heroicon::OutlinedArrowDownTray,
         self::TRANSFER => Heroicon::OutlinedArrowsRightLeft,
+        self::FIT_HEIGHT => Heroicon::OutlinedArrowsUpDown,
         self::EMPTY => Heroicon::OutlinedSquares2x2,
         self::INCREASE => Heroicon::ArrowTrendingUp,
         self::DECREASE => Heroicon::ArrowTrendingDown,
