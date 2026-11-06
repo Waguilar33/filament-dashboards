@@ -8,6 +8,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
 use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
@@ -28,37 +29,39 @@ trait HasDashboardDates
                 : trans_choice('filament-dashboards::dashboards.dates.days', $days, ['count' => $days]);
         }
 
-        $range = app(ResolveDateRange::class)->handle(null);
+        $presets[ResolveDateRange::CUSTOM] = __('filament-dashboards::dashboards.dates.custom');
 
         return $schema
             ->components([
-                Flex::make([
-                    ToggleButtons::make('preset')
-                        ->hiddenLabel()
-                        ->options($presets)
-                        ->default($plugin->getDefaultDatePreset())
-                        ->grouped()
-                        ->grow(false)
-                        ->afterStateUpdated(function (Set $set, mixed $state): void {
-                            if (blank($state)) {
-                                return;
-                            }
+                ToggleButtons::make('preset')
+                    ->hiddenLabel()
+                    ->options($presets)
+                    ->default($plugin->getDefaultDatePreset())
+                    ->grouped()
+                    ->columnSpanFull()
+                    ->afterStateUpdated(function (Set $set, mixed $state, mixed $old): void {
+                        if ($state !== ResolveDateRange::CUSTOM) {
+                            $set('startDate', null);
+                            $set('endDate', null);
 
-                            $range = app(ResolveDateRange::class)->handle(['preset' => $state]);
-                            $set('startDate', $range->start->toDateString());
-                            $set('endDate', $range->end->toDateString());
-                        }),
+                            return;
+                        }
+
+                        $range = app(ResolveDateRange::class)->handle(['preset' => $old]);
+                        $set('startDate', $range->start->toDateString());
+                        $set('endDate', $range->end->toDateString());
+                    }),
+                Flex::make([
                     DatePicker::make('startDate')
                         ->hiddenLabel()
-                        ->prefix(__('filament-dashboards::dashboards.dates.from'))
-                        ->default($range->start->toDateString())
-                        ->afterStateUpdated(fn (Set $set) => $set('preset', null)),
+                        ->prefix(__('filament-dashboards::dashboards.dates.from')),
                     DatePicker::make('endDate')
                         ->hiddenLabel()
-                        ->prefix(__('filament-dashboards::dashboards.dates.until'))
-                        ->default($range->end->toDateString())
-                        ->afterStateUpdated(fn (Set $set) => $set('preset', null)),
-                ])->from('lg')->columnSpanFull(),
+                        ->prefix(__('filament-dashboards::dashboards.dates.until')),
+                ])
+                    ->from('sm')
+                    ->visible(fn (Get $get): bool => $get('preset') === ResolveDateRange::CUSTOM)
+                    ->columnSpanFull(),
             ]);
     }
 }

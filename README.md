@@ -2,7 +2,7 @@
 
 Users build their own dashboards from your panel's widgets, share them with other users or roles, clone them, and pick one as their home page. You can ship read-only system dashboards everyone can clone.
 
-Private beta. The rules behind every behaviour are in [docs/architecture](docs/architecture/README.md).
+Beta. The rules behind every behaviour are in [docs/architecture](docs/architecture/README.md).
 
 ## Install
 
@@ -158,7 +158,7 @@ A figures table lays figures out like a spreadsheet. Each column is a figure (it
 
 ## Dashboard dates
 
-A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and a start and end date. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:
+A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and Custom, which shows a start and end date. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:
 
 ```php
 use Waguilar\FilamentDashboards\Concerns\InteractsWithDashboardDates;
@@ -177,7 +177,7 @@ class SalesByCategory extends TableWidget implements DashboardWidget
 }
 ```
 
-`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. Builder widgets follow the dates too: pick a *Dashboard date field* (stats cards, tables, breakdown and scatter charts), or the *Dashboard dates* period on line and bar charts, which then span the chosen range. Without it they ignore the bar. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters` (`preset`, `startDate`, `endDate`). Change the presets, the default and the time zone:
+`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. Builder widgets follow the dates too: pick a *Dashboard date field* (stats cards, tables, breakdown and scatter charts), or the *Dashboard dates* period on line and bar charts, which then span the chosen range. Without it they ignore the bar. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters`: `preset` is a number of days or `custom`, and `startDate` and `endDate` are set only for `custom`. Change the presets, the default and the time zone:
 
 ```php
 FilamentDashboardsPlugin::make()
