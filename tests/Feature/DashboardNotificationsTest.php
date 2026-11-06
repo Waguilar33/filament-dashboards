@@ -193,3 +193,11 @@ it('drops subscriptions and alerts with their dashboard or widget', function ():
     $dashboard->delete();
     expect(DashboardSubscription::query()->count())->toBe(0);
 });
+
+it('lets system widget cards take alerts by their fixed position', function (): void {
+    $system = builderWidget(attributes: ['system_key' => 'kpis', 'name' => 'KPIs', 'config' => ['cards' => [['source' => 'orders', 'metric' => 'count', 'label' => 'Orders']]]]);
+    $user = builderWidget(user(), ['config' => ['cards' => [['source' => 'orders', 'metric' => 'count']]]]);
+
+    expect(array_keys($system->keyedCards()))->toBe([0])
+        ->and($user->keyedCards())->toBe([]);
+});

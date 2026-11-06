@@ -104,6 +104,24 @@ class BuilderWidget extends Model
         )));
     }
 
+    /**
+     * @return array<array-key, array<mixed>>
+     */
+    public function keyedCards(): array
+    {
+        $cards = [];
+
+        foreach (is_array($this->config['cards'] ?? null) ? array_values($this->config['cards']) : [] as $index => $card) {
+            $key = is_array($card) ? ($card['key'] ?? ($this->isSystem() ? (string) $index : null)) : null;
+
+            if (is_array($card) && is_string($key) && filled($key)) {
+                $cards[$key] = $card;
+            }
+        }
+
+        return $cards;
+    }
+
     public function followsDashboardDates(): bool
     {
         $parts = $this->parts();

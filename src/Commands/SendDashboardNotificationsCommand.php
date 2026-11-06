@@ -92,8 +92,7 @@ class SendDashboardNotificationsCommand extends Command
     protected function checkAlert(DashboardAlert $alert, Model $user, Dashboard $dashboard, EvaluateStatsCards $evaluateCards): void
     {
         $widget = BuilderWidget::query()->inScope($alert->panel, $alert->tenant)->visibleTo($user)->find($alert->builder_widget_id);
-        $card = $widget === null ? null : collect(is_array($widget->config['cards'] ?? null) ? $widget->config['cards'] : [])
-            ->first(fn (mixed $card): bool => is_array($card) && ($card['key'] ?? null) === $alert->card_key);
+        $card = $widget?->keyedCards()[$alert->card_key] ?? null;
 
         if (! is_array($card) || ! $this->canView($dashboard, $user, $alert->tenant)) {
             return;

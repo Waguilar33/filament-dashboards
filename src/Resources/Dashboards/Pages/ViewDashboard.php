@@ -360,6 +360,7 @@ class ViewDashboard extends Page
             ->visible(FilamentDashboardsPlugin::get()->hasScheduledNotifications())
             ->modalWidth(Width::Medium)
             ->modalDescription(__('filament-dashboards::dashboards.digest.description', ['hour' => SendDashboardNotificationsCommand::SEND_HOUR]))
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.save'))
             ->fillForm(fn (): array => ['frequency' => $find()?->frequency->value])
             ->schema([
                 Select::make('frequency')
@@ -404,6 +405,7 @@ class ViewDashboard extends Page
             ->slideOver()
             ->modalWidth(Width::TwoExtraLarge)
             ->modalDescription(__('filament-dashboards::dashboards.alerts.description', ['hour' => SendDashboardNotificationsCommand::SEND_HOUR]))
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.save'))
             ->fillForm(fn (): array => ['alerts' => $mine()->get()->map(fn (DashboardAlert $alert): array => [
                 'card' => "{$alert->builder_widget_id}:{$alert->card_key}",
                 'operator' => $alert->operator->value,
@@ -479,11 +481,9 @@ class ViewDashboard extends Page
             ->get();
 
         foreach ($widgets as $widget) {
-            foreach (is_array($widget->config['cards'] ?? null) ? $widget->config['cards'] : [] as $card) {
-                if (is_array($card) && is_string($card['key'] ?? null) && filled($card['key'])) {
-                    $label = is_string($card['label'] ?? null) && filled($card['label']) ? $card['label'] : (is_string($card['source'] ?? null) ? $card['source'] : '');
-                    $options["{$widget->id}:{$card['key']}"] = "{$widget->name} · {$label}";
-                }
+            foreach ($widget->keyedCards() as $key => $card) {
+                $label = is_string($card['label'] ?? null) && filled($card['label']) ? $card['label'] : (is_string($card['source'] ?? null) ? $card['source'] : '');
+                $options["{$widget->id}:{$key}"] = "{$widget->name} · {$label}";
             }
         }
 
