@@ -14,6 +14,17 @@
     background: transparent;
 }
 
+.fi-dashboards-loading .fi-dashboards-item {
+    pointer-events: none;
+    animation: fi-dashboards-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes fi-dashboards-pulse {
+    50% {
+        opacity: 0.4;
+    }
+}
+
 .fi-dashboards-grid[data-editable='true'] .grid-stack-item-content {
     cursor: grab;
 }

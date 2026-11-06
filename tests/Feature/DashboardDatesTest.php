@@ -45,8 +45,14 @@ it('counts each preset back from today, today included', function (int $days, st
 ]);
 
 it('uses whole days of a custom range, in either order', function (): void {
-    expect(rangeOf(['preset' => null, 'startDate' => '2026-01-01', 'endDate' => '2026-01-31']))->toBe('2026-01-01 00:00:00 - 2026-01-31 23:59:59')
-        ->and(rangeOf(['preset' => null, 'startDate' => '2026-01-31', 'endDate' => '2026-01-01']))->toBe('2026-01-01 00:00:00 - 2026-01-31 23:59:59');
+    expect(rangeOf(['preset' => 'custom', 'startDate' => '2026-01-01', 'endDate' => '2026-01-31']))->toBe('2026-01-01 00:00:00 - 2026-01-31 23:59:59')
+        ->and(rangeOf(['preset' => 'custom', 'startDate' => '2026-01-31', 'endDate' => '2026-01-01']))->toBe('2026-01-01 00:00:00 - 2026-01-31 23:59:59');
+});
+
+it('reads the dates only for a custom range', function (): void {
+    expect(rangeOf(['preset' => 15, 'startDate' => '2026-01-01', 'endDate' => '2026-01-31']))->toBe('2026-10-21 00:00:00 - 2026-11-04 23:59:59')
+        ->and(rangeOf(['preset' => null, 'startDate' => '2026-01-01', 'endDate' => '2026-01-31']))->toBe('2026-10-06 00:00:00 - 2026-11-04 23:59:59')
+        ->and(rangeOf(['preset' => 'custom', 'startDate' => null, 'endDate' => '2026-01-31']))->toBe('2026-10-06 00:00:00 - 2026-11-04 23:59:59');
 });
 
 it('falls back to the default preset without filters or with an unknown preset', function (): void {
@@ -83,7 +89,9 @@ it('shows the dates on a dashboard with a widget that reads page filters', funct
 
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
         ->assertSeeHtml('filtersForm.preset')
-        ->assertSet('filters', ['preset' => 30, 'startDate' => '2026-10-06', 'endDate' => '2026-11-04']);
+        ->assertSeeHtml('wire:loading.class="fi-dashboards-loading"')
+        ->assertSet('filters', ['preset' => 30, 'startDate' => null, 'endDate' => null])
+        ->assertFormFieldHidden('startDate', 'filtersForm');
 });
 
 it('hides the dates when no widget reads page filters', function (): void {
@@ -93,18 +101,31 @@ it('hides the dates when no widget reads page filters', function (): void {
         ->assertDontSeeHtml('filtersForm.preset');
 });
 
-it('fills the dates from a preset, clears the preset on a custom date and passes the filters to the widgets', function (): void {
+it('fills a custom range from the previous preset, keeps it custom and passes the filters to the widgets', function (): void {
     $dashboard = datesDashboard('orders-overview');
 
     $page = Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
         ->set('filters.preset', 15)
+        ->assertSet('filters.startDate', null)
+        ->set('filters.preset', 'custom')
         ->assertSet('filters.startDate', '2026-10-21')
         ->assertSet('filters.endDate', '2026-11-04')
+        ->assertFormFieldVisible('startDate', 'filtersForm')
         ->set('filters.startDate', '2026-10-01')
-        ->assertSet('filters.preset', null);
+        ->assertSet('filters.preset', 'custom');
 
     $grid = $page->instance()->getSchema('content')?->getComponent(fn (mixed $component): bool => $component instanceof View, withHidden: true);
 
     expect($grid)->toBeInstanceOf(View::class)
-        ->and($grid->getViewData()['items'][0]['props']['pageFilters'])->toBe(['preset' => null, 'startDate' => '2026-10-01', 'endDate' => '2026-11-04']);
+        ->and($grid->getViewData()['items'][0]['props']['pageFilters'])->toBe(['preset' => 'custom', 'startDate' => '2026-10-01', 'endDate' => '2026-11-04']);
+});
+
+it('clears the dates when a preset is picked again', function (): void {
+    $dashboard = datesDashboard('orders-overview');
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->set('filters.preset', 'custom')
+        ->set('filters.preset', 60)
+        ->assertSet('filters', ['preset' => 60, 'startDate' => null, 'endDate' => null])
+        ->assertFormFieldHidden('startDate', 'filtersForm');
 });

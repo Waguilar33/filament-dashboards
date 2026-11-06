@@ -35,6 +35,7 @@ return [
         'days' => '{1} :count día|[2,*] :count días',
         'from' => 'Fecha inicial',
         'until' => 'Fecha final',
+        'custom' => 'Personalizado',
     ],
     'navigation_positions' => [
         'start' => 'Al inicio del grupo',

@@ -10,6 +10,8 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 
 class ResolveDateRange
 {
+    public const CUSTOM = 'custom';
+
     /**
      * @param  array<string, mixed>|null  $dates
      */
@@ -21,7 +23,7 @@ class ResolveDateRange
         $from = $dates['startDate'] ?? null;
         $until = $dates['endDate'] ?? null;
 
-        if (blank($preset) && is_string($from) && filled($from) && is_string($until) && filled($until)) {
+        if ($preset === self::CUSTOM && is_string($from) && filled($from) && is_string($until) && filled($until)) {
             $start = CarbonImmutable::parse($from, $timezone)->startOfDay();
             $end = CarbonImmutable::parse($until, $timezone)->endOfDay();
 

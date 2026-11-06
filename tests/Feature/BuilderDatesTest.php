@@ -71,7 +71,7 @@ it('spans a trend over the dashboard dates when its period follows them', functi
     $config = ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'sum', 'field' => 'total'];
 
     $dashboard = datedChart([...$config, 'period' => 'dashboard'], 'line', ['preset' => 15]);
-    $custom = datedChart([...$config, 'period' => 'dashboard'], 'line', ['startDate' => '2026-09-01', 'endDate' => '2026-11-04']);
+    $custom = datedChart([...$config, 'period' => 'dashboard'], 'line', ['preset' => 'custom', 'startDate' => '2026-09-01', 'endDate' => '2026-11-04']);
     $own = datedChart([...$config, 'period' => '12m'], 'line', ['preset' => 15]);
 
     expect($dashboard['labels'])->toHaveCount(15)
