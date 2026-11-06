@@ -622,5 +622,5 @@ it('lays each stats card out in two collapsible columns with its label on top', 
         ->and($cards?->isCollapsible())->toBeTrue()
         ->and($cards?->getGridColumns('lg'))->toBe(2)
         ->and(collect($cards?->getDefaultChildComponents())->first(fn (Component $field): bool => $field instanceof Repeater && $field->getName() === 'filters')?->getDefaultChildComponents()[0]->getColumns('lg'))->toBe(1)
-        ->and(array_map(fn (Component $field): ?string => $field instanceof Field ? $field->getName() : null, $cards?->getDefaultChildComponents() ?? []))->toBe(['key', 'label', 'source', 'metric', 'field', 'dates_field', 'filters']);
+        ->and(array_map(fn (Component $field): ?string => $field instanceof Field ? $field->getName() : null, $cards?->getDefaultChildComponents() ?? []))->toBe(['key', 'label', 'source', 'metric', 'field', 'dates_field', 'period', 'compare', 'goal', 'filters']);
 });

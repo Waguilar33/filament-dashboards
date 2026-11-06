@@ -150,6 +150,11 @@ return [
             'add_metric' => 'Add column',
             'percent' => 'Show % of total',
             'dates_field' => 'Dashboard date field',
+            'card_period' => 'Period',
+            'compare' => 'Compare with the previous period',
+            'compare_helper' => 'Shows the change against the same number of days just before.',
+            'goal' => 'Goal',
+            'goal_helper' => 'Shows how much of this number has been reached.',
             'dates_field_helper' => 'Filters this date with the dashboard dates.',
             'date_field' => 'Date',
             'grouping' => 'Group by',
@@ -191,6 +196,14 @@ return [
         ],
         'figures' => [
             'base' => 'Total',
+        ],
+        'card_periods' => [
+            'dashboard' => 'Dashboard dates',
+            'today' => 'Today',
+            'week' => 'This week',
+            'month' => 'This month',
+            'year' => 'This year',
+            '30d' => 'Last 30 days',
         ],
         'periods' => [
             'dashboard' => 'Dashboard dates',

@@ -150,6 +150,11 @@ return [
             'add_metric' => 'Agregar columna',
             'percent' => 'Mostrar % del total',
             'dates_field' => 'Campo de fecha',
+            'card_period' => 'Periodo',
+            'compare' => 'Comparar con el periodo anterior',
+            'compare_helper' => 'Muestra el cambio frente al mismo número de días justo antes.',
+            'goal' => 'Meta',
+            'goal_helper' => 'Muestra cuánto de esta cifra se ha alcanzado.',
             'dates_field_helper' => 'Filtra esta fecha con las fechas del escritorio.',
             'date_field' => 'Fecha',
             'grouping' => 'Agrupar por',
@@ -191,6 +196,14 @@ return [
         ],
         'figures' => [
             'base' => 'Total',
+        ],
+        'card_periods' => [
+            'dashboard' => 'Fechas del escritorio',
+            'today' => 'Hoy',
+            'week' => 'Esta semana',
+            'month' => 'Este mes',
+            'year' => 'Este año',
+            '30d' => 'Últimos 30 días',
         ],
         'periods' => [
             'dashboard' => 'Fechas del escritorio',

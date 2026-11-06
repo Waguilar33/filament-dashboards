@@ -148,6 +148,21 @@ class BuilderWidgetForm
                         self::sourceSelect(),
                         ...self::metricFields(),
                         self::datesField(),
+                        Select::make('period')
+                            ->label(__(self::T.'card_period'))
+                            ->options(fn (): array => __('filament-dashboards::dashboards.builder.card_periods'))
+                            ->default('dashboard')
+                            ->selectablePlaceholder(false)
+                            ->visible(fn (Get $get): bool => filled($get('dates_field'))),
+                        Toggle::make('compare')
+                            ->label(__(self::T.'compare'))
+                            ->helperText(__(self::T.'compare_helper'))
+                            ->visible(fn (Get $get): bool => filled($get('dates_field'))),
+                        TextInput::make('goal')
+                            ->label(__(self::T.'goal'))
+                            ->helperText(__(self::T.'goal_helper'))
+                            ->numeric()
+                            ->minValue(0),
                         self::filters(ruleColumns: 1),
                     ]),
             ],

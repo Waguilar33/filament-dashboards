@@ -99,7 +99,13 @@ class BuilderWidget extends Model
         $parts = $this->parts();
 
         foreach ($parts as $part) {
-            if (is_array($part) && (filled($part['dates_field'] ?? null) || ($part['period'] ?? null) === 'dashboard')) {
+            if (! is_array($part)) {
+                continue;
+            }
+
+            $period = $part['period'] ?? null;
+
+            if (filled($part['dates_field'] ?? null) ? in_array($period, [null, 'dashboard'], true) : $period === 'dashboard') {
                 return true;
             }
         }

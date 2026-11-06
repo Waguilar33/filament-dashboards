@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 return [
+    'goal_progress' => ':percent% de :goal',
+    'compare_change' => ':change vs. periodo anterior',
+    'compare_new' => 'Nuevo vs. periodo anterior',
     'needs_attention' => 'Requiere atención: un campo o filtro de este widget ya no existe. Edita el widget para corregirlo.',
     'yes' => 'Sí',
     'no' => 'No',
