@@ -9,14 +9,19 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
+use Illuminate\Support\Js;
 use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateSummary;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\Widgets\Concerns\DrillsDownToRecords;
+use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderSummaryWidget extends TableWidget
 {
+    use DrillsDownToRecords;
+    use ExportsCsv;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
@@ -34,6 +39,10 @@ class BuilderSummaryWidget extends TableWidget
             TextColumn::make('group')
                 ->label($groupField->label ?? '')
                 ->translateLabel(false)
+                ->extraCellAttributes(fn (array $record): array => $record['total'] || ! $this->canDrillDown($config['source'] ?? null) ? [] : [
+                    'wire:click' => 'mountAction(\'drillDown\', '.Js::from(['key' => $record['key'] ?? null, 'label' => $record['group']]).')',
+                    'class' => 'fi-dashboards-drill-down',
+                ])
                 ->weight(fn (array $record): ?FontWeight => $record['total'] ? FontWeight::Bold : null),
         ];
 
@@ -58,6 +67,8 @@ class BuilderSummaryWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->headerActions([$this->exportAction()])
+            ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(fn (): array => $source === null || $metrics === [] ? [] : $this->rows($config, $source, $metrics))
             ->columns($columns)
             ->paginated(false)
@@ -111,10 +122,12 @@ class BuilderSummaryWidget extends TableWidget
                 $this->dashboardDates($config),
             );
         } catch (InvalidArgumentException) {
+            $this->needsAttention = true;
+
             return [];
         }
 
-        $rows = array_map(fn (array $line): array => $this->record($line['group'], $line['values'], false, $metrics, $summary['totals']), $summary['rows']);
+        $rows = array_map(fn (array $line): array => [...$this->record($line['group'], $line['values'], false, $metrics, $summary['totals']), 'key' => $line['key']], $summary['rows']);
 
         if ((bool) ($config['total_row'] ?? false)) {
             $rows[] = $this->record(__('filament-dashboards::dashboards.builder.summary.total'), $summary['totals'], true, $metrics, $summary['totals']);
@@ -142,5 +155,24 @@ class BuilderSummaryWidget extends TableWidget
         }
 
         return $record;
+    }
+
+    protected function drillDownTarget(array $arguments): ?array
+    {
+        $config = $this->widgetConfig();
+        $group = $this->configString($config, 'group_field');
+        $key = $arguments['key'] ?? null;
+
+        if ($group === null) {
+            return null;
+        }
+
+        return [
+            'part' => $config,
+            'rule' => is_scalar($key) && filled($key)
+                ? ['field' => $group, 'operator' => 'is', 'value' => $key]
+                : ['field' => $group, 'operator' => 'is_empty'],
+            'title' => is_string($arguments['label'] ?? null) ? $arguments['label'] : '',
+        ];
     }
 }

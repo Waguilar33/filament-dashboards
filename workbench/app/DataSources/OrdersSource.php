@@ -35,6 +35,11 @@ final class OrdersSource extends DataSource
         return DemoOrder::query();
     }
 
+    public function drillDownFields(Model $user, ?Model $tenant): array
+    {
+        return ['number', 'customer', 'channel', 'status', 'total', 'ordered_at'];
+    }
+
     public function fields(): array
     {
         return [

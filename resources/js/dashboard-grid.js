@@ -4,7 +4,7 @@ const COLUMNS = 12
 
 const SPAN_VARIABLES = ['--col-span-csm', '--col-span-ncmd', '--col-span-cxl', '--col-span-nclg']
 
-export default function dashboardGrid({ editable }) {
+export default function dashboardGrid({ editable, printing }) {
     return {
         grid: null,
 
@@ -37,7 +37,26 @@ export default function dashboardGrid({ editable }) {
             this.grid.on('dragstop resizestop', () => setTimeout(() => this.save()))
 
             if (editable) {
+                this.wide = window.matchMedia('(min-width: 1024px)')
+                this.lockWhenNarrow = () => this.grid.setStatic(!this.wide.matches)
+                this.wide.addEventListener('change', this.lockWhenNarrow)
+                this.lockWhenNarrow()
+            }
+
+            if (printing) {
+                window.addEventListener('afterprint', () => {
+                    const url = new URL(window.location.href)
+                    url.searchParams.delete('print')
+                    window.history.replaceState(window.history.state, '', url)
+                }, { once: true })
+
+                // Charts draw on the next frames after mount; printing earlier leaves them blank.
+                setTimeout(() => window.print(), 1500)
+            }
+
+            if (editable) {
                 this.$refs.grid.addEventListener('pointerdown', (event) => this.resizeCard(event))
+                this.$refs.grid.addEventListener('keydown', (event) => this.resizeCardByKey(event))
             }
         },
 
@@ -97,7 +116,7 @@ export default function dashboardGrid({ editable }) {
         resizeCard(event) {
             const handle = event.target.closest('.fi-dashboards-stat-resize')
 
-            if (!handle) {
+            if (!handle || !this.wide?.matches) {
                 return
             }
 
@@ -124,18 +143,57 @@ export default function dashboardGrid({ editable }) {
                 handle.removeEventListener('pointerup', stop)
                 handle.removeEventListener('pointercancel', stop)
 
-                const widths = {}
-
-                cards.querySelectorAll(':scope > .fi-grid-col .fi-dashboards-stat').forEach((card) => {
-                    widths[card.dataset.cardKey] = Math.round((card.closest('.fi-grid-col').getBoundingClientRect().width + gap) / step)
-                })
-
-                this.$wire.saveCardWidths(Number(handle.closest('.grid-stack-item').getAttribute('gs-id')), widths)
+                this.saveCardWidths(handle)
             }
 
             handle.addEventListener('pointermove', move)
             handle.addEventListener('pointerup', stop)
             handle.addEventListener('pointercancel', stop)
+        },
+
+        resizeCardByKey(event) {
+            const handle = event.target.closest('.fi-dashboards-stat-resize')
+            const change = { ArrowLeft: -1, ArrowRight: 1 }[event.key]
+
+            if (!handle || !change || !this.wide?.matches) {
+                return
+            }
+
+            event.preventDefault()
+
+            const column = handle.closest('.fi-grid-col')
+            const { gap, step } = this.cardMetrics(column.parentElement)
+            const span = Math.min(COLUMNS, Math.max(1, this.spanOf(column, gap, step) + change))
+
+            SPAN_VARIABLES.forEach((variable) => column.style.setProperty(variable, `span ${span} / span ${span}`))
+            this.saveCardWidths(handle)
+        },
+
+        spanOf(column, gap, step) {
+            const set = [...SPAN_VARIABLES]
+                .reverse()
+                .map((variable) => parseInt(column.style.getPropertyValue(variable).replace('span', ''), 10))
+                .find((value) => value > 0)
+
+            return set || Math.round((column.getBoundingClientRect().width + gap) / step)
+        },
+
+        cardMetrics(cards) {
+            const gap = parseFloat(getComputedStyle(cards).columnGap) || 0
+
+            return { gap, step: (cards.clientWidth + gap) / COLUMNS }
+        },
+
+        saveCardWidths(handle) {
+            const cards = handle.closest('.fi-grid-col').parentElement
+            const { gap, step } = this.cardMetrics(cards)
+            const widths = {}
+
+            cards.querySelectorAll(':scope > .fi-grid-col .fi-dashboards-stat').forEach((card) => {
+                widths[card.dataset.cardKey] = this.spanOf(card.closest('.fi-grid-col'), gap, step)
+            })
+
+            this.$wire.saveCardWidths(Number(handle.closest('.grid-stack-item').getAttribute('gs-id')), widths)
         },
 
         save() {
@@ -150,6 +208,7 @@ export default function dashboardGrid({ editable }) {
         },
 
         destroy() {
+            this.wide?.removeEventListener('change', this.lockWhenNarrow)
             this.observer?.disconnect()
             this.grid?.destroy(false)
         },

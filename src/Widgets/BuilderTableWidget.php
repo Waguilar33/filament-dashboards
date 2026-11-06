@@ -10,10 +10,12 @@ use Filament\Widgets\TableWidget;
 use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\Actions\FetchRows;
 use Waguilar\FilamentDashboards\Builder\Field;
+use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderTableWidget extends TableWidget
 {
+    use ExportsCsv;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
@@ -31,6 +33,8 @@ class BuilderTableWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->headerActions([$this->exportAction()])
+            ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(function () use ($source, $config, $columns, $limit): array {
                 if ($source === null) {
                     return [];
@@ -50,6 +54,8 @@ class BuilderTableWidget extends TableWidget
                         $this->dashboardDates($config),
                     );
                 } catch (InvalidArgumentException) {
+                    $this->needsAttention = true;
+
                     return [];
                 }
             })

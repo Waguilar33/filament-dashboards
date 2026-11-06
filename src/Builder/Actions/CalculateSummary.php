@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Builder\Actions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Builder\AggregateExpression;
+use Waguilar\FilamentDashboards\Builder\AggregateIsNull;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Field;
@@ -25,7 +26,7 @@ class CalculateSummary
     /**
      * @param  non-empty-list<array{metric: Metric, field: ?string}>  $metrics
      * @param  list<list<array{field: string, operator: string, value?: mixed}>>  $filters
-     * @return array{rows: list<array{group: string, values: list<int|float>}>, totals: list<int|float>}
+     * @return array{rows: list<array{group: string, key: bool|float|int|string|null, values: list<int|float>}>, totals: list<int|float>}
      */
     public function handle(
         DataSource $source,
@@ -47,6 +48,7 @@ class CalculateSummary
         $rows = $this->aggregates(clone $query, $metrics, $numberFields)
             ->addSelect("{$groupColumn} as {$group->alias()}")
             ->groupBy($groupColumn)
+            ->orderBy(new AggregateIsNull($metrics[0]['metric']->sqlFunction(), $numberFields[0] === null ? null : $this->resolveColumn->handle($query, $numberFields[0])))
             ->orderByDesc('aggregate_0')
             ->orderBy($groupColumn)
             ->limit($limit)
@@ -59,6 +61,7 @@ class CalculateSummary
         return [
             'rows' => array_values($rows->map(fn (array $row): array => [
                 'group' => blank($row[$group->alias()]) ? trans('filament-dashboards::builder.empty') : $group->valueLabel($row[$group->alias()]),
+                'key' => is_scalar($row[$group->alias()]) && filled($row[$group->alias()]) ? $row[$group->alias()] : null,
                 'values' => $this->values($row, $numberFields),
             ])->all()),
             'totals' => $this->values($totals, $numberFields),

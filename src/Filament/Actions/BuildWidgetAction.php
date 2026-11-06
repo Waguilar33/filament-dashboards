@@ -54,6 +54,7 @@ class BuildWidgetAction extends Action
                     SaveBuilderWidget::newFor(DashboardResource::user(), Filament::getTenant(), FilamentDashboardsPlugin::currentPanel()->getId()),
                     self::type($arguments),
                     $data,
+                    DashboardResource::user(),
                 ));
             });
     }

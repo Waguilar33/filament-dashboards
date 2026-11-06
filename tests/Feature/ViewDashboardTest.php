@@ -17,6 +17,7 @@ use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\Renderless;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Waguilar\FilamentDashboards\Enums\NavigationPosition;
@@ -132,7 +133,7 @@ it('replaces who the dashboard is shared with', function (): void {
     viewAs($owner, $dashboard)->callAction('share', data: ['shares' => [
         ['shareable_type' => $teammate->getMorphClass(), 'shareable_id' => (string) $teammate->getKey(), 'level' => 'edit'],
         ['shareable_type' => $role->getMorphClass(), 'shareable_id' => (string) $role->getKey(), 'level' => 'read'],
-    ]])->assertHasNoActionErrors();
+    ]])->assertHasNoActionErrors()->assertNotified(__('filament-dashboards::dashboards.notifications.shares_saved'));
 
     expect($dashboard->shares()->orderBy('id')->get()->map(fn ($share): array => [$share->shareable_type, (int) $share->shareable_id, $share->level])->all())
         ->toBe([[$teammate->getMorphClass(), $teammate->getKey(), ShareLevel::Edit], [$role->getMorphClass(), $role->getKey(), ShareLevel::Read]]);
@@ -338,7 +339,7 @@ it('lays out the header as edit, share and a menu by default, without add widget
     expect(headerLayout($actions))->toBe([
         'edit:primary:no-icon',
         'share:gray:no-icon',
-        ['settings:icon', 'duplicate:icon', 'setAsHome:icon', 'removeHome:icon', 'delete:icon'],
+        ['settings:icon', 'emailMe:icon', 'alerts:icon', 'print:icon', 'duplicate:icon', 'setAsHome:icon', 'removeHome:icon', 'delete:icon'],
     ]);
 });
 
@@ -408,7 +409,7 @@ it('frames each item with its actions while editing, and edit only for builder w
         ->assertSee('Revenue')
         ->assertSeeHtml("mountAction('duplicateItem', { item: {$code->id} })")
         ->assertSeeHtml("mountAction('removeItem', { item: {$code->id} })")
-        ->assertSeeHtml("mountAction('editWidget', { widget: {$builder->id} })")
+        ->assertSeeHtml("mountAction('editWidget', { widget: {$builder->id}, item: {$built->id} })")
         ->assertSeeHtml("mountAction('duplicateItem', { item: {$built->id} })")
         ->assertSeeHtml("mountAction('removeItem', { item: {$built->id} })");
 
@@ -616,6 +617,25 @@ it('shows the dashboards list to someone with an own or shared dashboard whateve
     $this->actingAs($outsider)->get(DashboardResource::getUrl())->assertForbidden();
 });
 
+it('shows the dashboards list to someone who may create dashboards whatever the list policy says', function (): void {
+    Gate::policy(Dashboard::class, CreateOnlyDashboardsPolicy::class);
+
+    $this->actingAs(user())->get(DashboardResource::getUrl())->assertOk();
+});
+
+final class CreateOnlyDashboardsPolicy
+{
+    public function viewAny(): bool
+    {
+        return false;
+    }
+
+    public function create(): bool
+    {
+        return true;
+    }
+}
+
 final class NoDashboardsListPolicy
 {
     public function viewAny(): bool
@@ -623,3 +643,72 @@ final class NoDashboardsListPolicy
         return false;
     }
 }
+
+it('asks before removing a widget from the dashboard, then removes only that placement', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+
+    $page = viewAs($owner, $dashboard)->mountAction(TestAction::make('removeItem')->arguments(['item' => $item->id]));
+    $action = $page->instance()->getMountedAction();
+
+    expect($action?->isConfirmationRequired())->toBeTrue()
+        ->and($action?->getModalDescription())->toBe(__('filament-dashboards::dashboards.modals.remove_item.description'));
+
+    $page->callMountedAction();
+
+    expect($dashboard->items()->count())->toBe(0);
+});
+
+it('loads widgets lazily and keeps the grid when only positions change', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+    $this->actingAs($owner);
+    $grid = fn (): array => Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->instance()
+        ->getSchema('content')?->getComponent(fn (mixed $component): bool => $component instanceof View, withHidden: true)?->getViewData() ?? [];
+
+    $before = $grid();
+    $item->update(['x' => 6, 'y' => 3]);
+
+    expect($before['items'][0]['props']['lazy'])->toBeTrue()
+        ->and($grid()['signature'])->toBe($before['signature'])
+        ->and((new ReflectionMethod(ViewDashboard::class, 'saveDashboardLayout'))->getAttributes(Renderless::class))->toHaveCount(1);
+});
+
+it('tells editors that narrow screens do not change the layout', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $this->actingAs($owner);
+
+    Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertSeeHtml('fi-dashboards-narrow-notice')
+        ->assertSee(__('filament-dashboards::dashboards.edit_mode.narrow'));
+});
+
+it('prints the dashboard on letter paper with every widget loaded and the range it shows', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+
+    $page = viewAs($owner, $dashboard)->assertSeeHtml('fi-dashboards-print-range');
+    $print = collect($page->instance()->getCachedHeaderActions())
+        ->flatMap(fn (mixed $action): array => $action instanceof ActionGroup ? $action->getActions() : [$action])
+        ->first(fn (Action $action): bool => $action->getName() === 'print');
+
+    expect($print?->getUrl())->toBe(DashboardResource::getUrl('view', ['record' => $dashboard, 'print' => 1]))
+        ->and(file_get_contents(__DIR__.'/../../resources/dist/dashboards.css'))->toContain('size:letter');
+});
+
+it('loads every widget at once when printing', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+    $this->actingAs($owner);
+
+    $grid = Livewire::withQueryParams(['print' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])->instance()
+        ->getSchema('content')?->getComponent(fn (mixed $component): bool => $component instanceof View, withHidden: true)?->getViewData() ?? [];
+
+    expect($grid['printing'])->toBeTrue()
+        ->and($grid['items'][0]['props'])->not->toHaveKey('lazy');
+});

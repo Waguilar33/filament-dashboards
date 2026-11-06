@@ -9,10 +9,16 @@
     wire:target="filters"
     x-load
     x-load-src="{{ FilamentAsset::getAlpineComponentSrc('dashboard-grid', 'waguilar33/filament-dashboards') }}"
-    x-data="dashboardGrid({ editable: @js($editable) })"
+    x-data="dashboardGrid({ editable: @js($editable), printing: @js($printing) })"
     class="fi-dashboards-grid"
     data-editable="{{ $editable ? 'true' : 'false' }}"
 >
+    @if ($printRange)
+        <p class="fi-dashboards-print-range">
+            {{ $printRange->start->translatedFormat('j M Y') }} – {{ $printRange->end->translatedFormat('j M Y') }}
+        </p>
+    @endif
+
     <div x-ref="grid" class="grid-stack">
         @foreach ($items as $item)
             <div
@@ -35,19 +41,29 @@
                                         <x-filament::link
                                             tag="button"
                                             :icon="\Filament\Support\Icons\Heroicon::OutlinedPencilSquare"
-                                            wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }} })"
+                                            wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }}, item: {{ $item['id'] }} })"
                                         >
                                             {{ __('filament-dashboards::dashboards.actions.edit') }}
                                         </x-filament::link>
+
+                                        <x-filament::link
+                                            tag="button"
+                                            :icon="\Filament\Support\Icons\Heroicon::OutlinedClock"
+                                            wire:click="mountAction('widgetHistory', { widget: {{ $item['builderWidgetId'] }} })"
+                                        >
+                                            {{ __('filament-dashboards::dashboards.actions.history') }}
+                                        </x-filament::link>
                                     @endif
 
-                                    <x-filament::link
-                                        tag="button"
-                                        :icon="\Filament\Support\Icons\Heroicon::OutlinedDocumentDuplicate"
-                                        wire:click="mountAction('duplicateItem', { item: {{ $item['id'] }} })"
-                                    >
-                                        {{ __('filament-dashboards::dashboards.actions.duplicate') }}
-                                    </x-filament::link>
+                                    @if ($item['duplicable'])
+                                        <x-filament::link
+                                            tag="button"
+                                            :icon="\Filament\Support\Icons\Heroicon::OutlinedDocumentDuplicate"
+                                            wire:click="mountAction('duplicateItem', { item: {{ $item['id'] }} })"
+                                        >
+                                            {{ __('filament-dashboards::dashboards.actions.duplicate') }}
+                                        </x-filament::link>
+                                    @endif
 
                                     <x-filament::link
                                         tag="button"

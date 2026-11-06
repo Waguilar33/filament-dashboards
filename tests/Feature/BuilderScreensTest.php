@@ -15,6 +15,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Actions\BuildFilters;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
@@ -282,12 +283,12 @@ it('shows a saved widget only to people the widget itself is shared with', funct
 
     $this->actingAs($teammate);
     Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertNotFound();
-    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets yet');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets you can see');
 
     share($widget, $teammate, ShareLevel::Read);
 
     Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->assertOk()->assertSee('Count · Orders');
-    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets yet');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets you can see');
 });
 
 it('polls a saved widget at its refresh interval', function (): void {
@@ -365,7 +366,7 @@ it('shows edit with share, duplicate and delete in a menu by default', function 
 
     expect($actions[0]->getName())->toBe('edit')
         ->and($actions[1])->toBeInstanceOf(ActionGroup::class)
-        ->and(array_map(fn (Action $action): ?string => $action->getName(), $actions[1]->getActions()))->toBe(['share', 'duplicate', 'delete'])
+        ->and(array_map(fn (Action $action): ?string => $action->getName(), $actions[1]->getActions()))->toBe(['share', 'history', 'duplicate', 'delete'])
         ->and(array_keys($table->getColumns()))->toBe(['name', 'type', 'kind']);
 });
 
@@ -388,6 +389,7 @@ it('lets the app take over the widgets table with the plugin actions', function 
         ->assertHasNoTableActionErrors();
 
     expect(array_keys($page->instance()->getTable()->getColumns()))->toBe(['name'])
+        ->and($page->instance()->getTable()->getRecordAction($mine))->toBe('edit')
         ->and(BuilderWidget::query()->where('name', 'Copy')->exists())->toBeTrue();
 });
 
@@ -411,6 +413,11 @@ it('lets a registered widget policy gate the list and creating, keeping record r
         ->assertTableActionHidden('duplicate', $mine);
     expect(BuilderWidgetResource::canCreate())->toBeFalse();
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertActionHidden(TestAction::make('buildWidget')->arguments(['type' => 'stats']));
+    $placed = $dashboard->items()->create(['widget' => $mine->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertDontSeeHtml("mountAction('duplicateItem', { item: {$placed->id} })")
+        ->call('mountAction', 'duplicateItem', ['item' => $placed->id])
+        ->assertForbidden();
 
     WidgetListPolicy::$create = true;
     Livewire::test(ListBuilderWidgets::class)->assertActionVisible('create');
@@ -423,6 +430,24 @@ it('keeps the widgets list open to everyone with a source when no policy is regi
     expect(BuilderWidgetResource::canViewAny())->toBeTrue()
         ->and(BuilderWidgetResource::canCreate())->toBeTrue()
         ->and(BuilderWidgetResource::shouldRegisterNavigation())->toBeTrue();
+});
+
+it('refuses preview settings sent from the browser', function (string $property): void {
+    $this->actingAs(user());
+
+    Livewire::test(BuilderStatsWidget::class, ['previewType' => 'stats', 'previewConfig' => ['cards' => []]])
+        ->set($property, null);
+})->with(['previewConfig', 'previewType', 'previewName'])->throws(CannotUpdateLockedPropertyException::class);
+
+it('edits from a dashboard only widgets in its own panel and tenant', function (): void {
+    $me = user();
+    $dashboard = dashboard($me);
+    $elsewhere = builderWidget($me, ['panel' => 'teams']);
+    $this->actingAs($me);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->call('mountAction', 'editWidget', ['widget' => $elsewhere->id])
+        ->assertForbidden();
 });
 
 final class WidgetListPolicy
@@ -550,10 +575,10 @@ it('leaves widgets built on a source the viewer may not view off the dashboard',
     share($widget, $allowed, ShareLevel::Read);
 
     $this->actingAs($owner);
-    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets yet');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSee('No widgets you can see');
 
     $this->actingAs($allowed);
-    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets yet');
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertDontSee('No widgets you can see');
 });
 
 it('formats a field value and names the field on a stats card and in a table', function (): void {
@@ -597,5 +622,5 @@ it('lays each stats card out in two collapsible columns with its label on top', 
         ->and($cards?->isCollapsible())->toBeTrue()
         ->and($cards?->getGridColumns('lg'))->toBe(2)
         ->and(collect($cards?->getDefaultChildComponents())->first(fn (Component $field): bool => $field instanceof Repeater && $field->getName() === 'filters')?->getDefaultChildComponents()[0]->getColumns('lg'))->toBe(1)
-        ->and(array_map(fn (Component $field): ?string => $field instanceof Field ? $field->getName() : null, $cards?->getDefaultChildComponents() ?? []))->toBe(['key', 'label', 'source', 'metric', 'field', 'dates_field', 'filters']);
+        ->and(array_map(fn (Component $field): ?string => $field instanceof Field ? $field->getName() : null, $cards?->getDefaultChildComponents() ?? []))->toBe(['key', 'label', 'source', 'metric', 'field', 'dates_field', 'period', 'compare', 'goal', 'filters']);
 });

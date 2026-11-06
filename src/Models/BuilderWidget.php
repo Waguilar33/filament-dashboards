@@ -7,9 +7,11 @@ namespace Waguilar\FilamentDashboards\Models;
 use Illuminate\Database\Eloquent\Attributes\UseEloquentBuilder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Waguilar\FilamentDashboards\Builders\BuilderWidgetBuilder;
+use Waguilar\FilamentDashboards\Builders\DashboardBuilder;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Concerns\HasOwnerAndShares;
@@ -32,7 +34,9 @@ use Waguilar\FilamentDashboards\Models\Concerns\HasOwnerAndShares;
 #[UseEloquentBuilder(BuilderWidgetBuilder::class)]
 class BuilderWidget extends Model
 {
-    use HasOwnerAndShares;
+    use HasOwnerAndShares {
+        canBeEditedBy as canBeEditedByOwnerOrShare;
+    }
 
     public const KEY_PREFIX = 'custom:';
 
@@ -42,6 +46,44 @@ class BuilderWidget extends Model
     {
         /** @var string */
         return config('filament-dashboards.tables.widgets');
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $widget): void {
+            $widget->placements()->delete();
+            $widget->versions()->delete();
+            DashboardAlert::query()->where('builder_widget_id', $widget->getKey())->delete();
+        });
+    }
+
+    /**
+     * @return HasMany<BuilderWidgetVersion, $this>
+     */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(BuilderWidgetVersion::class);
+    }
+
+    /**
+     * @return HasMany<DashboardItem, $this>
+     */
+    public function placements(): HasMany
+    {
+        return $this->hasMany(DashboardItem::class);
+    }
+
+    public function canBeEditedBy(Model $user): bool
+    {
+        if ($this->isSystem()) {
+            return false;
+        }
+
+        return $this->canBeEditedByOwnerOrShare($user)
+            || $this->placements()
+                ->where('shares_widget', true)
+                ->whereHas('dashboard', fn (DashboardBuilder $dashboards): DashboardBuilder => $dashboards->editableBy($user))
+                ->exists();
     }
 
     public function dashboardKey(): string
@@ -62,12 +104,36 @@ class BuilderWidget extends Model
         )));
     }
 
+    /**
+     * @return array<array-key, array<mixed>>
+     */
+    public function keyedCards(): array
+    {
+        $cards = [];
+
+        foreach (is_array($this->config['cards'] ?? null) ? array_values($this->config['cards']) : [] as $index => $card) {
+            $key = is_array($card) ? ($card['key'] ?? ($this->isSystem() ? (string) $index : null)) : null;
+
+            if (is_array($card) && is_string($key) && filled($key)) {
+                $cards[$key] = $card;
+            }
+        }
+
+        return $cards;
+    }
+
     public function followsDashboardDates(): bool
     {
         $parts = $this->parts();
 
         foreach ($parts as $part) {
-            if (is_array($part) && (filled($part['dates_field'] ?? null) || ($part['period'] ?? null) === 'dashboard')) {
+            if (! is_array($part)) {
+                continue;
+            }
+
+            $period = $part['period'] ?? null;
+
+            if (filled($part['dates_field'] ?? null) ? in_array($period, [null, 'dashboard'], true) : $period === 'dashboard') {
                 return true;
             }
         }

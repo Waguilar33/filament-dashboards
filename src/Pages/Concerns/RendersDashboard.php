@@ -14,19 +14,22 @@ use Filament\Schemas\Components\View;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
+use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardItem;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetForm;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 
 trait RendersDashboard
 {
     /**
+     * @param  (Closure(): Action)|null  $addWidget
      * @return array<Component>
      */
-    protected function dashboardComponents(Dashboard $dashboard, bool|Closure $editing, ?Action $addWidget): array
+    protected function dashboardComponents(Dashboard $dashboard, bool|Closure $editing, ?Closure $addWidget): array
     {
         /** @var Model $user */
         $user = Filament::auth()->user();
@@ -44,12 +47,15 @@ trait RendersDashboard
             ->filter(fn (BuilderWidget $widget): bool => array_diff($widget->sourceKeys(), array_keys($sources)) === [])
             ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
 
+        $canCreateWidgets = BuilderWidgetResource::canCreate();
+        $printing = property_exists($this, 'isPrinting') && $this->isPrinting;
+
         $items = $dashboard->items()
             ->orderBy('y')
             ->orderBy('x')
             ->orderBy('id')
             ->get()
-            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $user): ?array {
+            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $user, $canCreateWidgets, $printing): ?array {
                 $builderWidget = $builderWidgets->get($item->widget);
                 $component = $builderWidget instanceof BuilderWidget
                     ? BuilderWidgetForm::component($builderWidget->type)
@@ -62,9 +68,10 @@ trait RendersDashboard
                 return [
                     'id' => $item->id,
                     'widget' => $component,
-                    'props' => $builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [],
+                    'props' => [...($printing ? [] : $component::getDefaultProperties()), ...($builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [])],
                     'version' => $builderWidget?->updated_at?->timestamp,
                     'builderWidgetId' => $builderWidget instanceof BuilderWidget && $builderWidget->canBeEditedBy($user) ? $builderWidget->id : null,
+                    'duplicable' => ! $builderWidget instanceof BuilderWidget || $canCreateWidgets,
                     'label' => $builderWidget instanceof BuilderWidget ? $builderWidget->name : $component::dashboardLabel(),
                     'followsDates' => $builderWidget instanceof BuilderWidget
                         ? $builderWidget->followsDashboardDates()
@@ -80,17 +87,19 @@ trait RendersDashboard
             ->all();
 
         if ($items === []) {
+            $hidden = $dashboard->items()->exists();
+
             return [
-                EmptyState::make(__('filament-dashboards::dashboards.empty.heading'))
-                    ->description(__('filament-dashboards::dashboards.empty.description'))
+                EmptyState::make(__($hidden ? 'filament-dashboards::dashboards.empty.hidden_heading' : 'filament-dashboards::dashboards.empty.heading'))
+                    ->description(__($hidden ? 'filament-dashboards::dashboards.empty.hidden_description' : 'filament-dashboards::dashboards.empty.description'))
                     ->icon(Heroicon::OutlinedSquares2x2)
-                    ->footer($addWidget === null ? [] : [$addWidget]),
+                    ->footer($addWidget === null ? [] : [$addWidget()]),
             ];
         }
 
         return [
             ...(array_filter(array_column($items, 'followsDates')) === [] ? [] : [EmbeddedSchema::make('filtersForm')]),
-            View::make('filament-dashboards::grid')->viewData(function () use ($items, $editing): array {
+            View::make('filament-dashboards::grid')->viewData(function () use ($items, $editing, $printing): array {
                 $editable = $editing instanceof Closure ? (bool) $editing() : $editing;
                 $cardWidths = $this->cardWidths(array_column(array_filter($items, fn (array $item): bool => $item['widget'] === BuilderStatsWidget::class), 'id'));
 
@@ -101,7 +110,9 @@ trait RendersDashboard
                         ...($item['widget'] === BuilderStatsWidget::class ? ['cardWidths' => $cardWidths[$item['id']] ?? [], 'resizableCards' => $editable] : []),
                     ]], $items),
                     'editable' => $editable,
-                    'signature' => md5((string) json_encode([$items, $editable])),
+                    'printing' => $printing,
+                    'printRange' => array_filter(array_column($items, 'followsDates')) === [] ? null : app(ResolveDateRange::class)->handle($this->filters),
+                    'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version']], $items), $editable])),
                 ];
             }),
         ];

@@ -118,7 +118,7 @@ FilamentDashboardsPlugin::make()->dataSources([OrdersSource::class]);
 
 A field can read through the source model's relationships with dot notation, as a Filament column does: `Field::text('product.family.name', 'Family')` joins `product` and its `family` for grouping, filters, sorting and figures. Each step must be a belongs-to or has-one relationship; a has-many or belongs-to-many step is refused, because grouping by it would count a row once per related record. The joins ignore the related models' own scopes (such as soft deletes), so filter those in `query()` when they matter.
 
-A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too. Format how its values read on cards and in tables with `->formatUsing(fn (int|float $value): string => Number::currency($value, 'GTQ'))`.
+Let people click a stats card or summary row to see the records behind it by listing the fields they may see: `public function drillDownFields(Model $user, ?Model $tenant): array { return ['number', 'customer', 'total']; }` (none by default). A `date` column with no time is compared by its date when its field is marked `->dateOnly()`. A number stored scaled, such as cents, is shown in its real units with `Field::number('total', 'Total')->divideBy(100)`; filters on it are compared in those units too. Format how its values read on cards and in tables with `->formatUsing(fn (int|float $value): string => Number::currency($value, 'GTQ'))`.
 
 Hide a source from users who may not use it; they are not offered it in the builder, and widgets built on it are left off their dashboards:
 
@@ -129,7 +129,7 @@ public function canView(Model $user, ?Model $tenant): bool
 }
 ```
 
-Users then pick New widget (stats cards, table, summary table, figures table, line, bar, scatter, pie, doughnut, polar area), choose a source, a metric and filters, and see a preview before saving. In edit mode, drag the side handle of a stats card to size it on a 12-column row; sizes are kept per dashboard placement, and cards stack on widgets narrower than 384px. Stats cards show without a heading unless *Show title* is on, which groups them in a section headed by the widget name. A summary table groups by one field and shows one or more figures per group (count, or sum, average, min or max of a number), each with an optional share of the total, and an optional total row. Saved widgets appear under Widgets, where they can be shared, cloned and deleted like dashboards; Create there builds one with the same picker and form, without placing it on a dashboard. Ship ready-made ones as system widgets:
+Users then pick New widget (stats cards, table, summary table, figures table, line, bar, scatter, pie, doughnut, polar area), choose a source, a metric and filters, and see a preview before saving. In edit mode, drag the side handle of a stats card to size it on a 12-column row; sizes are kept per dashboard placement, and cards stack on widgets narrower than 384px. A stats card with a dashboard date field can pin its own period (today, this week, this month, this year, last 30 days), compare with the period before, and show progress towards a goal. Stats cards show without a heading unless *Show title* is on, which groups them in a section headed by the widget name. A summary table groups by one field and shows one or more figures per group (count, or sum, average, min or max of a number), each with an optional share of the total, and an optional total row. Saved widgets appear under Widgets, where they can be shared, cloned and deleted like dashboards, and History lists who saved each version and restores an earlier one; Create there builds one with the same picker and form, without placing it on a dashboard. Ship ready-made ones as system widgets:
 
 ```php
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
@@ -154,7 +154,7 @@ FilamentDashboardsPlugin::make()->systemWidgets([OrdersByChannel::class]);
 
 A system dashboard can place a system widget by listing its class in `items()`.
 
-A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty.
+A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty. Table, summary and figures widgets have an Export button that downloads what is shown as a CSV file.
 
 ## Dashboard dates
 
@@ -240,7 +240,7 @@ Both `InteractsWithSchemas` and `InteractsWithDashboardDates` (through Filament'
 | Clone | Anyone who can view it and may create dashboards |
 | Set as home | Anyone who can view it |
 
-Sharing a dashboard also shares the owner's saved widgets on it at the same level, and so does adding one of the owner's widgets to a dashboard that is already shared. A widget share is raised from Read to Edit but never lowered, and it stays when the dashboard is unshared or the widget removed. Widgets owned by someone else are not shared.
+Anyone who can open a dashboard can see the saved widgets its owner placed on it, and edit them with an Edit share on the dashboard; the access ends when the dashboard is unshared or the widget removed from it. A widget placed by someone other than its owner gives no extra access. Deleting a saved widget removes it from every dashboard.
 
 Without any other package, every signed-in user can create dashboards and add any widget whose `canView()` passes. Narrow it with:
 
@@ -335,6 +335,25 @@ Install [waguilar33/filament-guardian](https://github.com/Waguilar33/filament-gu
 Guardian finds dashboard widgets the same way it finds every panel widget. Check the permission in the widget's `canView()`.
 
 Role sharing switches on whenever the user model has a spatie/laravel-permission `roles()` relationship.
+
+## Emails and alerts
+
+Turn on dashboard emails and stats card alerts, and schedule the command that sends them:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->scheduledNotifications()
+    ->recipientContextUsing(function (Model $user, ?Model $tenant, Closure $next): mixed {
+        // Set anything your data sources need for this person and company, such as a team id, then run $next().
+        return $next();
+    });
+```
+
+```php
+Schedule::command('dashboards:notify')->hourly();
+```
+
+Anyone who can open a dashboard can then choose *Email me* (every morning or every Monday, from 7:00 in the dashboard time zone) and set *Alerts* on its stats cards. Each email and alert is computed as its recipient, in their panel, company and language. Publish and run the new migrations after updating the plugin.
 
 ## Tenancy
 

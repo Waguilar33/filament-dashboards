@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Locked;
 use Waguilar\FilamentDashboards\Actions\BuildFilters;
 use Waguilar\FilamentDashboards\Actions\FindBuilderWidget;
+use Waguilar\FilamentDashboards\Actions\ResolveCardRange;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Field;
@@ -27,13 +28,23 @@ trait InteractsWithBuilderWidget
     /**
      * @var array<string, mixed>|null
      */
+    #[Locked]
     public ?array $previewConfig = null;
 
+    #[Locked]
     public ?string $previewType = null;
 
+    #[Locked]
     public ?string $previewName = null;
 
     protected ?BuilderWidget $resolvedBuilderWidget = null;
+
+    protected bool $needsAttention = false;
+
+    protected function needsAttentionText(): string
+    {
+        return __('filament-dashboards::builder.needs_attention');
+    }
 
     protected function builderWidget(): ?BuilderWidget
     {
@@ -109,7 +120,12 @@ trait InteractsWithBuilderWidget
      */
     protected function dashboardDates(array $config): ?DateRange
     {
-        return $this->configString($config, 'dates_field') === null ? null : app(ResolveDateRange::class)->handle($this->pageFilters);
+        if ($this->configString($config, 'dates_field') === null) {
+            return null;
+        }
+
+        return app(ResolveCardRange::class)->handle($this->configString($config, 'period') ?? 'dashboard')
+            ?? app(ResolveDateRange::class)->handle($this->pageFilters);
     }
 
     protected function getPollingInterval(): ?string

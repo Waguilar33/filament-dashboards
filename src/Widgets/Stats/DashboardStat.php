@@ -14,6 +14,8 @@ class DashboardStat extends Stat
 
     protected bool $isResizable = false;
 
+    protected bool $drillsDown = false;
+
     public function cardKey(string $key): static
     {
         $this->cardKey = $key;
@@ -36,5 +38,17 @@ class DashboardStat extends Stat
     public function isResizable(): bool
     {
         return $this->isResizable;
+    }
+
+    public function drillsDown(bool $condition = true): static
+    {
+        $this->drillsDown = $condition;
+
+        return $this;
+    }
+
+    public function hasDrillDown(): bool
+    {
+        return $this->drillsDown;
     }
 }

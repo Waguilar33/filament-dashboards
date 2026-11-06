@@ -57,9 +57,20 @@ return [
         'full' => 'Full',
     ],
     'edit_mode' => [
+        'narrow' => 'Widgets stack on narrow screens. Use a wider screen to move or resize them.',
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'email_me' => 'Email me',
+        'alerts' => 'Alerts',
+        'close' => 'Close',
+        'save_as_copy' => 'Save as my copy',
+        'history' => 'History',
+        'restore' => 'Restore',
+        'print' => 'Print',
+        'export' => 'Export',
+        'open' => 'Open',
+        'resize_card' => 'Resize card (left and right arrows)',
         'create' => 'Create',
         'done_editing' => 'Finish editing',
         'duplicate' => 'Duplicate',
@@ -77,6 +88,24 @@ return [
         'next' => 'Next',
     ],
     'modals' => [
+        'drill_down' => [
+            'description' => 'Up to :count records, newest first.',
+            'empty' => 'No records.',
+        ],
+        'edit_widget' => [
+            'used_on' => '{0} Not on any dashboard yet.|{1} Used on 1 dashboard.|[2,*] Used on :count dashboards; saving changes it on all of them.',
+        ],
+        'history' => [
+            'heading' => 'History',
+            'description' => 'Current version: :current. Pick an earlier one to restore it; restoring keeps this one in the history too.',
+            'empty' => 'No changes recorded yet.',
+            'version' => ':who, :when',
+            'before' => 'before history began',
+        ],
+        'remove_item' => [
+            'heading' => 'Remove widget',
+            'description' => 'The widget leaves this dashboard. A saved widget stays in the Widgets list.',
+        ],
         'add_widget' => [
             'heading' => 'Add widget',
             'description' => 'Widgets are cards that show figures, charts or lists.',
@@ -143,6 +172,11 @@ return [
             'add_metric' => 'Add column',
             'percent' => 'Show % of total',
             'dates_field' => 'Dashboard date field',
+            'card_period' => 'Period',
+            'compare' => 'Compare with the previous period',
+            'compare_helper' => 'Shows the change against the same number of days just before.',
+            'goal' => 'Goal',
+            'goal_helper' => 'Shows how much of this number has been reached.',
             'dates_field_helper' => 'Filters this date with the dashboard dates.',
             'date_field' => 'Date',
             'grouping' => 'Group by',
@@ -185,6 +219,14 @@ return [
         'figures' => [
             'base' => 'Total',
         ],
+        'card_periods' => [
+            'dashboard' => 'Dashboard dates',
+            'today' => 'Today',
+            'week' => 'This week',
+            'month' => 'This month',
+            'year' => 'This year',
+            '30d' => 'Last 30 days',
+        ],
         'periods' => [
             'dashboard' => 'Dashboard dates',
             '7d' => 'Last 7 days',
@@ -208,12 +250,45 @@ return [
             'system' => 'System',
         ],
     ],
+    'digest' => [
+        'frequency' => 'Send me this dashboard',
+        'off' => 'Never',
+        'description' => 'Its stats cards arrive by email at :hour:00, for the day or week before.',
+        'frequencies' => [
+            'daily' => 'Every morning',
+            'weekly' => 'Every Monday',
+        ],
+        'subject' => ':dashboard · :range',
+        'others' => 'Also on this dashboard: :widgets.',
+        'open' => 'Open dashboard',
+    ],
+    'alerts' => [
+        'description' => 'Get an email when a stats card goes above a number (checked every hour, for today), or ends a day, week or month below one (checked at :hour:00).',
+        'add' => 'Add alert',
+        'card' => 'Card',
+        'when' => 'When',
+        'threshold' => 'Value',
+        'operators' => [
+            'above' => 'Goes above',
+            'below' => 'Ends below',
+        ],
+        'notification' => [
+            'above' => ':card went above your alert',
+            'below' => ':card ended below your alert',
+            'body' => 'On :dashboard it is now :value.',
+        ],
+    ],
     'notifications' => [
+        'saved' => 'Saved.',
+        'version_restored' => 'Version restored.',
+        'shares_saved' => 'Sharing saved.',
         'home_set' => 'This dashboard is now your home page.',
         'home_removed' => 'Your home page is back to the default dashboard.',
         'read_only' => 'You can view this dashboard. Clone it to make your own copy.',
     ],
     'empty' => [
+        'hidden_heading' => 'No widgets you can see',
+        'hidden_description' => 'The widgets on this dashboard use data or widgets you do not have access to. Ask its owner if you need them.',
         'heading' => 'No widgets yet',
         'description' => 'Add widgets to start building this dashboard.',
     ],

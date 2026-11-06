@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $morphs = match (config('filament-dashboards.key_types.users')) {
+            'int' => 'nullableNumericMorphs',
+            'uuid' => 'nullableUuidMorphs',
+            'ulid' => 'nullableUlidMorphs',
+            default => 'nullableMorphs',
+        };
+
+        Schema::create(config('filament-dashboards.tables.versions', 'custom_dashboard_widget_versions'), function (Blueprint $table) use ($morphs): void {
+            $table->id();
+            $table->unsignedBigInteger('builder_widget_id')->index();
+            $table->string('name');
+            $table->json('config');
+            $table->unsignedInteger('refresh_interval')->nullable();
+            $table->{$morphs}('changed_by');
+            $table->timestamp('created_at')->nullable();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists(config('filament-dashboards.tables.versions', 'custom_dashboard_widget_versions'));
+    }
+};

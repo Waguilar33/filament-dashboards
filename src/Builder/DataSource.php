@@ -24,6 +24,14 @@ abstract class DataSource
     }
 
     /**
+     * @return list<string>
+     */
+    public function drillDownFields(Model $user, ?Model $tenant): array
+    {
+        return [];
+    }
+
+    /**
      * @return Builder<covariant Model>
      */
     abstract public function query(Model $user, ?Model $tenant): Builder;

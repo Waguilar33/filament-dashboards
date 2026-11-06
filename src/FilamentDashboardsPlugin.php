@@ -96,6 +96,13 @@ final class FilamentDashboardsPlugin implements Plugin
      */
     protected ?Closure $timezoneUsing = null;
 
+    protected bool $hasScheduledNotifications = false;
+
+    /**
+     * @var (Closure(Model, ?Model, Closure(): mixed): mixed)|null
+     */
+    protected ?Closure $recipientContextUsing = null;
+
     /**
      * @var (Closure(string): Field)|null
      */
@@ -549,6 +556,36 @@ final class FilamentDashboardsPlugin implements Plugin
         return $this;
     }
 
+    public function scheduledNotifications(bool $condition = true): static
+    {
+        $this->hasScheduledNotifications = $condition;
+
+        return $this;
+    }
+
+    public function hasScheduledNotifications(): bool
+    {
+        return $this->hasScheduledNotifications;
+    }
+
+    /**
+     * @param  (Closure(Model, ?Model, Closure(): mixed): mixed)|null  $callback
+     */
+    public function recipientContextUsing(?Closure $callback): static
+    {
+        $this->recipientContextUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  Closure(): mixed  $next
+     */
+    public function inRecipientContext(Model $user, ?Model $tenant, Closure $next): mixed
+    {
+        return $this->recipientContextUsing === null ? $next() : ($this->recipientContextUsing)($user, $tenant, $next);
+    }
+
     public function getTimezone(): string
     {
         return $this->timezoneUsing === null ? Config::string('app.timezone') : ($this->timezoneUsing)();
@@ -579,6 +616,9 @@ final class FilamentDashboardsPlugin implements Plugin
             $actions['share'],
             ActionGroup::make([
                 $actions['settings'],
+                $actions['emailMe'],
+                $actions['alerts'],
+                $actions['print'],
                 $actions['duplicate'],
                 $actions['setAsHome'],
                 $actions['removeHome'],

@@ -52,7 +52,7 @@ class FetchRows
         $sort = $sortField === null ? null : $fields->get($sortField);
 
         if ($sort instanceof Field) {
-            $query->orderBy($this->resolveColumn->handle($query, $sort), strtolower($sortDirection) === 'desc' ? 'desc' : 'asc');
+            $query->reorder($this->resolveColumn->handle($query, $sort), strtolower($sortDirection) === 'desc' ? 'desc' : 'asc');
         }
 
         return array_values($query

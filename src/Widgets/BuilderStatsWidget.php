@@ -4,22 +4,29 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Widgets;
 
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Widgets\StatsOverviewWidget;
-use InvalidArgumentException;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Reactive;
-use Waguilar\FilamentDashboards\Builder\Actions\CalculateMetric;
-use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\Actions\EvaluateStatsCards;
+use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
+use Waguilar\FilamentDashboards\Widgets\Concerns\DrillsDownToRecords;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 use Waguilar\FilamentDashboards\Widgets\Stats\DashboardStat;
+use Waguilar\FilamentDashboards\Widgets\Stats\StatCardResult;
 
-class BuilderStatsWidget extends StatsOverviewWidget
+class BuilderStatsWidget extends StatsOverviewWidget implements HasActions
 {
+    use DrillsDownToRecords;
+    use InteractsWithActions;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
+
+    protected string $view = 'filament-dashboards::stats-widget';
 
     public const COLUMNS = 12;
 
@@ -58,35 +65,25 @@ class BuilderStatsWidget extends StatsOverviewWidget
      */
     protected function getStats(): array
     {
-        $stats = [];
-        $cards = $this->widgetConfig()['cards'] ?? [];
-
-        foreach (is_array($cards) ? array_values($cards) : [] as $index => $card) {
-            if (! is_array($card)) {
-                continue;
+        $stats = array_map(function (StatCardResult $result): DashboardStat {
+            if ($result->needsAttention) {
+                $this->needsAttention = true;
             }
 
-            $source = $this->source($card['source'] ?? null);
-            $metric = Metric::tryFrom($this->configString($card, 'metric') ?? Metric::Count->value) ?? Metric::Count;
-
-            if ($source === null) {
-                continue;
-            }
-
-            try {
-                $value = app(CalculateMetric::class)->handle($source, $this->viewer(), $this->tenant(), $metric, $this->configString($card, 'field'), $this->filters($card), $this->configString($card, 'dates_field'), $this->dashboardDates($card));
-            } catch (InvalidArgumentException) {
-                continue;
-            }
-
-            $field = $metric->requiresNumberField() ? $this->field($source, $this->configString($card, 'field')) : null;
-            $title = implode(' · ', array_filter([$metric->getLabel(), $field?->label, $source->label()]));
-
-            $stats[] = DashboardStat::make($this->configString($card, 'label') ?? $title, $field?->format($value) ?? $this->formatNumber($value))
+            return DashboardStat::make($result->label, $result->formatted)
                 ->translateLabel(false)
-                ->cardKey($this->configString($card, 'key') ?? (string) $index)
-                ->resizable($this->resizableCards);
-        }
+                ->description($result->description)
+                ->descriptionIcon($result->icon)
+                ->color($result->color)
+                ->cardKey($result->key)
+                ->resizable($this->resizableCards)
+                ->drillsDown(! $this->resizableCards && ! $result->needsAttention && $result->source !== null && $this->drillDownFields($result->source) !== []);
+        }, app(EvaluateStatsCards::class)->handle(
+            is_array($cards = $this->widgetConfig()['cards'] ?? null) ? $cards : [],
+            $this->viewer(),
+            $this->tenant(),
+            app(ResolveDateRange::class)->handle($this->pageFilters),
+        ));
 
         $defaultSpan = intdiv(self::COLUMNS, count($stats) >= 3 && count($stats) % 3 === 1 ? 4 : 3);
 
@@ -98,5 +95,18 @@ class BuilderStatsWidget extends StatsOverviewWidget
         }
 
         return $stats;
+    }
+
+    protected function drillDownTarget(array $arguments): ?array
+    {
+        $cards = $this->widgetConfig()['cards'] ?? [];
+
+        foreach (is_array($cards) ? array_values($cards) : [] as $index => $card) {
+            if (is_array($card) && ($this->configString($card, 'key') ?? (string) $index) === ($arguments['card'] ?? null)) {
+                return ['part' => $card, 'rule' => null, 'title' => $this->configString($card, 'label') ?? $this->source($card['source'] ?? null)?->label() ?? ''];
+            }
+        }
+
+        return null;
     }
 }

@@ -53,7 +53,7 @@ it('reads relation fields as table columns and summary groups', function (): voi
         ['product__name' => 'Pine', 'product__family__name' => 'Trees', 'amount' => 100],
         ['product__name' => 'Fir', 'product__family__name' => 'Trees', 'amount' => 50],
     ])
-        ->and($summary['rows'][0])->toBe(['group' => 'Trees', 'values' => [2]])
+        ->and($summary['rows'][0])->toBe(['group' => 'Trees', 'key' => 'Trees', 'values' => [2]])
         ->and($summary['totals'])->toBe([4]);
 });
 

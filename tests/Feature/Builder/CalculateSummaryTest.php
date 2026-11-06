@@ -23,8 +23,8 @@ it('calculates several metrics per group, sorted by the first descending, with t
 
     expect($summary)->toEqual([
         'rows' => [
-            ['group' => 'Store', 'values' => [100, 1, 2]],
-            ['group' => 'Web', 'values' => [30, 2, 2]],
+            ['group' => 'Store', 'key' => 'store', 'values' => [100, 1, 2]],
+            ['group' => 'Web', 'key' => 'web', 'values' => [30, 2, 2]],
         ],
         'totals' => [135, 4, 2.5],
     ]);
@@ -35,5 +35,5 @@ it('applies the filters to the rows and the totals', function (): void {
         ['metric' => Metric::Count, 'field' => null],
     ], [[['field' => 'channel', 'operator' => 'is', 'value' => 'web']]]);
 
-    expect($summary)->toEqual(['rows' => [['group' => 'Paid', 'values' => [2]]], 'totals' => [2]]);
+    expect($summary)->toEqual(['rows' => [['group' => 'Paid', 'key' => 'paid', 'values' => [2]]], 'totals' => [2]]);
 });

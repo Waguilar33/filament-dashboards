@@ -12,19 +12,34 @@ use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas\BuilderWidgetFo
 
 class SaveBuilderWidget
 {
+    public function __construct(
+        protected RecordWidgetVersion $recordWidgetVersion,
+    ) {}
+
     /**
      * @param  array<mixed>  $data
      */
-    public function handle(BuilderWidget $widget, BuilderWidgetType $type, array $data): BuilderWidget
+    public function handle(BuilderWidget $widget, BuilderWidgetType $type, array $data, ?Model $changedBy = null): BuilderWidget
     {
         $interval = $data['refresh_interval'] ?? null;
+
+        if ($widget->exists && $widget->versions()->doesntExist()) {
+            $this->recordWidgetVersion->handle($widget, null);
+        }
 
         $widget->fill([
             'name' => Arr::string($data, 'name'),
             'type' => $type,
             'config' => BuilderWidgetForm::config($data),
             'refresh_interval' => is_numeric($interval) ? max(5, (int) $interval) : null,
-        ])->save();
+        ]);
+
+        $changed = ! $widget->exists || $widget->isDirty(['name', 'config', 'refresh_interval']);
+        $widget->save();
+
+        if ($changed) {
+            $this->recordWidgetVersion->handle($widget, $changedBy);
+        }
 
         return $widget;
     }

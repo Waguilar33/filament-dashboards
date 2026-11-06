@@ -27,7 +27,7 @@ class DashboardShareBuilder extends Builder
 
                 $query->orWhere(fn (Builder $byRole): Builder => $byRole
                     ->where('shareable_type', $role->getMorphClass())
-                    ->whereIn('shareable_id', $roles->pluck($role->getQualifiedKeyName())));
+                    ->whereIn('shareable_id', $roles->toBase()->select($role->getQualifiedKeyName())));
             }
         });
 

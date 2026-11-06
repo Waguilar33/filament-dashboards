@@ -6,6 +6,7 @@ namespace Waguilar\FilamentDashboards\Builder\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Builder\AggregateExpression;
+use Waguilar\FilamentDashboards\Builder\AggregateIsNull;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Dates\DateRange;
@@ -41,11 +42,13 @@ class CalculateBreakdown
 
         $query = $this->applyFilters->handle($source->query($user, $tenant), $source, $filters, $dateField, $dates);
         $groupColumn = $this->resolveColumn->handle($query, $group);
+        $numberColumn = $numberField === null ? null : $this->resolveColumn->handle($query, $numberField);
         $rows = $query
             ->reorder()
             ->select("{$groupColumn} as {$group->alias()}")
-            ->addSelect(new AggregateExpression($metric->sqlFunction(), $numberField === null ? null : $this->resolveColumn->handle($query, $numberField), 'aggregate'))
+            ->addSelect(new AggregateExpression($metric->sqlFunction(), $numberColumn, 'aggregate'))
             ->groupBy($groupColumn)
+            ->orderBy(new AggregateIsNull($metric->sqlFunction(), $numberColumn))
             ->orderByDesc('aggregate')
             ->orderBy($groupColumn)
             ->limit($limit)

@@ -57,9 +57,20 @@ return [
         'full' => 'Completo',
     ],
     'edit_mode' => [
+        'narrow' => 'En pantallas angostas los widgets se apilan. Usa una pantalla más ancha para moverlos o cambiar su tamaño.',
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'email_me' => 'Enviarme por correo',
+        'alerts' => 'Alertas',
+        'close' => 'Cerrar',
+        'save_as_copy' => 'Guardar como mi copia',
+        'history' => 'Historial',
+        'restore' => 'Restaurar',
+        'print' => 'Imprimir',
+        'export' => 'Exportar',
+        'open' => 'Abrir',
+        'resize_card' => 'Cambiar ancho de la tarjeta (flechas izquierda y derecha)',
         'create' => 'Crear',
         'done_editing' => 'Terminar edición',
         'duplicate' => 'Duplicar',
@@ -77,6 +88,24 @@ return [
         'next' => 'Siguiente',
     ],
     'modals' => [
+        'drill_down' => [
+            'description' => 'Hasta :count registros, los más recientes primero.',
+            'empty' => 'Sin registros.',
+        ],
+        'edit_widget' => [
+            'used_on' => '{0} Aún no está en ningún escritorio.|{1} Se usa en 1 escritorio.|[2,*] Se usa en :count escritorios; al guardar cambia en todos.',
+        ],
+        'history' => [
+            'heading' => 'Historial',
+            'description' => 'Versión actual: :current. Elige una anterior para restaurarla; al restaurar, esta también queda en el historial.',
+            'empty' => 'Aún no hay cambios registrados.',
+            'version' => ':who, :when',
+            'before' => 'antes del historial',
+        ],
+        'remove_item' => [
+            'heading' => 'Quitar widget',
+            'description' => 'El widget sale de este escritorio. Un widget guardado sigue en la lista de widgets.',
+        ],
         'add_widget' => [
             'heading' => 'Agregar widget',
             'description' => 'Los widgets son tarjetas con cifras, gráficas o listas.',
@@ -143,6 +172,11 @@ return [
             'add_metric' => 'Agregar columna',
             'percent' => 'Mostrar % del total',
             'dates_field' => 'Campo de fecha',
+            'card_period' => 'Periodo',
+            'compare' => 'Comparar con el periodo anterior',
+            'compare_helper' => 'Muestra el cambio frente al mismo número de días justo antes.',
+            'goal' => 'Meta',
+            'goal_helper' => 'Muestra cuánto de esta cifra se ha alcanzado.',
             'dates_field_helper' => 'Filtra esta fecha con las fechas del escritorio.',
             'date_field' => 'Fecha',
             'grouping' => 'Agrupar por',
@@ -185,6 +219,14 @@ return [
         'figures' => [
             'base' => 'Total',
         ],
+        'card_periods' => [
+            'dashboard' => 'Fechas del escritorio',
+            'today' => 'Hoy',
+            'week' => 'Esta semana',
+            'month' => 'Este mes',
+            'year' => 'Este año',
+            '30d' => 'Últimos 30 días',
+        ],
         'periods' => [
             'dashboard' => 'Fechas del escritorio',
             '7d' => 'Últimos 7 días',
@@ -208,12 +250,45 @@ return [
             'system' => 'Del sistema',
         ],
     ],
+    'digest' => [
+        'frequency' => 'Enviarme este escritorio',
+        'off' => 'Nunca',
+        'description' => 'Sus tarjetas de cifras llegan por correo a las :hour:00, del día o la semana anterior.',
+        'frequencies' => [
+            'daily' => 'Cada mañana',
+            'weekly' => 'Cada lunes',
+        ],
+        'subject' => ':dashboard · :range',
+        'others' => 'También en este escritorio: :widgets.',
+        'open' => 'Abrir escritorio',
+    ],
+    'alerts' => [
+        'description' => 'Recibe un correo cuando una tarjeta de cifras pase de un número (se revisa cada hora, para hoy) o cierre un día, semana o mes por debajo de uno (se revisa a las :hour:00).',
+        'add' => 'Agregar alerta',
+        'card' => 'Tarjeta',
+        'when' => 'Cuándo',
+        'threshold' => 'Valor',
+        'operators' => [
+            'above' => 'Pasa de',
+            'below' => 'Cierra por debajo de',
+        ],
+        'notification' => [
+            'above' => ':card pasó de tu alerta',
+            'below' => ':card cerró por debajo de tu alerta',
+            'body' => 'En :dashboard ahora es :value.',
+        ],
+    ],
     'notifications' => [
+        'saved' => 'Guardado.',
+        'version_restored' => 'Versión restaurada.',
+        'shares_saved' => 'Se guardó el acceso compartido.',
         'home_set' => 'Este escritorio ahora es tu página de inicio.',
         'home_removed' => 'Tu página de inicio vuelve a ser el escritorio predeterminado.',
         'read_only' => 'Puedes ver este escritorio. Clónalo para tener tu propia copia.',
     ],
     'empty' => [
+        'hidden_heading' => 'No hay widgets que puedas ver',
+        'hidden_description' => 'Los widgets de este escritorio usan datos o widgets a los que no tienes acceso. Pídeselos a su dueño si los necesitas.',
         'heading' => 'Aún no hay widgets',
         'description' => 'Agrega widgets para empezar a armar este escritorio.',
     ],

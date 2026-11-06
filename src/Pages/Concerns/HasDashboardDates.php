@@ -38,6 +38,7 @@ trait HasDashboardDates
                     ->options($presets)
                     ->default($plugin->getDefaultDatePreset())
                     ->grouped()
+                    ->extraAttributes(['class' => 'fi-dashboards-dates'])
                     ->columnSpanFull()
                     ->afterStateUpdated(function (Set $set, mixed $state, mixed $old): void {
                         if ($state !== ResolveDateRange::CUSTOM) {
@@ -60,6 +61,7 @@ trait HasDashboardDates
                         ->prefix(__('filament-dashboards::dashboards.dates.until')),
                 ])
                     ->from('sm')
+                    ->extraAttributes(['class' => 'fi-dashboards-dates'])
                     ->visible(fn (Get $get): bool => $get('preset') === ResolveDateRange::CUSTOM)
                     ->columnSpanFull(),
             ]);

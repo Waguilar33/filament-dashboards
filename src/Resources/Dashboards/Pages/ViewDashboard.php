@@ -8,6 +8,10 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Section;
@@ -19,23 +23,32 @@ use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
+use Livewire\Attributes\Renderless;
 use Livewire\Attributes\Url;
 use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\DuplicateDashboardItem;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveCardWidths;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
+use Waguilar\FilamentDashboards\Commands\SendDashboardNotificationsCommand;
+use Waguilar\FilamentDashboards\Enums\AlertOperator;
+use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\Enums\DigestFrequency;
 use Waguilar\FilamentDashboards\Filament\Actions\BuildWidgetAction;
 use Waguilar\FilamentDashboards\Filament\Actions\DashboardSettingsAction;
 use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
 use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\WidgetHistoryAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Models\DashboardAlert;
 use Waguilar\FilamentDashboards\Models\DashboardItem;
+use Waguilar\FilamentDashboards\Models\DashboardSubscription;
 use Waguilar\FilamentDashboards\Pages\Concerns\HasDashboardDates;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
@@ -52,8 +65,13 @@ class ViewDashboard extends Page
 
     protected static string $resource = DashboardResource::class;
 
+    protected ?bool $canEdit = null;
+
     #[Url(as: 'editing')]
     public bool $isEditingLayout = false;
+
+    #[Url(as: 'print')]
+    public bool $isPrinting = false;
 
     public static function canAccess(array $parameters = []): bool
     {
@@ -89,13 +107,14 @@ class ViewDashboard extends Page
                 Section::make(__('filament-dashboards::dashboards.edit_mode.heading'))
                     ->key('editMode')
                     ->compact()
+                    ->description(new HtmlString('<span class="fi-dashboards-narrow-notice">'.e(__('filament-dashboards::dashboards.edit_mode.narrow')).'</span>'))
                     ->icon(Heroicon::OutlinedPencilSquare)
                     ->headerActions([$this->doneEditingAction(), $this->addWidgetAction()]),
             ] : []),
             ...$this->dashboardComponents(
                 $this->getDashboard(),
                 fn (): bool => $this->isEditingLayout,
-                $this->canEdit() && ! $this->isEditingLayout ? $this->addWidgetAction() : null,
+                $this->canEdit() && ! $this->isEditingLayout ? $this->addWidgetAction(...) : null,
             ),
         ]);
     }
@@ -103,6 +122,7 @@ class ViewDashboard extends Page
     /**
      * @param  array<mixed>  $layout
      */
+    #[Renderless]
     public function saveDashboardLayout(array $layout): void
     {
         abort_unless($this->canEdit(), 403);
@@ -131,6 +151,7 @@ class ViewDashboard extends Page
                     ->get()
                     ->first(fn (BuilderWidget $widget): bool => $widget->dashboardKey() === $item->widget);
 
+                abort_if($builderWidget instanceof BuilderWidget && ! BuilderWidgetResource::canCreate(), 403);
                 abort_unless(
                     $builderWidget instanceof BuilderWidget
                         || array_key_exists($item->widget, FilamentDashboardsPlugin::get()->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), $user)),
@@ -147,6 +168,11 @@ class ViewDashboard extends Page
     {
         return Action::make('removeItem')
             ->visible($this->canEdit())
+            ->requiresConfirmation()
+            ->color('danger')
+            ->modalHeading(__('filament-dashboards::dashboards.modals.remove_item.heading'))
+            ->modalDescription(__('filament-dashboards::dashboards.modals.remove_item.description'))
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.remove'))
             ->action(function (array $arguments): void {
                 $this->editableItem($arguments)->delete();
 
@@ -178,6 +204,12 @@ class ViewDashboard extends Page
             'edit' => $this->editLayoutAction(),
             'share' => $this->shareAction(),
             'settings' => $this->settingsAction(),
+            'emailMe' => $this->emailMeAction(),
+            'alerts' => $this->alertsAction(),
+            'print' => Action::make('print')
+                ->label(__('filament-dashboards::dashboards.actions.print'))
+                ->icon(Heroicon::OutlinedPrinter)
+                ->url(fn (): string => DashboardResource::getUrl('view', ['record' => $this->getDashboard(), 'print' => 1])),
             'duplicate' => $this->cloneAction(),
             'setAsHome' => $this->setHomeAction(),
             'removeHome' => $this->removeHomeAction(),
@@ -195,8 +227,8 @@ class ViewDashboard extends Page
             ->when($sources === [], fn (Builder $query): Builder => $query->whereKey([]))
             ->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())
             ->visibleTo($user)
-            ->orderBy('name')
             ->get()
+            ->sortBy(fn (BuilderWidget $widget): string => mb_strtolower($widget->name))
             ->filter(fn (BuilderWidget $widget): bool => array_diff($widget->sourceKeys(), array_keys($sources)) === [])
             ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
 
@@ -256,6 +288,7 @@ class ViewDashboard extends Page
                     $this->getDashboard(),
                     $key,
                     $builderWidget instanceof BuilderWidget ? $builderWidget->type->defaultSize() : $widgets[$key]::dashboardSize(),
+                    DashboardResource::user(),
                 );
 
                 $this->reloadDashboard();
@@ -268,7 +301,7 @@ class ViewDashboard extends Page
             ->visible($this->canEdit() && BuilderWidgetResource::canCreate())
             ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
             ->after(function (BuilderWidget $record): void {
-                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize());
+                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize(), DashboardResource::user());
 
                 $this->reloadDashboard();
             });
@@ -277,18 +310,191 @@ class ViewDashboard extends Page
     public function editWidgetAction(): Action
     {
         return Action::make('editWidget')
+            ->visible($this->canEdit())
             ->slideOver()
             ->modalWidth(Width::FourExtraLarge)
             ->modalHeading(fn (array $arguments): string => $this->editableWidget($arguments)->name)
+            ->modalDescription(fn (array $arguments): string => trans_choice('filament-dashboards::dashboards.modals.edit_widget.used_on', $count = $this->editableWidget($arguments)->placements()->distinct()->count('dashboard_id'), ['count' => $count]))
             ->fillForm(fn (array $arguments): array => BuilderWidgetForm::fill($this->editableWidget($arguments)))
             ->schema(fn (array $arguments): array => BuilderWidgetForm::components($this->editableWidget($arguments)->type))
+            ->extraModalFooterActions(fn (Action $action, array $arguments): array => BuilderWidgetResource::canCreate() && filled($arguments['item'] ?? null) ? [
+                $action->makeModalSubmitAction('saveAsCopy', arguments: ['copy' => true])
+                    ->label(__('filament-dashboards::dashboards.actions.save_as_copy'))
+                    ->color('gray'),
+            ] : [])
             ->action(function (array $data, array $arguments): void {
                 $widget = $this->editableWidget($arguments);
 
-                app(SaveBuilderWidget::class)->handle($widget, $widget->type, $data);
+                if ((bool) ($arguments['copy'] ?? false)) {
+                    abort_unless(BuilderWidgetResource::canCreate(), 403);
+
+                    $item = $this->editableItem($arguments);
+                    $copy = app(SaveBuilderWidget::class)->handle(
+                        SaveBuilderWidget::newFor(DashboardResource::user(), Filament::getTenant(), $widget->panel),
+                        $widget->type,
+                        $data,
+                        DashboardResource::user(),
+                    );
+                    $item->update(['widget' => $copy->dashboardKey(), 'shares_widget' => true]);
+                } else {
+                    app(SaveBuilderWidget::class)->handle($widget, $widget->type, $data, DashboardResource::user());
+                }
 
                 $this->reloadDashboard();
             });
+    }
+
+    protected function emailMeAction(): Action
+    {
+        $find = fn (): ?DashboardSubscription => DashboardSubscription::query()
+            ->where('panel', $this->getDashboard()->panel)
+            ->where('dashboard_id', $this->getDashboard()->getKey())
+            ->whereMorphedTo('user', DashboardResource::user())
+            ->where('tenant_type', Filament::getTenant()?->getMorphClass())
+            ->where('tenant_id', Filament::getTenant()?->getKey())
+            ->first();
+
+        return Action::make('emailMe')
+            ->label(__('filament-dashboards::dashboards.actions.email_me'))
+            ->icon(Heroicon::OutlinedEnvelope)
+            ->visible(FilamentDashboardsPlugin::get()->hasScheduledNotifications())
+            ->modalWidth(Width::Medium)
+            ->modalDescription(__('filament-dashboards::dashboards.digest.description', ['hour' => SendDashboardNotificationsCommand::SEND_HOUR]))
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.save'))
+            ->fillForm(fn (): array => ['frequency' => $find()?->frequency->value])
+            ->schema([
+                Select::make('frequency')
+                    ->label(__('filament-dashboards::dashboards.digest.frequency'))
+                    ->placeholder(__('filament-dashboards::dashboards.digest.off'))
+                    ->options(collect(DigestFrequency::cases())->mapWithKeys(fn (DigestFrequency $frequency): array => [$frequency->value => $frequency->getLabel()])->all()),
+            ])
+            ->action(function (array $data) use ($find): void {
+                $frequency = DigestFrequency::tryFrom(is_string($data['frequency'] ?? null) ? $data['frequency'] : '');
+                $subscription = $find();
+
+                if ($frequency === null) {
+                    $subscription?->delete();
+
+                    return;
+                }
+
+                $subscription ??= new DashboardSubscription([
+                    'panel' => $this->getDashboard()->panel,
+                    'dashboard_id' => $this->getDashboard()->getKey(),
+                ]);
+                $subscription->user()->associate(DashboardResource::user());
+                $subscription->tenant()->associate(Filament::getTenant());
+                $subscription->frequency = $frequency;
+                $subscription->save();
+            })
+            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.saved'));
+    }
+
+    protected function alertsAction(): Action
+    {
+        $mine = fn (): Builder => DashboardAlert::query()
+            ->where('dashboard_id', $this->getDashboard()->getKey())
+            ->whereMorphedTo('user', DashboardResource::user())
+            ->where('tenant_type', Filament::getTenant()?->getMorphClass())
+            ->where('tenant_id', Filament::getTenant()?->getKey());
+
+        return Action::make('alerts')
+            ->label(__('filament-dashboards::dashboards.actions.alerts'))
+            ->icon(Heroicon::OutlinedBellAlert)
+            ->visible(FilamentDashboardsPlugin::get()->hasScheduledNotifications())
+            ->slideOver()
+            ->modalWidth(Width::TwoExtraLarge)
+            ->modalDescription(__('filament-dashboards::dashboards.alerts.description', ['hour' => SendDashboardNotificationsCommand::SEND_HOUR]))
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.save'))
+            ->fillForm(fn (): array => ['alerts' => $mine()->get()->map(fn (DashboardAlert $alert): array => [
+                'card' => "{$alert->builder_widget_id}:{$alert->card_key}",
+                'operator' => $alert->operator->value,
+                'threshold' => $alert->threshold,
+            ])->all()])
+            ->schema(fn (): array => [
+                Repeater::make('alerts')
+                    ->hiddenLabel()
+                    ->defaultItems(0)
+                    ->reorderable(false)
+                    ->compact()
+                    ->addActionLabel(__('filament-dashboards::dashboards.alerts.add'))
+                    ->table([
+                        TableColumn::make(__('filament-dashboards::dashboards.alerts.card'))->markAsRequired()->alignStart(),
+                        TableColumn::make(__('filament-dashboards::dashboards.alerts.when'))->markAsRequired()->alignStart(),
+                        TableColumn::make(__('filament-dashboards::dashboards.alerts.threshold'))->markAsRequired()->alignStart(),
+                    ])
+                    ->schema([
+                        Select::make('card')->options($this->alertableCards())->required(),
+                        Select::make('operator')
+                            ->options(collect(AlertOperator::cases())->mapWithKeys(fn (AlertOperator $operator): array => [$operator->value => $operator->getLabel()])->all())
+                            ->default(AlertOperator::Above->value)
+                            ->selectablePlaceholder(false)
+                            ->required(),
+                        TextInput::make('threshold')->numeric()->required(),
+                    ]),
+            ])
+            ->action(function (array $data) use ($mine): void {
+                $cards = $this->alertableCards();
+                $mine()->delete();
+
+                foreach (Arr::array($data, 'alerts') as $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+
+                    $card = is_string($row['card'] ?? null) ? $row['card'] : '';
+                    $operator = AlertOperator::tryFrom(is_string($row['operator'] ?? null) ? $row['operator'] : '');
+                    $threshold = $row['threshold'] ?? null;
+
+                    if (! array_key_exists($card, $cards) || $operator === null || ! is_numeric($threshold)) {
+                        continue;
+                    }
+
+                    [$widget, $key] = explode(':', $card, 2);
+                    $alert = new DashboardAlert([
+                        'panel' => $this->getDashboard()->panel,
+                        'dashboard_id' => $this->getDashboard()->getKey(),
+                        'builder_widget_id' => (int) $widget,
+                        'card_key' => $key,
+                        'operator' => $operator,
+                        'threshold' => $threshold + 0,
+                    ]);
+                    $alert->user()->associate(DashboardResource::user());
+                    $alert->tenant()->associate(Filament::getTenant());
+                    $alert->save();
+                }
+            })
+            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.saved'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function alertableCards(): array
+    {
+        $options = [];
+        $widgets = BuilderWidget::query()
+            ->inScope($this->getDashboard()->panel, Filament::getTenant())
+            ->visibleTo(DashboardResource::user())
+            ->where('type', BuilderWidgetType::Stats)
+            ->whereIn('id', $this->getDashboard()->items()->whereNotNull('builder_widget_id')->select('builder_widget_id'))
+            ->get();
+
+        foreach ($widgets as $widget) {
+            foreach ($widget->keyedCards() as $key => $card) {
+                $label = is_string($card['label'] ?? null) && filled($card['label']) ? $card['label'] : (is_string($card['source'] ?? null) ? $card['source'] : '');
+                $options["{$widget->id}:{$key}"] = "{$widget->name} · {$label}";
+            }
+        }
+
+        return $options;
+    }
+
+    public function widgetHistoryAction(): Action
+    {
+        return WidgetHistoryAction::make('widgetHistory')
+            ->record(fn (array $arguments): BuilderWidget => $this->editableWidget($arguments))
+            ->after(fn () => $this->reloadDashboard());
     }
 
     /**
@@ -296,7 +502,9 @@ class ViewDashboard extends Page
      */
     protected function editableWidget(array $arguments): BuilderWidget
     {
-        $widget = BuilderWidget::query()->find($arguments['widget'] ?? null);
+        $widget = BuilderWidget::query()
+            ->inScope($this->getDashboard()->panel, Filament::getTenant())
+            ->find($arguments['widget'] ?? null);
 
         abort_unless($widget instanceof BuilderWidget && $widget->canBeEditedBy(DashboardResource::user()), 403);
 
@@ -366,6 +574,6 @@ class ViewDashboard extends Page
 
     protected function canEdit(): bool
     {
-        return $this->getDashboard()->canBeEditedBy(DashboardResource::user());
+        return $this->canEdit ??= $this->getDashboard()->canBeEditedBy(DashboardResource::user());
     }
 }

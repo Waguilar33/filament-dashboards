@@ -32,7 +32,7 @@ class ResolveColumn
         foreach ($segments as $segment) {
             $relation = method_exists($model, $segment) ? $model->{$segment}() : null;
 
-            if (! $relation instanceof BelongsTo && ! $relation instanceof HasOne) {
+            if (! $relation instanceof BelongsTo && (! $relation instanceof HasOne || $relation->isOneOfMany())) {
                 throw new InvalidArgumentException("[{$field->name}] must reach its attribute through belongs-to or has-one relationships; [{$segment}] is not one.");
             }
 

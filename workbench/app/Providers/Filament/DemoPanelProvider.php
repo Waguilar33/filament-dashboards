@@ -40,6 +40,7 @@ final class DemoPanelProvider extends PanelProvider
             ->discoverWidgets(in: __DIR__.'/../../Filament/Widgets', for: 'Workbench\\App\\Filament\\Widgets')
             ->plugin(FilamentDashboardsPlugin::make()
                 ->dataSources([OrdersSource::class])
+                ->scheduledNotifications()
                 ->shareableUsersUsing(fn (?Model $tenant): Builder => User::query())
                 ->systemWidgets([SalesThisYear::class, RevenueTrend::class, OrdersByChannel::class])
                 ->systemDashboards([OverviewDashboard::class]))

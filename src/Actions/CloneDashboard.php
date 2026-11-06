@@ -26,6 +26,7 @@ class CloneDashboard
 
             $clone->items()->createMany($source->items->map(fn (DashboardItem $item): array => [
                 'widget' => $item->widget,
+                'shares_widget' => $item->builderWidget?->isOwnedBy($owner) ?? false,
                 'x' => $item->x,
                 'y' => $item->y,
                 'w' => $item->w,

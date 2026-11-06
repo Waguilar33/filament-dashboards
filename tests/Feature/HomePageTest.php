@@ -6,6 +6,7 @@ use Filament\Facades\Filament;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
 use Waguilar\FilamentDashboards\Pages\Home;
+use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Workbench\App\Filament\Widgets\OrdersOverview;
 
 beforeEach(function (): void {
@@ -22,7 +23,9 @@ it('shows the user home dashboard', function (): void {
     Livewire::test(Home::class)
         ->assertSee('My home')
         ->assertSee("dashboard-item-{$dashboard->items()->sole()->id}")
-        ->assertSeeHtml('filtersForm.preset');
+        ->assertSeeHtml('filtersForm.preset')
+        ->assertActionVisible('openHome')
+        ->assertActionHasUrl('openHome', DashboardResource::getUrl('view', ['record' => $dashboard]));
 });
 
 it('keeps dashboard widgets off the default dashboard', function (): void {
@@ -37,5 +40,6 @@ it('shows the default dashboard without a home', function (): void {
     Livewire::test(Home::class)
         ->assertSee('Dashboard')
         ->assertDontSee('No widgets yet')
-        ->assertDontSeeHtml('filtersForm.preset');
+        ->assertDontSeeHtml('filtersForm.preset')
+        ->assertActionDoesNotExist('openHome');
 });

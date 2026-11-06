@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Widgets;
 
+use Carbon\CarbonImmutable;
 use Filament\Widgets\ChartWidget;
 use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
@@ -13,6 +14,7 @@ use Waguilar\FilamentDashboards\Builder\Actions\CalculateTrend;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderChartWidget extends ChartWidget
@@ -50,8 +52,17 @@ class BuilderChartWidget extends ChartWidget
                 default => $this->breakdown($config, $source, $metric, $label),
             };
         } catch (InvalidArgumentException) {
+            $this->needsAttention = true;
+
             return ['datasets' => [], 'labels' => []];
         }
+    }
+
+    public function getDescription(): ?string
+    {
+        $this->getCachedData();
+
+        return $this->needsAttention ? $this->needsAttentionText() : null;
     }
 
     protected function getType(): string
@@ -78,6 +89,7 @@ class BuilderChartWidget extends ChartWidget
     {
         $dates = app(ResolveDateRange::class)->handle($this->pageFilters);
         $days = (int) $dates->start->diffInDays($dates->end) + 1;
+        $today = CarbonImmutable::now(FilamentDashboardsPlugin::get()->getTimezone());
 
         [$from, $to, $grouping] = match ($this->configString($config, 'period') ?? '12m') {
             'dashboard' => [$dates->start, $dates->end, match (true) {
@@ -85,11 +97,11 @@ class BuilderChartWidget extends ChartWidget
                 $days <= 180 => TimeGrouping::Week,
                 default => TimeGrouping::Month,
             }],
-            '7d' => [now()->subDays(6), now(), TimeGrouping::Day],
-            '30d' => [now()->subDays(29), now(), TimeGrouping::Day],
-            '90d' => [now()->subDays(89), now(), TimeGrouping::Week],
-            'ytd' => [now()->startOfYear(), now(), TimeGrouping::Month],
-            default => [now()->subMonths(11), now(), TimeGrouping::Month],
+            '7d' => [$today->subDays(6)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
+            '30d' => [$today->subDays(29)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
+            '90d' => [$today->subDays(89)->startOfDay(), $today->endOfDay(), TimeGrouping::Week],
+            'ytd' => [$today->startOfYear(), $today->endOfDay(), TimeGrouping::Month],
+            default => [$today->startOfMonth()->subMonths(11), $today->endOfDay(), TimeGrouping::Month],
         };
 
         $grouping = TimeGrouping::tryFrom($this->configString($config, 'grouping') ?? '') ?? $grouping;
