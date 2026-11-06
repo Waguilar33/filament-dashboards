@@ -11,12 +11,12 @@ use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\Actions\FetchRows;
 use Waguilar\FilamentDashboards\Builder\Field;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
-use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
+use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsData;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderTableWidget extends TableWidget
 {
-    use ExportsCsv;
+    use ExportsData;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
@@ -71,5 +71,12 @@ class BuilderTableWidget extends TableWidget
             ))))
             ->paginated(false)
             ->poll($interval);
+    }
+
+    protected function exportSourceKeys(): array
+    {
+        $source = $this->configString($this->widgetConfig(), 'source');
+
+        return $source === null ? [] : [$source];
     }
 }

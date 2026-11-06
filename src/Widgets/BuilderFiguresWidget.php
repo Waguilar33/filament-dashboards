@@ -17,12 +17,12 @@ use Waguilar\FilamentDashboards\Builder\Actions\CalculateMetric;
 use Waguilar\FilamentDashboards\Builder\Enums\Arithmetic;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
-use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
+use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsData;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderFiguresWidget extends TableWidget
 {
-    use ExportsCsv;
+    use ExportsData;
     use InteractsWithBuilderWidget;
 
     public const NUMBER = 'number';
@@ -190,5 +190,13 @@ class BuilderFiguresWidget extends TableWidget
         }
 
         return $rows;
+    }
+
+    protected function exportSourceKeys(): array
+    {
+        return $this->builderWidget()?->sourceKeys() ?? array_values(array_unique(array_filter(array_map(
+            fn (mixed $column): ?string => is_array($column) ? $this->configString($column, 'source') : null,
+            is_array($this->widgetConfig()['columns'] ?? null) ? $this->widgetConfig()['columns'] : [],
+        ))));
     }
 }

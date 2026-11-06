@@ -16,13 +16,13 @@ use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\DrillsDownToRecords;
-use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
+use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsData;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderSummaryWidget extends TableWidget
 {
     use DrillsDownToRecords;
-    use ExportsCsv;
+    use ExportsData;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
@@ -175,5 +175,12 @@ class BuilderSummaryWidget extends TableWidget
                 : ['field' => $group, 'operator' => 'is_empty'],
             'title' => is_string($arguments['label'] ?? null) ? $arguments['label'] : '',
         ];
+    }
+
+    protected function exportSourceKeys(): array
+    {
+        $source = $this->configString($this->widgetConfig(), 'source');
+
+        return $source === null ? [] : [$source];
     }
 }

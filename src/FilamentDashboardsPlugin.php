@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use LogicException;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
@@ -39,6 +40,8 @@ use Waguilar\FilamentDashboards\Dates\Periods\ThisWeek;
 use Waguilar\FilamentDashboards\Dates\Periods\ThisYear;
 use Waguilar\FilamentDashboards\Dates\Periods\Today;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\Exports\CsvExporter;
+use Waguilar\FilamentDashboards\Exports\WidgetExporter;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterTenantDashboardNavigation;
@@ -125,6 +128,18 @@ final class FilamentDashboardsPlugin implements Plugin
     protected array $builderLimits = ['table' => 100, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100];
 
     protected ?int $minRefreshInterval = 5;
+
+    /**
+     * @var list<WidgetExporter>|null
+     */
+    protected ?array $exporters = null;
+
+    protected string $csvDelimiter = ',';
+
+    /**
+     * @var (Closure(string): string)|null
+     */
+    protected ?Closure $exportFileNameUsing = null;
 
     /**
      * @var (Closure(): string)|null
@@ -702,6 +717,48 @@ final class FilamentDashboardsPlugin implements Plugin
     public function getBuilderLimit(string $key): int
     {
         return $this->builderLimits[$key];
+    }
+
+    /**
+     * @param  list<WidgetExporter>  $exporters
+     */
+    public function exporters(array $exporters): static
+    {
+        $this->exporters = $exporters;
+
+        return $this;
+    }
+
+    /**
+     * @return list<WidgetExporter>
+     */
+    public function getExporters(): array
+    {
+        return $this->exporters ?? [new CsvExporter($this->csvDelimiter)];
+    }
+
+    public function csvDelimiter(string $delimiter): static
+    {
+        $this->csvDelimiter = $delimiter;
+
+        return $this;
+    }
+
+    /**
+     * @param  (Closure(string): string)|null  $callback
+     */
+    public function exportFileNameUsing(?Closure $callback): static
+    {
+        $this->exportFileNameUsing = $callback;
+
+        return $this;
+    }
+
+    public function exportFileName(string $widgetName): string
+    {
+        return $this->exportFileNameUsing === null
+            ? Str::slug($widgetName).'-'.now()->format('Y-m-d')
+            : ($this->exportFileNameUsing)($widgetName);
     }
 
     public function minRefreshInterval(?int $seconds): static

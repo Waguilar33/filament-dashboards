@@ -154,7 +154,14 @@ FilamentDashboardsPlugin::make()->systemWidgets([OrdersByChannel::class]);
 
 A system dashboard can place a system widget by listing its class in `items()`.
 
-A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty. Table, summary and figures widgets have an Export button that downloads what is shown as a CSV file.
+A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty. Table, summary and figures widgets have an Export button that downloads what is shown as a CSV file. Choose the delimiter and file name, add your own formats by extending `WidgetExporter` (several formats turn Export into a menu), and refuse export for a source with `canExport($user, $tenant)`:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->csvDelimiter(';')
+    ->exportFileNameUsing(fn (string $widgetName): string => Str::slug($widgetName))
+    ->exporters([new CsvExporter(';'), new XlsxExporter]);
+```
 
 Limit the builder to the widget types you want, change the fields a type shows, cap rows and set the shortest auto-refresh (`null` turns auto-refresh off):
 

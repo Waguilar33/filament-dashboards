@@ -280,6 +280,9 @@ return [
             'body' => 'En :dashboard ahora es :value.',
         ],
     ],
+    'exports' => [
+        'csv' => 'CSV',
+    ],
     'notifications' => [
         'saved' => 'Guardado.',
         'version_restored' => 'Versión restaurada.',
