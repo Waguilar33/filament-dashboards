@@ -38,13 +38,17 @@ trait ExportsCsv
                 return;
             }
 
-            // Excel only reads UTF-8 accents when the file starts with a byte order mark.
+            // Excel only reads UTF-8 accents when the file starts with a byte order mark; a leading = + - @ in text would run as a formula.
             fwrite($output, "\u{FEFF}");
             fputcsv($output, array_map(fn (Column $column): string => $this->plainLabel($column->getLabel()), array_values($columns)), escape: '');
 
             foreach ($records as $record) {
                 fputcsv($output, array_map(function (Column $column) use ($record): string {
                     $value = is_array($record) ? ($record[$column->getName()] ?? null) : data_get($record, $column->getName());
+
+                    if (is_string($value) && ! is_numeric($value) && preg_match('/^[=+\-@\t\r]/', $value) === 1) {
+                        return "'".$value;
+                    }
 
                     return is_scalar($value) ? (string) $value : '';
                 }, array_values($columns)), escape: '');

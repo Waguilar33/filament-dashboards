@@ -686,7 +686,7 @@ it('tells editors that narrow screens do not change the layout', function (): vo
         ->assertSee(__('filament-dashboards::dashboards.edit_mode.narrow'));
 });
 
-it('prints the dashboard on letter paper with the range it shows', function (): void {
+it('prints the dashboard on letter paper with every widget loaded and the range it shows', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);
     $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
@@ -696,6 +696,19 @@ it('prints the dashboard on letter paper with the range it shows', function (): 
         ->flatMap(fn (mixed $action): array => $action instanceof ActionGroup ? $action->getActions() : [$action])
         ->first(fn (Action $action): bool => $action->getName() === 'print');
 
-    expect($print?->getAlpineClickHandler())->toBe('window.print()')
+    expect($print?->getUrl())->toBe(DashboardResource::getUrl('view', ['record' => $dashboard, 'print' => 1]))
         ->and(file_get_contents(__DIR__.'/../../resources/dist/dashboards.css'))->toContain('size:letter');
+});
+
+it('loads every widget at once when printing', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+    $this->actingAs($owner);
+
+    $grid = Livewire::withQueryParams(['print' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])->instance()
+        ->getSchema('content')?->getComponent(fn (mixed $component): bool => $component instanceof View, withHidden: true)?->getViewData() ?? [];
+
+    expect($grid['printing'])->toBeTrue()
+        ->and($grid['items'][0]['props'])->not->toHaveKey('lazy');
 });

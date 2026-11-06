@@ -32,9 +32,14 @@ class SaveBuilderWidget
             'type' => $type,
             'config' => BuilderWidgetForm::config($data),
             'refresh_interval' => is_numeric($interval) ? max(5, (int) $interval) : null,
-        ])->save();
+        ]);
 
-        $this->recordWidgetVersion->handle($widget, $changedBy);
+        $changed = ! $widget->exists || $widget->isDirty(['name', 'config', 'refresh_interval']);
+        $widget->save();
+
+        if ($changed) {
+            $this->recordWidgetVersion->handle($widget, $changedBy);
+        }
 
         return $widget;
     }

@@ -116,3 +116,12 @@ it('says how many dashboards use a widget and saves a copy for this dashboard on
         ->and($item->shares_widget)->toBeTrue()
         ->and($copy->canBeViewedBy($owner))->toBeTrue();
 });
+
+it('writes no version when a save changes nothing', function (): void {
+    $owner = user();
+    $widget = builderWidget($owner);
+    saveAs($widget, 'Same', $owner);
+    saveAs($widget, 'Same', $owner);
+
+    expect($widget->versions()->count())->toBe(2);
+});

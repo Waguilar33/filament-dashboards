@@ -1,4 +1,13 @@
-<div class="fi-dashboards-stat" data-card-key="{{ $getCardKey() }}">
+<div
+    class="fi-dashboards-stat @if ($hasDrillDown()) fi-dashboards-drill-down @endif"
+    data-card-key="{{ $getCardKey() }}"
+    @if ($hasDrillDown())
+        role="button"
+        tabindex="0"
+        wire:click="mountAction('drillDown', { card: @js($getCardKey()) })"
+        wire:keydown.enter="mountAction('drillDown', { card: @js($getCardKey()) })"
+    @endif
+>
     @include('filament-widgets::stats-overview-widget.stat')
 
     @if ($isResizable())

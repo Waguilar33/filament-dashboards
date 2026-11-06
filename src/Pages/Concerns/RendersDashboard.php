@@ -48,13 +48,14 @@ trait RendersDashboard
             ->keyBy(fn (BuilderWidget $widget): string => $widget->dashboardKey());
 
         $canCreateWidgets = BuilderWidgetResource::canCreate();
+        $printing = property_exists($this, 'isPrinting') && $this->isPrinting;
 
         $items = $dashboard->items()
             ->orderBy('y')
             ->orderBy('x')
             ->orderBy('id')
             ->get()
-            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $user, $canCreateWidgets): ?array {
+            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $user, $canCreateWidgets, $printing): ?array {
                 $builderWidget = $builderWidgets->get($item->widget);
                 $component = $builderWidget instanceof BuilderWidget
                     ? BuilderWidgetForm::component($builderWidget->type)
@@ -67,7 +68,7 @@ trait RendersDashboard
                 return [
                     'id' => $item->id,
                     'widget' => $component,
-                    'props' => [...$component::getDefaultProperties(), ...($builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [])],
+                    'props' => [...($printing ? [] : $component::getDefaultProperties()), ...($builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [])],
                     'version' => $builderWidget?->updated_at?->timestamp,
                     'builderWidgetId' => $builderWidget instanceof BuilderWidget && $builderWidget->canBeEditedBy($user) ? $builderWidget->id : null,
                     'duplicable' => ! $builderWidget instanceof BuilderWidget || $canCreateWidgets,
@@ -98,7 +99,7 @@ trait RendersDashboard
 
         return [
             ...(array_filter(array_column($items, 'followsDates')) === [] ? [] : [EmbeddedSchema::make('filtersForm')]),
-            View::make('filament-dashboards::grid')->viewData(function () use ($items, $editing): array {
+            View::make('filament-dashboards::grid')->viewData(function () use ($items, $editing, $printing): array {
                 $editable = $editing instanceof Closure ? (bool) $editing() : $editing;
                 $cardWidths = $this->cardWidths(array_column(array_filter($items, fn (array $item): bool => $item['widget'] === BuilderStatsWidget::class), 'id'));
 
@@ -109,6 +110,7 @@ trait RendersDashboard
                         ...($item['widget'] === BuilderStatsWidget::class ? ['cardWidths' => $cardWidths[$item['id']] ?? [], 'resizableCards' => $editable] : []),
                     ]], $items),
                     'editable' => $editable,
+                    'printing' => $printing,
                     'printRange' => array_filter(array_column($items, 'followsDates')) === [] ? null : app(ResolveDateRange::class)->handle($this->filters),
                     'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version']], $items), $editable])),
                 ];

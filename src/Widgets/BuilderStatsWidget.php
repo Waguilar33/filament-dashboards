@@ -6,6 +6,8 @@ namespace Waguilar\FilamentDashboards\Widgets;
 
 use Carbon\CarbonImmutable;
 use Closure;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Icons\Heroicon;
@@ -16,14 +18,19 @@ use Livewire\Attributes\Reactive;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateMetric;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Dates\DateRange;
+use Waguilar\FilamentDashboards\Widgets\Concerns\DrillsDownToRecords;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 use Waguilar\FilamentDashboards\Widgets\Stats\DashboardStat;
 
-class BuilderStatsWidget extends StatsOverviewWidget
+class BuilderStatsWidget extends StatsOverviewWidget implements HasActions
 {
+    use DrillsDownToRecords;
+    use InteractsWithActions;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
+
+    protected string $view = 'filament-dashboards::stats-widget';
 
     public const COLUMNS = 12;
 
@@ -97,7 +104,8 @@ class BuilderStatsWidget extends StatsOverviewWidget
             $stat = DashboardStat::make($this->configString($card, 'label') ?? $title, $format($value))
                 ->translateLabel(false)
                 ->cardKey($this->configString($card, 'key') ?? (string) $index)
-                ->resizable($this->resizableCards);
+                ->resizable($this->resizableCards)
+                ->drillsDown(! $this->resizableCards && $this->drillDownFields($source) !== []);
 
             $this->describe($stat, $card, $value, $format, fn (DateRange $range): int|float => app(CalculateMetric::class)->handle($source, $this->viewer(), $this->tenant(), $metric, $this->configString($card, 'field'), $this->filters($card), $this->configString($card, 'dates_field'), $range));
 
@@ -134,7 +142,7 @@ class BuilderStatsWidget extends StatsOverviewWidget
             $parts[] = __("filament-dashboards::dashboards.builder.card_periods.{$period}");
         }
 
-        if ($goal !== null && $goal > 0) {
+        if ($goal !== null && $goal > 0 && ($range === null || $period !== 'dashboard')) {
             $reached = $value / $goal * 100;
             $parts[] = __('filament-dashboards::builder.goal_progress', ['percent' => number_format($reached), 'goal' => $format($goal)]);
             $color = $reached >= 100 ? 'success' : null;
@@ -143,7 +151,7 @@ class BuilderStatsWidget extends StatsOverviewWidget
         if ($range !== null && (bool) ($card['compare'] ?? false)) {
             $now = CarbonImmutable::now($range->end->getTimezone());
             $current = $range->upTo($now);
-            $previous = $calculate($current->previous());
+            $previous = $calculate($current->previous($period));
             $currentValue = $current->end->equalTo($range->end) ? $value : $calculate($current);
 
             if ($previous == 0 && $currentValue != 0) {
@@ -159,5 +167,18 @@ class BuilderStatsWidget extends StatsOverviewWidget
         if ($parts !== []) {
             $stat->description(implode(' · ', $parts))->descriptionIcon($icon)->color($color);
         }
+    }
+
+    protected function drillDownTarget(array $arguments): ?array
+    {
+        $cards = $this->widgetConfig()['cards'] ?? [];
+
+        foreach (is_array($cards) ? array_values($cards) : [] as $index => $card) {
+            if (is_array($card) && ($this->configString($card, 'key') ?? (string) $index) === ($arguments['card'] ?? null)) {
+                return ['part' => $card, 'rule' => null, 'title' => $this->configString($card, 'label') ?? $this->source($card['source'] ?? null)?->label() ?? ''];
+            }
+        }
+
+        return null;
     }
 }

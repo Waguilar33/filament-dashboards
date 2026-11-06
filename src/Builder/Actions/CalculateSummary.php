@@ -26,7 +26,7 @@ class CalculateSummary
     /**
      * @param  non-empty-list<array{metric: Metric, field: ?string}>  $metrics
      * @param  list<list<array{field: string, operator: string, value?: mixed}>>  $filters
-     * @return array{rows: list<array{group: string, values: list<int|float>}>, totals: list<int|float>}
+     * @return array{rows: list<array{group: string, key: bool|float|int|string|null, values: list<int|float>}>, totals: list<int|float>}
      */
     public function handle(
         DataSource $source,
@@ -61,6 +61,7 @@ class CalculateSummary
         return [
             'rows' => array_values($rows->map(fn (array $row): array => [
                 'group' => blank($row[$group->alias()]) ? trans('filament-dashboards::builder.empty') : $group->valueLabel($row[$group->alias()]),
+                'key' => is_scalar($row[$group->alias()]) && filled($row[$group->alias()]) ? $row[$group->alias()] : null,
                 'values' => $this->values($row, $numberFields),
             ])->all()),
             'totals' => $this->values($totals, $numberFields),

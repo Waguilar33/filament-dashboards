@@ -60,6 +60,9 @@ class ViewDashboard extends Page
     #[Url(as: 'editing')]
     public bool $isEditingLayout = false;
 
+    #[Url(as: 'print')]
+    public bool $isPrinting = false;
+
     public static function canAccess(array $parameters = []): bool
     {
         $record = $parameters['record'] ?? null;
@@ -194,7 +197,7 @@ class ViewDashboard extends Page
             'print' => Action::make('print')
                 ->label(__('filament-dashboards::dashboards.actions.print'))
                 ->icon(Heroicon::OutlinedPrinter)
-                ->alpineClickHandler('window.print()'),
+                ->url(fn (): string => DashboardResource::getUrl('view', ['record' => $this->getDashboard(), 'print' => 1])),
             'duplicate' => $this->cloneAction(),
             'setAsHome' => $this->setHomeAction(),
             'removeHome' => $this->removeHomeAction(),

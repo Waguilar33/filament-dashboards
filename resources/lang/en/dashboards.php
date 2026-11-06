@@ -61,6 +61,7 @@ return [
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'close' => 'Close',
         'save_as_copy' => 'Save as my copy',
         'history' => 'History',
         'restore' => 'Restore',
@@ -85,6 +86,10 @@ return [
         'next' => 'Next',
     ],
     'modals' => [
+        'drill_down' => [
+            'description' => 'Up to :count records, newest first.',
+            'empty' => 'No records.',
+        ],
         'edit_widget' => [
             'used_on' => '{0} Not on any dashboard yet.|{1} Used on 1 dashboard.|[2,*] Used on :count dashboards; saving changes it on all of them.',
         ],

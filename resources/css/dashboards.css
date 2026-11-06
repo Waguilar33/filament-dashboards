@@ -249,6 +249,10 @@
     }
 }
 
+.fi-dashboards-drill-down {
+    cursor: pointer;
+}
+
 .fi-dashboards-print-range {
     display: none;
 }

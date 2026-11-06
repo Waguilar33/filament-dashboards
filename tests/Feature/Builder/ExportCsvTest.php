@@ -43,3 +43,11 @@ it('offers export on the table widgets', function (): void {
     Livewire::test(BuilderTableWidget::class, ['previewType' => 'table', 'previewConfig' => ['source' => 'orders', 'columns' => ['customer']]])
         ->assertTableActionExists('export');
 });
+
+it('keeps text that looks like a formula from running in a spreadsheet', function (): void {
+    DemoOrderFactory::new()->create(['customer' => '=HYPERLINK("http://x")', 'channel' => 'web', 'total' => -5, 'ordered_at' => now()->addMinute()]);
+
+    $csv = exported(BuilderTableWidget::class, ['type' => 'table', 'config' => ['source' => 'orders', 'columns' => ['customer', 'total'], 'sort_field' => 'ordered_at', 'sort_direction' => 'desc', 'limit' => 1]]);
+
+    expect($csv)->toContain("\"'=HYPERLINK(\"\"http://x\"\")\",-5\n");
+});

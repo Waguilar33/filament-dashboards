@@ -49,11 +49,20 @@ it('shows a drop, a new figure, and nothing when both periods are empty', functi
     expect(statsOf(['period' => 'today', 'compare' => true, 'metric' => 'count', 'filters' => [['rules' => [['field' => 'channel', 'operator' => 'is', 'choice' => 'phone']]]]])['description'])->toBe('Today · New vs previous period');
 });
 
-it('shows progress towards a goal', function (): void {
+it('shows progress towards a goal only over a fixed span', function (): void {
     DemoOrderFactory::new()->create(['total' => 75, 'ordered_at' => '2026-11-10 10:00:00']);
 
-    expect(statsOf(['goal' => 100]))->toMatchArray(['description' => '75% of 100', 'color' => null])
-        ->and(statsOf(['goal' => '50'])['color'])->toBe('success');
+    expect(statsOf(['period' => 'month', 'goal' => 100]))->toMatchArray(['description' => 'This month · 75% of 100', 'color' => null])
+        ->and(statsOf(['period' => 'month', 'goal' => '50'])['color'])->toBe('success')
+        ->and(statsOf(['goal' => 100])['description'])->toBeNull();
+});
+
+it('compares calendar periods with the same part of the one before', function (): void {
+    DemoOrderFactory::new()->create(['total' => 20, 'ordered_at' => '2026-11-17 09:00:00']);
+    DemoOrderFactory::new()->create(['total' => 10, 'ordered_at' => '2026-11-10 09:00:00']);
+    DemoOrderFactory::new()->create(['total' => 999, 'ordered_at' => '2026-11-14 09:00:00']);
+
+    expect(statsOf(['period' => 'week', 'compare' => true])['description'])->toBe('This week · +100.0% vs previous period');
 });
 
 it('makes the dashboard show its dates only for cards that follow them', function (): void {
@@ -66,5 +75,7 @@ it('measures the period before a range by its length in days', function (): void
 
     expect($range->previous()->start->toDateTimeString())->toBe('2026-10-26 00:00:00')
         ->and($range->previous()->end->toDateTimeString())->toBe('2026-10-31 23:59:59')
-        ->and($range->upTo(CarbonImmutable::parse('2026-11-03 08:00:00'))->end->toDateTimeString())->toBe('2026-11-03 08:00:00');
+        ->and($range->upTo(CarbonImmutable::parse('2026-11-03 08:00:00'))->end->toDateTimeString())->toBe('2026-11-03 08:00:00')
+        ->and($range->previous('month')->start->toDateTimeString())->toBe('2026-10-01 00:00:00')
+        ->and((new DateRange(CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-31 12:00:00')))->previous('month')->end->toDateString())->toBe('2026-02-28');
 });

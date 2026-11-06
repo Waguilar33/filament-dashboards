@@ -4,7 +4,7 @@ const COLUMNS = 12
 
 const SPAN_VARIABLES = ['--col-span-csm', '--col-span-ncmd', '--col-span-cxl', '--col-span-nclg']
 
-export default function dashboardGrid({ editable }) {
+export default function dashboardGrid({ editable, printing }) {
     return {
         grid: null,
 
@@ -41,6 +41,17 @@ export default function dashboardGrid({ editable }) {
                 this.lockWhenNarrow = () => this.grid.setStatic(!this.wide.matches)
                 this.wide.addEventListener('change', this.lockWhenNarrow)
                 this.lockWhenNarrow()
+            }
+
+            if (printing) {
+                window.addEventListener('afterprint', () => {
+                    const url = new URL(window.location.href)
+                    url.searchParams.delete('print')
+                    window.history.replaceState(window.history.state, '', url)
+                }, { once: true })
+
+                // Charts draw on the next frames after mount; printing earlier leaves them blank.
+                setTimeout(() => window.print(), 1500)
             }
 
             if (editable) {

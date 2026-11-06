@@ -61,6 +61,7 @@ return [
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'close' => 'Cerrar',
         'save_as_copy' => 'Guardar como mi copia',
         'history' => 'Historial',
         'restore' => 'Restaurar',
@@ -85,6 +86,10 @@ return [
         'next' => 'Siguiente',
     ],
     'modals' => [
+        'drill_down' => [
+            'description' => 'Hasta :count registros, los más recientes primero.',
+            'empty' => 'Sin registros.',
+        ],
         'edit_widget' => [
             'used_on' => '{0} Aún no está en ningún escritorio.|{1} Se usa en 1 escritorio.|[2,*] Se usa en :count escritorios; al guardar cambia en todos.',
         ],

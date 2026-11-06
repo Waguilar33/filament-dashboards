@@ -162,7 +162,8 @@ class BuilderWidgetForm
                             ->label(__(self::T.'goal'))
                             ->helperText(__(self::T.'goal_helper'))
                             ->numeric()
-                            ->minValue(0),
+                            ->minValue(0)
+                            ->visible(fn (Get $get): bool => blank($get('dates_field')) || ($get('period') ?? 'dashboard') !== 'dashboard'),
                         self::filters(ruleColumns: 1),
                     ]),
             ],
