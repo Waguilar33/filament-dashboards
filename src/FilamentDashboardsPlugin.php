@@ -84,6 +84,16 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $shareableUsersUsing = null;
 
     /**
+     * @var (Closure(?Model): Builder<covariant Model>)|null
+     */
+    protected ?Closure $shareableRolesUsing = null;
+
+    /**
+     * @var (Closure(Builder<covariant Model>, string): Builder<covariant Model>)|null
+     */
+    protected ?Closure $searchShareableUsersUsing = null;
+
+    /**
      * @var (Closure(array<string, Action>): array<Action|ActionGroup>)|null
      */
     protected ?Closure $headerActionsUsing = null;
@@ -294,18 +304,57 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @return Builder<Model>|null
+     * @param  (Closure(?Model): Builder<covariant Model>)|null  $callback
      */
-    public function getShareableRoles(): ?Builder
+    public function shareableRolesUsing(?Closure $callback): static
     {
-        $query = $this->getRolesRelationship()?->getRelated()->newQuery();
+        $this->shareableRolesUsing = $callback;
 
-        if ($query !== null && config('permission.teams') === true && function_exists('getPermissionsTeamId')) {
+        return $this;
+    }
+
+    /**
+     * @return Builder<covariant Model>|null
+     */
+    public function getShareableRoles(?Model $tenant = null): ?Builder
+    {
+        if ($this->getRolesRelationship() === null) {
+            return null;
+        }
+
+        if ($this->shareableRolesUsing !== null) {
+            return ($this->shareableRolesUsing)($tenant);
+        }
+
+        $query = $this->getRolesRelationship()->getRelated()->newQuery();
+
+        if (config('permission.teams') === true && function_exists('getPermissionsTeamId')) {
             $team = config()->string('permission.column_names.team_foreign_key');
             $query->where(fn (Builder $roles): Builder => $roles->whereNull($team)->orWhere($team, getPermissionsTeamId()));
         }
 
         return $query;
+    }
+
+    /**
+     * @param  (Closure(Builder<covariant Model>, string): Builder<covariant Model>)|null  $callback
+     */
+    public function searchShareableUsersUsing(?Closure $callback): static
+    {
+        $this->searchShareableUsersUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function searchShareableUsers(Builder $query, string $search): Builder
+    {
+        return $this->searchShareableUsersUsing === null
+            ? $query->where($query->getModel()->qualifyColumn('name'), 'like', '%'.$search.'%')
+            : ($this->searchShareableUsersUsing)($query, $search);
     }
 
     protected function newUser(): Model

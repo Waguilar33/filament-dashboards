@@ -289,7 +289,13 @@ FilamentDashboardsPlugin::make()
     ->shareableUsersUsing(fn (?Model $tenant): Builder => ...);
 ```
 
-`shareableUsersUsing` limits the users offered in Share, for example to the members of the current tenant.
+`shareableUsersUsing` limits the users offered in Share, for example to the members of the current tenant. People are found by typing (up to 50 matches, by `name` unless you search another way), roles are limited the same way, and anything not offered is dropped when saving:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->searchShareableUsersUsing(fn (Builder $query, string $search): Builder => $query->where('email', 'like', "%{$search}%"))
+    ->shareableRolesUsing(fn (?Model $tenant): Builder => Role::query()->where('name', '!=', 'super_admin'));
+```
 
 A policy you register for the dashboard model decides who sees the Dashboards list (`viewAny`) and who creates dashboards (`create`); anyone who owns a dashboard or has one shared with them sees the list and opens it regardless. Register a policy for `BuilderWidget` with `viewAny` and `create` to gate the Widgets list and building widgets from roles the same way; users still need at least one data source. Viewing, editing, sharing and deleting a given dashboard or widget always follow ownership and shares. With no policy, every user with a data source can use the Widgets list and build widgets.
 
