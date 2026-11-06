@@ -600,7 +600,20 @@ it('opens a shared dashboard for a viewer the app policy keeps off the dashboard
 
     $this->actingAs($reader)->get(DashboardResource::getUrl('view', ['record' => $dashboard->slug]))->assertOk();
     $this->actingAs($reader)->get(DashboardResource::getUrl('view', ['record' => dashboard($owner, ['slug' => 'private'])->slug]))->assertNotFound();
-    $this->actingAs($reader)->get(DashboardResource::getUrl())->assertForbidden();
+});
+
+it('shows the dashboards list to someone with an own or shared dashboard whatever the policy says', function (): void {
+    Gate::policy(Dashboard::class, NoDashboardsListPolicy::class);
+    $owner = user();
+    $reader = user();
+    $outsider = user();
+    $dashboard = dashboard($owner);
+    share($dashboard, $reader, ShareLevel::Read);
+    dashboard(attributes: ['system_key' => 'sales', 'slug' => 'system']);
+
+    $this->actingAs($reader)->get(DashboardResource::getUrl())->assertOk();
+    $this->actingAs($owner)->get(DashboardResource::getUrl())->assertOk();
+    $this->actingAs($outsider)->get(DashboardResource::getUrl())->assertForbidden();
 });
 
 final class NoDashboardsListPolicy

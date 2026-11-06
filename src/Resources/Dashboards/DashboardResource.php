@@ -66,7 +66,9 @@ class DashboardResource extends Resource
     {
         $user = self::user();
         $allowed = match ($action) {
-            'viewAny' => Gate::getPolicyFor(Dashboard::class) === null || parent::getAuthorizationResponse($action)->allowed(),
+            'viewAny' => Gate::getPolicyFor(Dashboard::class) === null
+                || parent::getAuthorizationResponse($action)->allowed()
+                || self::getEloquentQuery()->whereNull('system_key')->exists(),
             'create' => FilamentDashboardsPlugin::get()->canCreateDashboards($user),
             'view' => $record instanceof Dashboard && $record->canBeViewedBy($user),
             'update' => $record instanceof Dashboard && $record->canBeEditedBy($user),
