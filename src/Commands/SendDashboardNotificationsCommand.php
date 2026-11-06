@@ -120,7 +120,8 @@ class SendDashboardNotificationsCommand extends Command
         }
 
         $range = $evaluateCards->range($card, $today);
-        $previous = $range === null ? null : (FilamentDashboardsPlugin::get()->getDatePeriod(is_string($card['period'] ?? null) ? $card['period'] : '')?->previous($range) ?? $range->previous());
+        $datePeriod = FilamentDashboardsPlugin::get()->getDatePeriod(is_string($card['period'] ?? null) ? $card['period'] : 'today') ?? FilamentDashboardsPlugin::get()->getDatePeriod('today');
+        $previous = $range === null ? null : $datePeriod?->range($range->start->subSecond());
         $period = $previous?->start->toDateString() ?? $now->toDateString();
 
         if ($now->hour < self::SEND_HOUR || $alert->last_period === $period) {

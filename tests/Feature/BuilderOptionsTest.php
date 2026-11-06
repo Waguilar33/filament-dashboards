@@ -11,6 +11,7 @@ use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Filament\Actions\BuildWidgetAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ViewDashboard;
+use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
 use Workbench\Database\Factories\DemoOrderFactory;
 
@@ -67,4 +68,18 @@ it('drops auto-refresh when the app turns it off, and raises it to the app minim
     $plugin->minRefreshInterval(null);
     $widget = app(SaveBuilderWidget::class)->handle($widget, BuilderWidgetType::Stats, ['name' => 'A', 'refresh_interval' => 10, 'cards' => []]);
     expect($widget->refresh_interval)->toBeNull();
+});
+
+it('applies the refresh minimum to widgets saved before it changed', function (): void {
+    $owner = user();
+    $widget = builderWidget($owner, ['refresh_interval' => 10]);
+    $this->actingAs($owner);
+    FilamentDashboardsPlugin::get()->minRefreshInterval(60);
+    $component = Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id])->instance();
+
+    expect((fn (): ?string => $this->getPollingInterval())->call($component))->toBe('60s');
+
+    FilamentDashboardsPlugin::get()->minRefreshInterval(null);
+
+    expect((fn (): ?string => $this->getPollingInterval())->call($component))->toBeNull();
 });

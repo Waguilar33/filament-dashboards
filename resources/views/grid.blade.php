@@ -45,42 +45,23 @@
 
                             <x-slot name="footer">
                                 <div class="fi-dashboards-item-actions">
-                                    @if (filled($item['builderWidgetId']))
-                                        <x-filament::link
-                                            tag="button"
-                                            :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::EDIT)"
-                                            wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }}, item: {{ $item['id'] }} })"
-                                        >
-                                            {{ __('filament-dashboards::dashboards.actions.edit') }}
-                                        </x-filament::link>
-
-                                        <x-filament::link
-                                            tag="button"
-                                            :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::HISTORY)"
-                                            wire:click="mountAction('widgetHistory', { widget: {{ $item['builderWidgetId'] }} })"
-                                        >
-                                            {{ __('filament-dashboards::dashboards.actions.history') }}
-                                        </x-filament::link>
-                                    @endif
-
-                                    @if ($item['duplicable'])
-                                        <x-filament::link
-                                            tag="button"
-                                            :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::DUPLICATE)"
-                                            wire:click="mountAction('duplicateItem', { item: {{ $item['id'] }} })"
-                                        >
-                                            {{ __('filament-dashboards::dashboards.actions.duplicate') }}
-                                        </x-filament::link>
-                                    @endif
-
-                                    <x-filament::link
-                                        tag="button"
-                                        color="danger"
-                                        :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::REMOVE)"
-                                        wire:click="mountAction('removeItem', { item: {{ $item['id'] }} })"
-                                    >
-                                        {{ __('filament-dashboards::dashboards.actions.remove') }}
-                                    </x-filament::link>
+                                    @foreach ([
+                                        'editWidget' => filled($item['builderWidgetId']) ? "{ widget: {$item['builderWidgetId']}, item: {$item['id']} }" : null,
+                                        'widgetHistory' => filled($item['builderWidgetId']) ? "{ widget: {$item['builderWidgetId']} }" : null,
+                                        'duplicateItem' => $item['duplicable'] ? "{ item: {$item['id']} }" : null,
+                                        'removeItem' => "{ item: {$item['id']} }",
+                                    ] as $name => $arguments)
+                                        @if ($arguments && ($tool = $toolbar[$name] ?? null))
+                                            <x-filament::link
+                                                tag="button"
+                                                :color="$tool['color']"
+                                                :icon="$tool['icon']"
+                                                wire:click="mountAction('{{ $name }}', {{ $arguments }})"
+                                            >
+                                                {{ $tool['label'] }}
+                                            </x-filament::link>
+                                        @endif
+                                    @endforeach
                                 </div>
                             </x-slot>
                         </x-filament::section>

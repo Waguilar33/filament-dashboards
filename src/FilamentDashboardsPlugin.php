@@ -670,6 +670,11 @@ final class FilamentDashboardsPlugin implements Plugin
 
         foreach ($this->datePeriods as $period) {
             $period = $period instanceof DatePeriod ? $period : new $period;
+
+            if (in_array($period->key(), ['dashboard', 'custom'], true) || is_numeric($period->key())) {
+                throw new LogicException("Date period key [{$period->key()}] is reserved.");
+            }
+
             $periods[$period->key()] = $period;
         }
 
@@ -832,7 +837,7 @@ final class FilamentDashboardsPlugin implements Plugin
     public function exportFileName(string $widgetName): string
     {
         return $this->exportFileNameUsing === null
-            ? Str::slug($widgetName).'-'.now()->format('Y-m-d')
+            ? Str::slug($widgetName).'-'.now($this->getTimezone())->format('Y-m-d')
             : ($this->exportFileNameUsing)($widgetName);
     }
 

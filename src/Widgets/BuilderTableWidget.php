@@ -65,7 +65,7 @@ class BuilderTableWidget extends TableWidget
                     ? TextColumn::make($field->alias())
                         ->label($field->label)
                         ->translateLabel(false)
-                        ->formatStateUsing(fn (mixed $state): mixed => is_int($state) || is_float($state) ? ($field->format($state) ?? $state) : $state)
+                        ->formatStateUsing(fn (mixed $state): mixed => is_int($state) || is_float($state) ? ($field->format($state) ?? $this->formatNumber($state)) : $state)
                     : null,
                 $columns,
             ))))

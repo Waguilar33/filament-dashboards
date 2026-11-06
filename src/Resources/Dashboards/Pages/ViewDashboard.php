@@ -141,6 +141,8 @@ class ViewDashboard extends Page
     public function duplicateItemAction(): Action
     {
         return FilamentDashboardsPlugin::get()->modifyAction(Action::make('duplicateItem')
+            ->label(__('filament-dashboards::dashboards.actions.duplicate'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DUPLICATE))
             ->visible($this->canEdit())
             ->action(function (array $arguments): void {
                 $item = $this->editableItem($arguments);
@@ -167,6 +169,8 @@ class ViewDashboard extends Page
     public function removeItemAction(): Action
     {
         return FilamentDashboardsPlugin::get()->modifyAction(Action::make('removeItem')
+            ->label(__('filament-dashboards::dashboards.actions.remove'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::REMOVE))
             ->visible($this->canEdit())
             ->requiresConfirmation()
             ->color('danger')
@@ -310,6 +314,8 @@ class ViewDashboard extends Page
     public function editWidgetAction(): Action
     {
         return FilamentDashboardsPlugin::get()->modifyAction(Action::make('editWidget')
+            ->label(__('filament-dashboards::dashboards.actions.edit'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EDIT))
             ->visible($this->canEdit())
             ->slideOver()
             ->modalWidth(Width::FourExtraLarge)

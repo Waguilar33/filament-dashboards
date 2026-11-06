@@ -34,3 +34,19 @@ it('lets the app change any action the plugin builds, by name', function (): voi
 
     expect(array_unique($names))->toContain('dashboard.edit', 'dashboard.share', 'dashboard.print', 'dashboard.doneEditing', 'dashboard.addWidget', 'dashboards.create', 'dashboards.setAsHome', 'widgets.create', 'widgets.edit', 'widgets.history');
 });
+
+it('draws the widget toolbar from the actions, so the hook reaches it', function (): void {
+    FilamentDashboardsPlugin::get()->modifyActionUsing(fn (Action $action, string $name): Action => match ($name) {
+        'dashboard.removeItem' => $action->label('Quitar del tablero'),
+        'dashboard.duplicateItem' => $action->hidden(),
+        default => $action,
+    });
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $item = $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+    $this->actingAs($owner);
+
+    Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->assertSee('Quitar del tablero')
+        ->assertDontSeeHtml("mountAction('duplicateItem', { item: {$item->id} })");
+});

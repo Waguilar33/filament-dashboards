@@ -12,6 +12,7 @@ use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\EmptyState;
 use Filament\Schemas\Components\View;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
 use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
@@ -111,6 +112,7 @@ trait RendersDashboard
                     ]], $items),
                     'editable' => $editable,
                     'printing' => $printing,
+                    'toolbar' => $editable ? $this->itemToolbar() : [],
                     'printRange' => array_filter(array_column($items, 'followsDates')) === [] ? null : app(ResolveDateRange::class)->handle($this->filters),
                     'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version']], $items), $editable])),
                 ];
@@ -133,5 +135,22 @@ trait RendersDashboard
             ->get()
             ->mapWithKeys(fn (DashboardItem $item): array => [$item->id => $item->cardWidths()])
             ->all();
+    }
+
+    /**
+     * @return array<string, array{label: string|Htmlable, icon: mixed, color: mixed}|null>
+     */
+    protected function itemToolbar(): array
+    {
+        $toolbar = [];
+
+        foreach (['editWidget', 'widgetHistory', 'duplicateItem', 'removeItem'] as $name) {
+            $action = method_exists($this, $name.'Action') ? $this->getAction($name, isMounting: false) : null;
+            $toolbar[$name] = $action === null || ($name !== 'widgetHistory' && $action->isHidden())
+                ? null
+                : ['label' => $action->getLabel() ?? '', 'icon' => $action->getIcon(), 'color' => $action->getColor()];
+        }
+
+        return $toolbar;
     }
 }

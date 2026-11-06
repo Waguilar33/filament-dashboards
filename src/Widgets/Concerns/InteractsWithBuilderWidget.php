@@ -131,8 +131,9 @@ trait InteractsWithBuilderWidget
     protected function getPollingInterval(): ?string
     {
         $interval = $this->builderWidget()?->refresh_interval;
+        $minimum = FilamentDashboardsPlugin::get()->getMinRefreshInterval();
 
-        return filled($interval) ? "{$interval}s" : null;
+        return filled($interval) && $minimum !== null ? max($minimum, $interval).'s' : null;
     }
 
     protected function formatNumber(int|float $value): string

@@ -49,6 +49,14 @@ class EvaluateStatsCards
 
             $metric = Metric::tryFrom(self::text($card, 'metric') ?? Metric::Count->value) ?? Metric::Count;
             $key = self::text($card, 'key') ?? (string) $index;
+            $period = self::text($card, 'period') ?? 'dashboard';
+
+            if (self::text($card, 'dates_field') !== null && $period !== 'dashboard' && FilamentDashboardsPlugin::get()->getDatePeriod($period) === null) {
+                $results[] = new StatCardResult($key, self::text($card, 'label') ?? $source->label(), $source, null, '—', __('filament-dashboards::builder.needs_attention'), 'warning', needsAttention: true);
+
+                continue;
+            }
+
             $range = $this->range($card, $dashboardRange);
             $calculate = fn (?DateRange $within): int|float => $this->calculateMetric->handle($source, $user, $tenant, $metric, self::text($card, 'field'), $this->buildFilters->handle($card['filters'] ?? []), self::text($card, 'dates_field'), $within);
 
@@ -103,7 +111,7 @@ class EvaluateStatsCards
         $icon = null;
 
         if ($range !== null && $period !== 'dashboard') {
-            $parts[] = __("filament-dashboards::dashboards.builder.card_periods.{$period}");
+            $parts[] = FilamentDashboardsPlugin::get()->getDatePeriod($period)?->label() ?? $period;
         }
 
         if ($goal !== null && $goal > 0 && ($range === null || $period !== 'dashboard')) {

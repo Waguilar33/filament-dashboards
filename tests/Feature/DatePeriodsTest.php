@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Filament\Facades\Filament;
+use Waguilar\FilamentDashboards\Actions\EvaluateStatsCards;
 use Waguilar\FilamentDashboards\Actions\ResolveCardRange;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
@@ -62,4 +63,37 @@ it('starts weeks on the day the app chooses, everywhere', function (): void {
 
     expect(rangeText(app(ResolveCardRange::class)->handle('week')))->toBe('2026-11-15 - 2026-11-18')
         ->and(TimeGrouping::Week->start(CarbonImmutable::parse('2026-11-18'))->toDateString())->toBe('2026-11-15');
+});
+
+it('refuses period keys the date bar already uses', function (): void {
+    FilamentDashboardsPlugin::get()->datePeriods([new class extends DatePeriod
+    {
+        public function key(): string
+        {
+            return 'custom';
+        }
+
+        public function label(): string
+        {
+            return 'Custom';
+        }
+
+        public function range(CarbonImmutable $now): DateRange
+        {
+            return new DateRange($now, $now);
+        }
+    }])->getDatePeriods();
+})->throws(LogicException::class);
+
+it('flags a card pinned to a period the app no longer offers', function (): void {
+    $this->actingAs(user());
+
+    $cards = app(EvaluateStatsCards::class)->handle(
+        [['source' => 'orders', 'metric' => 'count', 'label' => 'Orders', 'dates_field' => 'ordered_at', 'period' => 'fiscal']],
+        user(),
+        null,
+        new DateRange(CarbonImmutable::now()->startOfDay(), CarbonImmutable::now()->endOfDay()),
+    );
+
+    expect($cards[0]->needsAttention)->toBeTrue();
 });
