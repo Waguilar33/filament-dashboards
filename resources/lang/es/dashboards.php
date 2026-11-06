@@ -61,6 +61,8 @@ return [
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'history' => 'Historial',
+        'restore' => 'Restaurar',
         'print' => 'Imprimir',
         'export' => 'Exportar',
         'open' => 'Abrir',
@@ -82,6 +84,13 @@ return [
         'next' => 'Siguiente',
     ],
     'modals' => [
+        'history' => [
+            'heading' => 'Historial',
+            'description' => 'Versión actual: :current. Elige una anterior para restaurarla; al restaurar, esta también queda en el historial.',
+            'empty' => 'Aún no hay cambios registrados.',
+            'version' => ':who, :when',
+            'before' => 'antes del historial',
+        ],
         'remove_item' => [
             'heading' => 'Quitar widget',
             'description' => 'El widget sale de este escritorio. Un widget guardado sigue en la lista de widgets.',
@@ -231,6 +240,7 @@ return [
         ],
     ],
     'notifications' => [
+        'version_restored' => 'Versión restaurada.',
         'shares_saved' => 'Se guardó el acceso compartido.',
         'home_set' => 'Este escritorio ahora es tu página de inicio.',
         'home_removed' => 'Tu página de inicio vuelve a ser el escritorio predeterminado.',

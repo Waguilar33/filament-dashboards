@@ -52,7 +52,16 @@ class BuilderWidget extends Model
     {
         static::deleting(function (self $widget): void {
             $widget->placements()->delete();
+            $widget->versions()->delete();
         });
+    }
+
+    /**
+     * @return HasMany<BuilderWidgetVersion, $this>
+     */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(BuilderWidgetVersion::class);
     }
 
     /**

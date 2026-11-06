@@ -45,6 +45,14 @@
                                         >
                                             {{ __('filament-dashboards::dashboards.actions.edit') }}
                                         </x-filament::link>
+
+                                        <x-filament::link
+                                            tag="button"
+                                            :icon="\Filament\Support\Icons\Heroicon::OutlinedClock"
+                                            wire:click="mountAction('widgetHistory', { widget: {{ $item['builderWidgetId'] }} })"
+                                        >
+                                            {{ __('filament-dashboards::dashboards.actions.history') }}
+                                        </x-filament::link>
                                     @endif
 
                                     @if ($item['duplicable'])

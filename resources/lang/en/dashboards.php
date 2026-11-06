@@ -61,6 +61,8 @@ return [
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'history' => 'History',
+        'restore' => 'Restore',
         'print' => 'Print',
         'export' => 'Export',
         'open' => 'Open',
@@ -82,6 +84,13 @@ return [
         'next' => 'Next',
     ],
     'modals' => [
+        'history' => [
+            'heading' => 'History',
+            'description' => 'Current version: :current. Pick an earlier one to restore it; restoring keeps this one in the history too.',
+            'empty' => 'No changes recorded yet.',
+            'version' => ':who, :when',
+            'before' => 'before history began',
+        ],
         'remove_item' => [
             'heading' => 'Remove widget',
             'description' => 'The widget leaves this dashboard. A saved widget stays in the Widgets list.',
@@ -231,6 +240,7 @@ return [
         ],
     ],
     'notifications' => [
+        'version_restored' => 'Version restored.',
         'shares_saved' => 'Sharing saved.',
         'home_set' => 'This dashboard is now your home page.',
         'home_removed' => 'Your home page is back to the default dashboard.',

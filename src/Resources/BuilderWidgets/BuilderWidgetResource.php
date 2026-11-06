@@ -24,6 +24,7 @@ use UnitEnum;
 use Waguilar\FilamentDashboards\Actions\CloneBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\WidgetHistoryAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Pages\ListBuilderWidgets;
@@ -105,7 +106,7 @@ class BuilderWidgetResource extends Resource
             ->recordAction('edit')
             ->recordActions([
                 $actions['edit'],
-                ActionGroup::make([$actions['share'], $actions['duplicate'], $actions['delete']]),
+                ActionGroup::make([$actions['share'], $actions['history'], $actions['duplicate'], $actions['delete']]),
             ]), self::recordActions());
     }
 
@@ -123,7 +124,7 @@ class BuilderWidgetResource extends Resource
                 ->modalWidth(Width::FourExtraLarge)
                 ->fillForm(fn (BuilderWidget $record): array => BuilderWidgetForm::fill($record))
                 ->schema(fn (BuilderWidget $record): array => BuilderWidgetForm::components($record->type))
-                ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data)),
+                ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data, DashboardResource::user())),
             'duplicate' => Action::make('duplicate')
                 ->label(__('filament-dashboards::dashboards.actions.duplicate'))
                 ->icon(Heroicon::OutlinedDocumentDuplicate)
@@ -138,6 +139,7 @@ class BuilderWidgetResource extends Resource
                 ])
                 ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(CloneBuilderWidget::class)->handle($record, DashboardResource::user(), Filament::getTenant(), Arr::string($data, 'name'))),
             'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
+            'history' => WidgetHistoryAction::make(),
             'delete' => DeleteAction::make()->icon(Heroicon::OutlinedTrash),
         ];
     }

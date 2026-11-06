@@ -9,6 +9,7 @@ return [
         'widgets' => 'custom_dashboard_widgets',
         'shares' => 'custom_dashboard_shares',
         'homes' => 'custom_dashboard_homes',
+        'versions' => 'custom_dashboard_widget_versions',
     ],
 
     'key_types' => [

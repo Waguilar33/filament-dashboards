@@ -25,7 +25,7 @@ final class FilamentDashboardsServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews(self::NAME)
             ->hasTranslations()
-            ->hasMigrations(['create_filament_dashboards_tables', 'link_filament_dashboards_items_to_widgets'])
+            ->hasMigrations(['create_filament_dashboards_tables', 'link_filament_dashboards_items_to_widgets', 'create_filament_dashboards_widget_versions_table'])
             ->hasCommand(SyncDashboardsCommand::class)
             ->hasInstallCommand(fn (InstallCommand $command): InstallCommand => $command
                 ->publishConfigFile()

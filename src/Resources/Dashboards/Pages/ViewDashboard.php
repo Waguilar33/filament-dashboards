@@ -33,6 +33,7 @@ use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
 use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\WidgetHistoryAction;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
@@ -303,10 +304,17 @@ class ViewDashboard extends Page
             ->action(function (array $data, array $arguments): void {
                 $widget = $this->editableWidget($arguments);
 
-                app(SaveBuilderWidget::class)->handle($widget, $widget->type, $data);
+                app(SaveBuilderWidget::class)->handle($widget, $widget->type, $data, DashboardResource::user());
 
                 $this->reloadDashboard();
             });
+    }
+
+    public function widgetHistoryAction(): Action
+    {
+        return WidgetHistoryAction::make('widgetHistory')
+            ->record(fn (array $arguments): BuilderWidget => $this->editableWidget($arguments))
+            ->after(fn () => $this->reloadDashboard());
     }
 
     /**
