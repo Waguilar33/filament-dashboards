@@ -28,7 +28,7 @@ class BuildWidgetAction extends Action
     {
         $options = [];
 
-        foreach (BuilderWidgetType::cases() as $type) {
+        foreach (FilamentDashboardsPlugin::get()->getBuilderWidgetTypes() as $type) {
             $options[$prefix.$type->value] = ['label' => $type->getLabel(), 'description' => $type->getDescription(), 'preview' => null, 'kind' => $type->preview()];
         }
 
@@ -64,6 +64,10 @@ class BuildWidgetAction extends Action
      */
     protected static function type(array $arguments): BuilderWidgetType
     {
-        return BuilderWidgetType::from(Arr::string($arguments, 'type'));
+        $type = BuilderWidgetType::tryFrom(Arr::string($arguments, 'type'));
+
+        abort_unless($type !== null && in_array($type, FilamentDashboardsPlugin::get()->getBuilderWidgetTypes(), true), 404);
+
+        return $type;
     }
 }

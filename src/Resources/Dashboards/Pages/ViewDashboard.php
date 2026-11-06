@@ -17,7 +17,6 @@ use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\TableWidget;
@@ -41,7 +40,9 @@ use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
 use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\TransferOwnershipAction;
 use Waguilar\FilamentDashboards\Filament\Actions\WidgetHistoryAction;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
@@ -108,7 +109,7 @@ class ViewDashboard extends Page
                     ->key('editMode')
                     ->compact()
                     ->description(new HtmlString('<span class="fi-dashboards-narrow-notice">'.e(__('filament-dashboards::dashboards.edit_mode.narrow')).'</span>'))
-                    ->icon(Heroicon::OutlinedPencilSquare)
+                    ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EDIT))
                     ->headerActions([$this->doneEditingAction(), $this->addWidgetAction()]),
             ] : []),
             ...$this->dashboardComponents(
@@ -140,7 +141,9 @@ class ViewDashboard extends Page
 
     public function duplicateItemAction(): Action
     {
-        return Action::make('duplicateItem')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('duplicateItem')
+            ->label(__('filament-dashboards::dashboards.actions.duplicate'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DUPLICATE))
             ->visible($this->canEdit())
             ->action(function (array $arguments): void {
                 $item = $this->editableItem($arguments);
@@ -161,12 +164,27 @@ class ViewDashboard extends Page
                 app(DuplicateDashboardItem::class)->handle($this->getDashboard(), $item, $builderWidget, $user, Filament::getTenant());
 
                 $this->reloadDashboard();
-            });
+            }), 'dashboard.duplicateItem');
+    }
+
+    public function fitItemHeightAction(): Action
+    {
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('fitItemHeight')
+            ->label(__('filament-dashboards::dashboards.actions.fit_height'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::FIT_HEIGHT))
+            ->visible($this->canEdit())
+            ->action(function (array $arguments): void {
+                $this->editableItem($arguments)->update(['fits_content' => true]);
+
+                $this->reloadDashboard();
+            }), 'dashboard.fitItemHeight');
     }
 
     public function removeItemAction(): Action
     {
-        return Action::make('removeItem')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('removeItem')
+            ->label(__('filament-dashboards::dashboards.actions.remove'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::REMOVE))
             ->visible($this->canEdit())
             ->requiresConfirmation()
             ->color('danger')
@@ -177,7 +195,7 @@ class ViewDashboard extends Page
                 $this->editableItem($arguments)->delete();
 
                 $this->reloadDashboard();
-            });
+            }), 'dashboard.removeItem');
     }
 
     /**
@@ -206,11 +224,12 @@ class ViewDashboard extends Page
             'settings' => $this->settingsAction(),
             'emailMe' => $this->emailMeAction(),
             'alerts' => $this->alertsAction(),
-            'print' => Action::make('print')
+            'print' => FilamentDashboardsPlugin::get()->modifyAction(Action::make('print')
                 ->label(__('filament-dashboards::dashboards.actions.print'))
-                ->icon(Heroicon::OutlinedPrinter)
-                ->url(fn (): string => DashboardResource::getUrl('view', ['record' => $this->getDashboard(), 'print' => 1])),
+                ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::PRINT))
+                ->url(fn (): string => DashboardResource::getUrl('view', ['record' => $this->getDashboard(), 'print' => 1])), 'dashboard.print'),
             'duplicate' => $this->cloneAction(),
+            'transfer' => FilamentDashboardsPlugin::get()->modifyAction(TransferOwnershipAction::make()->record($this->getDashboard()), 'dashboard.transfer'),
             'setAsHome' => $this->setHomeAction(),
             'removeHome' => $this->removeHomeAction(),
             'delete' => $this->deleteAction(),
@@ -259,7 +278,7 @@ class ViewDashboard extends Page
             $sections[] = BuildWidgetAction::pickerSection(self::NEW_PREFIX);
         }
 
-        return $plugin->modifyAddWidgetAction(Action::make('addWidget')
+        return FilamentDashboardsPlugin::get()->modifyAction($plugin->modifyAddWidgetAction(Action::make('addWidget')
             ->label(__('filament-dashboards::dashboards.actions.add_widget'))
             ->visible($this->canEdit())
             ->slideOver()
@@ -289,27 +308,30 @@ class ViewDashboard extends Page
                     $key,
                     $builderWidget instanceof BuilderWidget ? $builderWidget->type->defaultSize() : $widgets[$key]::dashboardSize(),
                     DashboardResource::user(),
+                    ! $builderWidget instanceof BuilderWidget || ! $builderWidget->type->isChart(),
                 );
 
                 $this->reloadDashboard();
-            }));
+            })), 'dashboard.addWidget');
     }
 
     public function buildWidgetAction(): Action
     {
-        return BuildWidgetAction::make()
+        return FilamentDashboardsPlugin::get()->modifyAction(BuildWidgetAction::make()
             ->visible($this->canEdit() && BuilderWidgetResource::canCreate())
             ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.add_widget'))
             ->after(function (BuilderWidget $record): void {
-                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize(), DashboardResource::user());
+                app(AddDashboardWidget::class)->handle($this->getDashboard(), $record->dashboardKey(), $record->type->defaultSize(), DashboardResource::user(), ! $record->type->isChart());
 
                 $this->reloadDashboard();
-            });
+            }), 'dashboard.buildWidget');
     }
 
     public function editWidgetAction(): Action
     {
-        return Action::make('editWidget')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('editWidget')
+            ->label(__('filament-dashboards::dashboards.actions.edit'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EDIT))
             ->visible($this->canEdit())
             ->slideOver()
             ->modalWidth(Width::FourExtraLarge)
@@ -341,7 +363,7 @@ class ViewDashboard extends Page
                 }
 
                 $this->reloadDashboard();
-            });
+            }), 'dashboard.editWidget');
     }
 
     protected function emailMeAction(): Action
@@ -354,9 +376,9 @@ class ViewDashboard extends Page
             ->where('tenant_id', Filament::getTenant()?->getKey())
             ->first();
 
-        return Action::make('emailMe')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('emailMe')
             ->label(__('filament-dashboards::dashboards.actions.email_me'))
-            ->icon(Heroicon::OutlinedEnvelope)
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EMAIL))
             ->visible(FilamentDashboardsPlugin::get()->hasScheduledNotifications())
             ->modalWidth(Width::Medium)
             ->modalDescription(__('filament-dashboards::dashboards.digest.description', ['hour' => SendDashboardNotificationsCommand::SEND_HOUR]))
@@ -387,7 +409,7 @@ class ViewDashboard extends Page
                 $subscription->frequency = $frequency;
                 $subscription->save();
             })
-            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.saved'));
+            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.saved')), 'dashboard.emailMe');
     }
 
     protected function alertsAction(): Action
@@ -398,9 +420,9 @@ class ViewDashboard extends Page
             ->where('tenant_type', Filament::getTenant()?->getMorphClass())
             ->where('tenant_id', Filament::getTenant()?->getKey());
 
-        return Action::make('alerts')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('alerts')
             ->label(__('filament-dashboards::dashboards.actions.alerts'))
-            ->icon(Heroicon::OutlinedBellAlert)
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::ALERTS))
             ->visible(FilamentDashboardsPlugin::get()->hasScheduledNotifications())
             ->slideOver()
             ->modalWidth(Width::TwoExtraLarge)
@@ -464,7 +486,7 @@ class ViewDashboard extends Page
                     $alert->save();
                 }
             })
-            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.saved'));
+            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.saved')), 'dashboard.alerts');
     }
 
     /**
@@ -492,9 +514,9 @@ class ViewDashboard extends Page
 
     public function widgetHistoryAction(): Action
     {
-        return WidgetHistoryAction::make('widgetHistory')
+        return FilamentDashboardsPlugin::get()->modifyAction(WidgetHistoryAction::make('widgetHistory')
             ->record(fn (array $arguments): BuilderWidget => $this->editableWidget($arguments))
-            ->after(fn () => $this->reloadDashboard());
+            ->after(fn () => $this->reloadDashboard()), 'dashboard.widgetHistory');
     }
 
     /**
@@ -513,12 +535,12 @@ class ViewDashboard extends Page
 
     protected function shareAction(): ShareAction
     {
-        return FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->record($this->getDashboard())->color('gray'));
+        return FilamentDashboardsPlugin::get()->modifyAction(FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->record($this->getDashboard())->color('gray')), 'dashboard.share');
     }
 
     protected function editLayoutAction(): Action
     {
-        return Action::make('edit')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('edit')
             ->label(__('filament-dashboards::dashboards.actions.edit'))
             ->color('primary')
             ->visible($this->canEdit() && ! $this->isEditingLayout)
@@ -526,50 +548,50 @@ class ViewDashboard extends Page
                 $this->isEditingLayout = true;
 
                 $this->reloadDashboard();
-            });
+            }), 'dashboard.edit');
     }
 
     protected function doneEditingAction(): Action
     {
-        return Action::make('doneEditing')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('doneEditing')
             ->label(__('filament-dashboards::dashboards.actions.done_editing'))
             ->color('gray')
             ->action(function (): void {
                 $this->isEditingLayout = false;
 
                 $this->reloadDashboard();
-            });
+            }), 'dashboard.doneEditing');
     }
 
     protected function settingsAction(): EditAction
     {
-        return FilamentDashboardsPlugin::get()->modifySettingsAction(DashboardSettingsAction::make()
+        return FilamentDashboardsPlugin::get()->modifyAction(FilamentDashboardsPlugin::get()->modifySettingsAction(DashboardSettingsAction::make()
             ->record($this->getDashboard())
-            ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record])));
+            ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record]))), 'dashboard.settings');
     }
 
     protected function cloneAction(): Action
     {
-        return DuplicateDashboardAction::make()->record($this->getDashboard());
+        return FilamentDashboardsPlugin::get()->modifyAction(DuplicateDashboardAction::make()->record($this->getDashboard()), 'dashboard.duplicate');
     }
 
     protected function setHomeAction(): Action
     {
-        return SetHomeAction::make()->record($this->getDashboard());
+        return FilamentDashboardsPlugin::get()->modifyAction(SetHomeAction::make()->record($this->getDashboard()), 'dashboard.setAsHome');
     }
 
     protected function removeHomeAction(): Action
     {
-        return RemoveHomeAction::make()->record($this->getDashboard());
+        return FilamentDashboardsPlugin::get()->modifyAction(RemoveHomeAction::make()->record($this->getDashboard()), 'dashboard.removeHome');
     }
 
     protected function deleteAction(): DeleteAction
     {
-        return DeleteAction::make()
-            ->icon(Heroicon::OutlinedTrash)
+        return FilamentDashboardsPlugin::get()->modifyAction(DeleteAction::make()
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE))
             ->record($this->getDashboard())
             ->visible($this->getDashboard()->canBeDeletedBy(DashboardResource::user()))
-            ->successRedirectUrl(DashboardResource::getUrl());
+            ->successRedirectUrl(DashboardResource::getUrl()), 'dashboard.delete');
     }
 
     protected function canEdit(): bool

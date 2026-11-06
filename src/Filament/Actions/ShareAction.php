@@ -37,7 +37,6 @@ class ShareAction extends Action
         $viewer = Filament::auth()->user();
         $userType = $viewer->getMorphClass();
         $roleType = $plugin->getRolesRelationship()?->getRelated()->getMorphClass();
-        $userOptions = null;
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.share'))
@@ -81,19 +80,15 @@ class ShareAction extends Action
                             ->required(),
                         Select::make('shareable_id')
                             ->label(__('filament-dashboards::dashboards.fields.shareable'))
-                            ->options(function (Get $get) use (&$userOptions, $plugin, $roleType, $userType, $viewer): array {
-                                return ($get('shareable_type') ?? $userType) === $roleType
-                                ? $plugin->getShareableRoles()?->pluck('name', 'id')->all() ?? []
-                                : $userOptions ??= $plugin->getShareableUsers(Filament::getTenant())
-                                    ->whereKeyNot($viewer->getKey())
-                                    ->get()
-                                    ->mapWithKeys(function (Model $user): array {
-                                        $key = $user->getKey();
-
-                                        return is_int($key) || is_string($key) ? [$key => Filament::getUserName($user)] : [];
-                                    })
-                                    ->all();
-                            })
+                            ->options(fn (Get $get): array => ($get('shareable_type') ?? $userType) === $roleType
+                                ? $plugin->getShareableRoles(Filament::getTenant())?->pluck('name', $plugin->getShareableRoles(Filament::getTenant())->getModel()->getKeyName())->all() ?? []
+                                : [])
+                            ->getSearchResultsUsing(fn (Get $get, string $search): array => ($get('shareable_type') ?? $userType) === $roleType
+                                ? []
+                                : self::userOptions($plugin->searchShareableUsers($plugin->getShareableUsers(Filament::getTenant())->whereKeyNot($viewer->getKey()), $search)->limit(50)->get()))
+                            ->getOptionLabelUsing(fn (Get $get, mixed $value): ?string => ($get('shareable_type') ?? $userType) === $roleType
+                                ? (is_int($value) || is_string($value) ? ($plugin->getShareableRoles(Filament::getTenant())?->pluck('name', $plugin->getShareableRoles(Filament::getTenant())->getModel()->getKeyName())->map(fn (mixed $name): string => is_scalar($name) ? (string) $name : '')->get($value)) : null)
+                                : (is_int($value) || is_string($value) ? self::userOptions($plugin->getShareableUsers(Filament::getTenant())->whereKey($value)->get())[$value] ?? null : null))
                             ->searchable()
                             ->required(),
                         Select::make('level')
@@ -108,7 +103,7 @@ class ShareAction extends Action
                     ]),
             ])
             ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.shares_saved'))
-            ->action(function (array $data, Dashboard|BuilderWidget $record, Action $action) use ($userType): void {
+            ->action(function (array $data, Dashboard|BuilderWidget $record, Action $action) use ($userType, $roleType, $plugin): void {
                 $shares = [];
 
                 foreach (Arr::array($data, 'shares') as $share) {
@@ -125,9 +120,31 @@ class ShareAction extends Action
                     ];
                 }
 
-                app(SaveShares::class)->handle($record, $shares);
+                $allowedUsers = $plugin->getShareableUsers(Filament::getTenant())->whereKey(array_column(array_filter($shares, fn (array $share): bool => $share['shareable_type'] === $userType), 'shareable_id'))->pluck($plugin->getShareableUsers(null)->getModel()->getKeyName())->map(fn (mixed $key): string => is_scalar($key) ? (string) $key : '')->all();
+                $allowedRoles = $roleType === null ? [] : ($plugin->getShareableRoles(Filament::getTenant())?->pluck($plugin->getShareableRoles(Filament::getTenant())->getModel()->getKeyName())->map(fn (mixed $key): string => is_scalar($key) ? (string) $key : '')->all() ?? []);
+
+                app(SaveShares::class)->handle($record, array_values(array_filter($shares, fn (array $share): bool => in_array((string) $share['shareable_id'], $share['shareable_type'] === $userType ? $allowedUsers : $allowedRoles, true))));
 
                 $action->success();
             });
+    }
+
+    /**
+     * @param  iterable<Model>  $users
+     * @return array<int|string, string>
+     */
+    protected static function userOptions(iterable $users): array
+    {
+        $options = [];
+
+        foreach ($users as $user) {
+            $key = $user->getKey();
+
+            if (is_int($key) || is_string($key)) {
+                $options[$key] = Filament::getUserName($user);
+            }
+        }
+
+        return $options;
     }
 }

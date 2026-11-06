@@ -11,10 +11,13 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\EmptyState;
 use Filament\Schemas\Components\View;
-use Filament\Support\Icons\Heroicon;
+use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Widgets\TableWidget;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
@@ -65,6 +68,8 @@ trait RendersDashboard
                     return null;
                 }
 
+                $adjustableHeight = is_a($component, ChartWidget::class, true) || is_a($component, TableWidget::class, true);
+
                 return [
                     'id' => $item->id,
                     'widget' => $component,
@@ -80,6 +85,8 @@ trait RendersDashboard
                     'y' => $item->y,
                     'w' => $item->w,
                     'h' => $item->h,
+                    'adjustableHeight' => $adjustableHeight,
+                    'fixedHeight' => $adjustableHeight && ! $item->fits_content,
                 ];
             })
             ->filter()
@@ -92,7 +99,7 @@ trait RendersDashboard
             return [
                 EmptyState::make(__($hidden ? 'filament-dashboards::dashboards.empty.hidden_heading' : 'filament-dashboards::dashboards.empty.heading'))
                     ->description(__($hidden ? 'filament-dashboards::dashboards.empty.hidden_description' : 'filament-dashboards::dashboards.empty.description'))
-                    ->icon(Heroicon::OutlinedSquares2x2)
+                    ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EMPTY))
                     ->footer($addWidget === null ? [] : [$addWidget()]),
             ];
         }
@@ -111,8 +118,9 @@ trait RendersDashboard
                     ]], $items),
                     'editable' => $editable,
                     'printing' => $printing,
+                    'toolbar' => $editable ? $this->itemToolbar() : [],
                     'printRange' => array_filter(array_column($items, 'followsDates')) === [] ? null : app(ResolveDateRange::class)->handle($this->filters),
-                    'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version']], $items), $editable])),
+                    'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version'], $item['fixedHeight']], $items), $editable])),
                 ];
             }),
         ];
@@ -133,5 +141,22 @@ trait RendersDashboard
             ->get()
             ->mapWithKeys(fn (DashboardItem $item): array => [$item->id => $item->cardWidths()])
             ->all();
+    }
+
+    /**
+     * @return array<string, array{label: string|Htmlable, icon: mixed, color: mixed}|null>
+     */
+    protected function itemToolbar(): array
+    {
+        $toolbar = [];
+
+        foreach (['editWidget', 'widgetHistory', 'fitItemHeight', 'duplicateItem', 'removeItem'] as $name) {
+            $action = method_exists($this, $name.'Action') ? $this->getAction($name, isMounting: false) : null;
+            $toolbar[$name] = $action === null || ($name !== 'widgetHistory' && $action->isHidden())
+                ? null
+                : ['label' => $action->getLabel() ?? '', 'icon' => $action->getIcon(), 'color' => $action->getColor()];
+        }
+
+        return $toolbar;
     }
 }

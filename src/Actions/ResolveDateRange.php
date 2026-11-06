@@ -37,10 +37,19 @@ class ResolveDateRange
             );
         }
 
-        $days = is_numeric($preset) && in_array((int) $preset, $plugin->getDatePresets(), true)
-            ? (int) $preset
-            : $plugin->getDefaultDatePreset();
+        $presets = $plugin->getDatePresets();
+        $chosen = match (true) {
+            is_numeric($preset) && in_array((int) $preset, $presets, true) => (int) $preset,
+            is_string($preset) && in_array($preset, $presets, true) => $preset,
+            default => $plugin->getDefaultDatePreset(),
+        };
         $today = CarbonImmutable::now($timezone);
+
+        if (is_string($chosen) && ($period = $plugin->getDatePeriod($chosen)) !== null) {
+            return $period->range($today);
+        }
+
+        $days = is_int($chosen) ? $chosen : 30;
 
         return new DateRange($today->subDays($days - 1)->startOfDay(), $today->endOfDay());
     }

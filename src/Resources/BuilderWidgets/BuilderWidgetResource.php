@@ -12,10 +12,11 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -23,8 +24,11 @@ use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 use Waguilar\FilamentDashboards\Actions\CloneBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
+use Waguilar\FilamentDashboards\Builders\BuilderWidgetBuilder;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\TransferOwnershipAction;
 use Waguilar\FilamentDashboards\Filament\Actions\WidgetHistoryAction;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\Pages\ListBuilderWidgets;
@@ -39,7 +43,22 @@ class BuilderWidgetResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return FilamentDashboardsPlugin::get()->getNavigationGroup() ?? parent::getNavigationGroup();
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        $sort = FilamentDashboardsPlugin::get()->getNavigationSort();
+
+        return $sort === null ? parent::getNavigationSort() : $sort + 1;
+    }
+
+    public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
+    {
+        return FilamentDashboardsIcon::get(FilamentDashboardsIcon::NAVIGATION_WIDGETS);
+    }
 
     public static function getModelLabel(): string
     {
@@ -61,9 +80,9 @@ class BuilderWidgetResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
-        return BuilderWidget::query()
-            ->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())
-            ->visibleTo(DashboardResource::user());
+        $query = BuilderWidget::query()->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant());
+
+        return FilamentDashboardsPlugin::get()->canManageAny(DashboardResource::user(), Filament::getTenant()) ? $query : $query->visibleTo(DashboardResource::user());
     }
 
     public static function getAuthorizationResponse(string|UnitEnum $action, ?Model $record = null): Response
@@ -103,10 +122,17 @@ class BuilderWidgetResource extends Resource
                     }),
             ])
             ->defaultSort('name')
+            ->filters([
+                Filter::make('mine')
+                    ->label(__('filament-dashboards::dashboards.filters.mine'))
+                    ->default()
+                    ->visible(fn (): bool => FilamentDashboardsPlugin::get()->canManageAny(DashboardResource::user(), Filament::getTenant()))
+                    ->query(fn (BuilderWidgetBuilder $query): BuilderWidgetBuilder => $query->visibleTo(DashboardResource::user())),
+            ])
             ->recordAction('edit')
             ->recordActions([
                 $actions['edit'],
-                ActionGroup::make([$actions['share'], $actions['history'], $actions['duplicate'], $actions['delete']]),
+                ActionGroup::make([$actions['share'], $actions['history'], $actions['duplicate'], $actions['transfer'], $actions['delete']]),
             ]), self::recordActions());
     }
 
@@ -115,10 +141,10 @@ class BuilderWidgetResource extends Resource
      */
     protected static function recordActions(): array
     {
-        return [
+        return array_map(fn (Action $action): Action => FilamentDashboardsPlugin::get()->modifyAction($action, "widgets.{$action->getName()}"), [
             'edit' => Action::make('edit')
                 ->label(__('filament-dashboards::dashboards.actions.edit'))
-                ->icon(Heroicon::OutlinedPencilSquare)
+                ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EDIT))
                 ->visible(fn (BuilderWidget $record): bool => $record->canBeEditedBy(DashboardResource::user()))
                 ->slideOver()
                 ->modalWidth(Width::FourExtraLarge)
@@ -128,7 +154,7 @@ class BuilderWidgetResource extends Resource
                 ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data, DashboardResource::user())),
             'duplicate' => Action::make('duplicate')
                 ->label(__('filament-dashboards::dashboards.actions.duplicate'))
-                ->icon(Heroicon::OutlinedDocumentDuplicate)
+                ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DUPLICATE))
                 ->visible(fn (): bool => static::canCreate())
                 ->modalWidth(Width::Medium)
                 ->fillForm(fn (BuilderWidget $record): array => ['name' => __('filament-dashboards::dashboards.modals.clone.name', ['name' => $record->name])])
@@ -139,10 +165,11 @@ class BuilderWidgetResource extends Resource
                         ->maxLength(255),
                 ])
                 ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(CloneBuilderWidget::class)->handle($record, DashboardResource::user(), Filament::getTenant(), Arr::string($data, 'name'))),
-            'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
+            'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::SHARE))),
             'history' => WidgetHistoryAction::make(),
-            'delete' => DeleteAction::make()->icon(Heroicon::OutlinedTrash),
-        ];
+            'transfer' => TransferOwnershipAction::make(),
+            'delete' => DeleteAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE)),
+        ]);
     }
 
     public static function getPages(): array

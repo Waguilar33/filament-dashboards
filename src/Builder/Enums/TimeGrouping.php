@@ -7,6 +7,7 @@ namespace Waguilar\FilamentDashboards\Builder\Enums;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Filament\Support\Contracts\HasLabel;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 
 enum TimeGrouping: string implements HasLabel
 {
@@ -26,7 +27,7 @@ enum TimeGrouping: string implements HasLabel
 
         return match ($this) {
             self::Day => $date->startOfDay(),
-            self::Week => $date->startOfWeek(CarbonInterface::MONDAY),
+            self::Week => $date->startOfWeek(FilamentDashboardsPlugin::get()->getWeekStart()),
             self::Month => $date->startOfMonth(),
             self::Year => $date->startOfYear(),
         };
@@ -44,10 +45,6 @@ enum TimeGrouping: string implements HasLabel
 
     public function label(CarbonImmutable $start): string
     {
-        return $start->translatedFormat(match ($this) {
-            self::Day, self::Week => 'M j',
-            self::Month => 'M Y',
-            self::Year => 'Y',
-        });
+        return FilamentDashboardsPlugin::get()->formatDate($start, $this->value);
     }
 }

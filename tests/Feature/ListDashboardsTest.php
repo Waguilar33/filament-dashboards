@@ -160,7 +160,7 @@ it('keeps the default dashboards table, with the home toggle and a menu', functi
     $actions = $table->getRecordActions();
 
     expect(array_map(fn (Action|ActionGroup $action): ?string => $action instanceof Action ? $action->getName() : null, $actions))->toBe(['setAsHome', 'removeHome', null])
-        ->and(array_map(fn (Action $action): ?string => $action->getName(), $actions[2]->getActions()))->toBe(['share', 'settings', 'duplicate', 'delete'])
+        ->and(array_map(fn (Action $action): ?string => $action->getName(), $actions[2]->getActions()))->toBe(['share', 'settings', 'duplicate', 'transfer', 'delete'])
         ->and(array_keys($table->getColumns()))->toBe(['name', 'kind']);
 });
 

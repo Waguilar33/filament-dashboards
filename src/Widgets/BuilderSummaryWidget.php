@@ -14,14 +14,15 @@ use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateSummary;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\DrillsDownToRecords;
-use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
+use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsData;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderSummaryWidget extends TableWidget
 {
     use DrillsDownToRecords;
-    use ExportsCsv;
+    use ExportsData;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
@@ -61,7 +62,7 @@ class BuilderSummaryWidget extends TableWidget
                     ->translateLabel(false)
                     ->alignment(Alignment::End)
                     ->weight(fn (array $record): ?FontWeight => $record['total'] ? FontWeight::Bold : null)
-                    ->formatStateUsing(fn (int|float $state): string => number_format($state, 2).'%');
+                    ->formatStateUsing(fn (int|float $state): string => FilamentDashboardsPlugin::get()->formatNumber($state, 2).'%');
             }
         }
 
@@ -117,7 +118,7 @@ class BuilderSummaryWidget extends TableWidget
                 $this->configString($config, 'group_field') ?? '',
                 array_map(fn (array $metric): array => ['metric' => $metric['metric'], 'field' => $metric['field']], $metrics),
                 $this->filters($config),
-                is_numeric($limit) ? max(1, min(100, (int) $limit)) : 20,
+                is_numeric($limit) ? max(1, min(FilamentDashboardsPlugin::get()->getBuilderLimit('summary'), (int) $limit)) : 20,
                 $this->configString($config, 'dates_field'),
                 $this->dashboardDates($config),
             );
@@ -174,5 +175,12 @@ class BuilderSummaryWidget extends TableWidget
                 : ['field' => $group, 'operator' => 'is_empty'],
             'title' => is_string($arguments['label'] ?? null) ? $arguments['label'] : '',
         ];
+    }
+
+    protected function exportSourceKeys(): array
+    {
+        $source = $this->configString($this->widgetConfig(), 'source');
+
+        return $source === null ? [] : [$source];
     }
 }

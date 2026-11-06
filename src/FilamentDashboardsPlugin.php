@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards;
 
+use Carbon\CarbonInterface;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -13,7 +14,9 @@ use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
 use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Filament\Widgets\Widget;
@@ -25,9 +28,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use LogicException;
+use UnitEnum;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
+use Waguilar\FilamentDashboards\Dates\DatePeriod;
+use Waguilar\FilamentDashboards\Dates\Periods\LastMonth;
+use Waguilar\FilamentDashboards\Dates\Periods\LastThirtyDays;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisMonth;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisQuarter;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisWeek;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisYear;
+use Waguilar\FilamentDashboards\Dates\Periods\Today;
+use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\Exports\CsvExporter;
+use Waguilar\FilamentDashboards\Exports\WidgetExporter;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterTenantDashboardNavigation;
@@ -70,6 +86,21 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $shareableUsersUsing = null;
 
     /**
+     * @var (Closure(?Model): Builder<covariant Model>)|null
+     */
+    protected ?Closure $shareableRolesUsing = null;
+
+    /**
+     * @var (Closure(Model, ?Model): bool)|null
+     */
+    protected ?Closure $canManageAnyUsing = null;
+
+    /**
+     * @var (Closure(Builder<covariant Model>, string): Builder<covariant Model>)|null
+     */
+    protected ?Closure $searchShareableUsersUsing = null;
+
+    /**
      * @var (Closure(array<string, Action>): array<Action|ActionGroup>)|null
      */
     protected ?Closure $headerActionsUsing = null;
@@ -85,11 +116,75 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $modifyWidgetsTableUsing = null;
 
     /**
-     * @var list<int>
+     * @var list<int|string>
      */
     protected array $datePresets = [1, 15, 30, 60, 90];
 
-    protected int $defaultDatePreset = 30;
+    protected int|string $defaultDatePreset = 30;
+
+    /**
+     * @var list<class-string<DatePeriod>|DatePeriod>
+     */
+    protected array $datePeriods = [Today::class, ThisWeek::class, ThisMonth::class, LastMonth::class, ThisQuarter::class, ThisYear::class, LastThirtyDays::class];
+
+    protected int $weekStart = CarbonInterface::MONDAY;
+
+    /**
+     * @var list<BuilderWidgetType>|null
+     */
+    protected ?array $builderWidgetTypes = null;
+
+    /**
+     * @var (Closure(array<Component>, BuilderWidgetType): array<Component>)|null
+     */
+    protected ?Closure $modifyBuilderWidgetFieldsUsing = null;
+
+    /**
+     * @var array<string, int>
+     */
+    protected array $builderLimits = ['table' => 100, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100, 'series' => 10];
+
+    protected ?int $minRefreshInterval = 5;
+
+    /**
+     * @var list<WidgetExporter>|null
+     */
+    protected ?array $exporters = null;
+
+    protected string $csvDelimiter = ',';
+
+    protected string $printPageSize = 'letter';
+
+    /**
+     * @var list<string>
+     */
+    protected array $chartColors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
+
+    /**
+     * @var (Closure(array<string, mixed>, string): array<string, mixed>)|null
+     */
+    protected ?Closure $modifyChartOptionsUsing = null;
+
+    protected int $widgetVersionsToKeep = 20;
+
+    protected string|UnitEnum|null $navigationGroup = null;
+
+    protected ?int $navigationSort = null;
+
+    /**
+     * @var (Closure(NavigationItem, Dashboard): ?NavigationItem)|null
+     */
+    protected ?Closure $modifyDashboardNavigationItemUsing = null;
+
+    /**
+     * @var array{cellHeight: int, margin: int, stackBelow: int}
+     */
+    protected array $gridOptions = ['cellHeight' => 40, 'margin' => 8, 'stackBelow' => 1024];
+
+    /**
+     * @var (Closure(string): string)|null
+     */
+    protected ?Closure $exportFileNameUsing = null;
 
     /**
      * @var (Closure(): string)|null
@@ -97,6 +192,16 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $timezoneUsing = null;
 
     protected bool $hasScheduledNotifications = false;
+
+    /**
+     * @var (Closure(int|float, int): string)|null
+     */
+    protected ?Closure $formatNumbersUsing = null;
+
+    /**
+     * @var (Closure(CarbonInterface, string): string)|null
+     */
+    protected ?Closure $formatDatesUsing = null;
 
     /**
      * @var (Closure(Model, ?Model, Closure(): mixed): mixed)|null
@@ -137,6 +242,11 @@ final class FilamentDashboardsPlugin implements Plugin
      * @var (Closure(Action): Action)|null
      */
     protected ?Closure $modifyAddWidgetActionUsing = null;
+
+    /**
+     * @var (Closure(Action, string): Action)|null
+     */
+    protected ?Closure $modifyActionUsing = null;
 
     public static function make(): static
     {
@@ -215,18 +325,72 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @return Builder<Model>|null
+     * @param  (Closure(Model, ?Model): bool)|null  $callback
      */
-    public function getShareableRoles(): ?Builder
+    public function canManageAnyUsing(?Closure $callback): static
     {
-        $query = $this->getRolesRelationship()?->getRelated()->newQuery();
+        $this->canManageAnyUsing = $callback;
 
-        if ($query !== null && config('permission.teams') === true && function_exists('getPermissionsTeamId')) {
+        return $this;
+    }
+
+    public function canManageAny(Model $user, ?Model $tenant): bool
+    {
+        return $this->canManageAnyUsing !== null && ($this->canManageAnyUsing)($user, $tenant);
+    }
+
+    /**
+     * @param  (Closure(?Model): Builder<covariant Model>)|null  $callback
+     */
+    public function shareableRolesUsing(?Closure $callback): static
+    {
+        $this->shareableRolesUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @return Builder<covariant Model>|null
+     */
+    public function getShareableRoles(?Model $tenant = null): ?Builder
+    {
+        if ($this->getRolesRelationship() === null) {
+            return null;
+        }
+
+        if ($this->shareableRolesUsing !== null) {
+            return ($this->shareableRolesUsing)($tenant);
+        }
+
+        $query = $this->getRolesRelationship()->getRelated()->newQuery();
+
+        if (config('permission.teams') === true && function_exists('getPermissionsTeamId')) {
             $team = config()->string('permission.column_names.team_foreign_key');
             $query->where(fn (Builder $roles): Builder => $roles->whereNull($team)->orWhere($team, getPermissionsTeamId()));
         }
 
         return $query;
+    }
+
+    /**
+     * @param  (Closure(Builder<covariant Model>, string): Builder<covariant Model>)|null  $callback
+     */
+    public function searchShareableUsersUsing(?Closure $callback): static
+    {
+        $this->searchShareableUsersUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function searchShareableUsers(Builder $query, string $search): Builder
+    {
+        return $this->searchShareableUsersUsing === null
+            ? $query->where($query->getModel()->qualifyColumn('name'), 'like', '%'.$search.'%')
+            : ($this->searchShareableUsersUsing)($query, $search);
     }
 
     protected function newUser(): Model
@@ -469,6 +633,32 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
+     * @param  (Closure(Action, string): Action)|null  $callback
+     */
+    public function modifyActionUsing(?Closure $callback): static
+    {
+        $this->modifyActionUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @template TAction of Action
+     *
+     * @param  TAction  $action
+     * @return TAction
+     */
+    public function modifyAction(Action $action, string $name): Action
+    {
+        if ($this->modifyActionUsing === null) {
+            return $action;
+        }
+
+        /** @var TAction */
+        return ($this->modifyActionUsing)($action, $name);
+    }
+
+    /**
      * @param  (Closure(string): Field)|null  $callback
      */
     public function navigationIconFieldUsing(?Closure $callback): static
@@ -517,33 +707,304 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @param  list<int>  $days
+     * @param  list<int|string>  $presets
      */
-    public function datePresets(array $days): static
+    public function datePresets(array $presets): static
     {
-        $this->datePresets = $days;
+        $this->datePresets = $presets;
 
         return $this;
     }
 
     /**
-     * @return list<int>
+     * @return list<int|string>
      */
     public function getDatePresets(): array
     {
-        return $this->datePresets;
+        return array_values(array_filter($this->datePresets, fn (int|string $preset): bool => is_int($preset) || $this->getDatePeriod($preset) !== null));
     }
 
-    public function defaultDatePreset(int $days): static
+    public function defaultDatePreset(int|string $preset): static
     {
-        $this->defaultDatePreset = $days;
+        $this->defaultDatePreset = $preset;
 
         return $this;
     }
 
-    public function getDefaultDatePreset(): int
+    public function getDefaultDatePreset(): int|string
     {
         return $this->defaultDatePreset;
+    }
+
+    /**
+     * @param  list<class-string<DatePeriod>|DatePeriod>  $periods
+     */
+    public function datePeriods(array $periods): static
+    {
+        $this->datePeriods = [...$this->datePeriods, ...$periods];
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, DatePeriod>
+     */
+    public function getDatePeriods(): array
+    {
+        $periods = [];
+
+        foreach ($this->datePeriods as $period) {
+            $period = $period instanceof DatePeriod ? $period : new $period;
+
+            if (in_array($period->key(), ['dashboard', 'custom'], true) || is_numeric($period->key())) {
+                throw new LogicException("Date period key [{$period->key()}] is reserved.");
+            }
+
+            $periods[$period->key()] = $period;
+        }
+
+        return $periods;
+    }
+
+    public function getDatePeriod(string $key): ?DatePeriod
+    {
+        return $this->getDatePeriods()[$key] ?? null;
+    }
+
+    /**
+     * @param  list<BuilderWidgetType>  $types
+     */
+    public function builderWidgetTypes(array $types): static
+    {
+        $this->builderWidgetTypes = $types;
+
+        return $this;
+    }
+
+    /**
+     * @return list<BuilderWidgetType>
+     */
+    public function getBuilderWidgetTypes(): array
+    {
+        return $this->builderWidgetTypes ?? BuilderWidgetType::cases();
+    }
+
+    /**
+     * @param  (Closure(array<Component>, BuilderWidgetType): array<Component>)|null  $callback
+     */
+    public function modifyBuilderWidgetFieldsUsing(?Closure $callback): static
+    {
+        $this->modifyBuilderWidgetFieldsUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<Component>  $fields
+     * @return array<Component>
+     */
+    public function modifyBuilderWidgetFields(array $fields, BuilderWidgetType $type): array
+    {
+        return $this->modifyBuilderWidgetFieldsUsing === null ? $fields : ($this->modifyBuilderWidgetFieldsUsing)($fields, $type);
+    }
+
+    /**
+     * @param  array<string, int>  $limits
+     */
+    public function builderLimits(array $limits): static
+    {
+        $this->builderLimits = [...$this->builderLimits, ...$limits];
+
+        return $this;
+    }
+
+    public function getBuilderLimit(string $key): int
+    {
+        return $this->builderLimits[$key];
+    }
+
+    /**
+     * @param  list<WidgetExporter>  $exporters
+     */
+    public function exporters(array $exporters): static
+    {
+        $this->exporters = $exporters;
+
+        return $this;
+    }
+
+    /**
+     * @return list<WidgetExporter>
+     */
+    public function getExporters(): array
+    {
+        return $this->exporters ?? [new CsvExporter($this->csvDelimiter)];
+    }
+
+    public function printPageSize(string $size): static
+    {
+        $this->printPageSize = $size;
+
+        return $this;
+    }
+
+    public function getPrintPageSize(): string
+    {
+        return $this->printPageSize;
+    }
+
+    /**
+     * @param  list<string>  $colors
+     */
+    public function chartColors(array $colors): static
+    {
+        $this->chartColors = $colors;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getChartColors(): array
+    {
+        return $this->chartColors;
+    }
+
+    /**
+     * @param  (Closure(array<string, mixed>, string): array<string, mixed>)|null  $callback
+     */
+    public function modifyChartOptionsUsing(?Closure $callback): static
+    {
+        $this->modifyChartOptionsUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
+     */
+    public function modifyChartOptions(array $options, string $type): array
+    {
+        return $this->modifyChartOptionsUsing === null ? $options : ($this->modifyChartOptionsUsing)($options, $type);
+    }
+
+    public function navigationGroup(string|UnitEnum|null $group): static
+    {
+        $this->navigationGroup = $group;
+
+        return $this;
+    }
+
+    public function getNavigationGroup(): string|UnitEnum|null
+    {
+        return $this->navigationGroup;
+    }
+
+    public function navigationSort(?int $sort): static
+    {
+        $this->navigationSort = $sort;
+
+        return $this;
+    }
+
+    public function getNavigationSort(): ?int
+    {
+        return $this->navigationSort;
+    }
+
+    /**
+     * @param  (Closure(NavigationItem, Dashboard): ?NavigationItem)|null  $callback
+     */
+    public function modifyDashboardNavigationItemUsing(?Closure $callback): static
+    {
+        $this->modifyDashboardNavigationItemUsing = $callback;
+
+        return $this;
+    }
+
+    public function modifyDashboardNavigationItem(NavigationItem $item, Dashboard $dashboard): ?NavigationItem
+    {
+        return $this->modifyDashboardNavigationItemUsing === null ? $item : ($this->modifyDashboardNavigationItemUsing)($item, $dashboard);
+    }
+
+    /**
+     * @param  array{cellHeight?: int, margin?: int, stackBelow?: int}  $options
+     */
+    public function gridOptions(array $options): static
+    {
+        $this->gridOptions = [...$this->gridOptions, ...$options];
+
+        return $this;
+    }
+
+    /**
+     * @return array{cellHeight: int, margin: int, stackBelow: int}
+     */
+    public function getGridOptions(): array
+    {
+        return $this->gridOptions;
+    }
+
+    public function widgetVersionsToKeep(int $count): static
+    {
+        $this->widgetVersionsToKeep = $count;
+
+        return $this;
+    }
+
+    public function getWidgetVersionsToKeep(): int
+    {
+        return $this->widgetVersionsToKeep;
+    }
+
+    public function csvDelimiter(string $delimiter): static
+    {
+        $this->csvDelimiter = $delimiter;
+
+        return $this;
+    }
+
+    /**
+     * @param  (Closure(string): string)|null  $callback
+     */
+    public function exportFileNameUsing(?Closure $callback): static
+    {
+        $this->exportFileNameUsing = $callback;
+
+        return $this;
+    }
+
+    public function exportFileName(string $widgetName): string
+    {
+        return $this->exportFileNameUsing === null
+            ? Str::slug($widgetName).'-'.now($this->getTimezone())->format('Y-m-d')
+            : ($this->exportFileNameUsing)($widgetName);
+    }
+
+    public function minRefreshInterval(?int $seconds): static
+    {
+        $this->minRefreshInterval = $seconds;
+
+        return $this;
+    }
+
+    public function getMinRefreshInterval(): ?int
+    {
+        return $this->minRefreshInterval;
+    }
+
+    public function weekStartsOn(int $day): static
+    {
+        $this->weekStart = $day;
+
+        return $this;
+    }
+
+    public function getWeekStart(): int
+    {
+        return $this->weekStart;
     }
 
     /**
@@ -554,6 +1015,47 @@ final class FilamentDashboardsPlugin implements Plugin
         $this->timezoneUsing = $callback;
 
         return $this;
+    }
+
+    /**
+     * @param  (Closure(int|float, int): string)|null  $callback
+     */
+    public function formatNumbersUsing(?Closure $callback): static
+    {
+        $this->formatNumbersUsing = $callback;
+
+        return $this;
+    }
+
+    public function formatNumber(int|float $value, ?int $decimals = null): string
+    {
+        $decimals ??= is_int($value) || floor($value) === $value ? 0 : 2;
+
+        return $this->formatNumbersUsing === null ? number_format($value, $decimals) : ($this->formatNumbersUsing)($value, $decimals);
+    }
+
+    /**
+     * @param  (Closure(CarbonInterface, string): string)|null  $callback
+     */
+    public function formatDatesUsing(?Closure $callback): static
+    {
+        $this->formatDatesUsing = $callback;
+
+        return $this;
+    }
+
+    public function formatDate(CarbonInterface $date, string $context): string
+    {
+        if ($this->formatDatesUsing !== null) {
+            return ($this->formatDatesUsing)($date, $context);
+        }
+
+        return $date->translatedFormat(match ($context) {
+            'day', 'week' => 'M j',
+            'month' => 'M Y',
+            'year' => 'Y',
+            default => 'j M Y',
+        });
     }
 
     public function scheduledNotifications(bool $condition = true): static
@@ -584,6 +1086,25 @@ final class FilamentDashboardsPlugin implements Plugin
     public function inRecipientContext(Model $user, ?Model $tenant, Closure $next): mixed
     {
         return $this->recipientContextUsing === null ? $next() : ($this->recipientContextUsing)($user, $tenant, $next);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getHiddenSystemKeys(string $kind, Model $user, ?Model $tenant): array
+    {
+        $definitions = $kind === 'widgets' ? $this->getSystemWidgets() : $this->getSystemDashboards();
+        $hidden = [];
+
+        foreach ($definitions as $definition) {
+            $definition = new $definition;
+
+            if (! $definition->canView($user, $tenant)) {
+                $hidden[] = $definition->key();
+            }
+        }
+
+        return $hidden;
     }
 
     public function getTimezone(): string
@@ -620,6 +1141,7 @@ final class FilamentDashboardsPlugin implements Plugin
                 $actions['alerts'],
                 $actions['print'],
                 $actions['duplicate'],
+                $actions['transfer'],
                 $actions['setAsHome'],
                 $actions['removeHome'],
                 $actions['delete'],

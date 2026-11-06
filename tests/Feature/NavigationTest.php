@@ -5,9 +5,13 @@ declare(strict_types=1);
 use Filament\Facades\Filament;
 use Filament\Livewire\Sidebar;
 use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Illuminate\Http\Request;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
+use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
+use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Workbench\App\Models\Team;
 
 it('adds dashboards marked for navigation to the user navigation', function (): void {
@@ -78,3 +82,33 @@ it('looks up dashboard navigation only for requests that draw the navigation', f
     'a widget update' => [['waguilar.filament-dashboards.widgets.builder-stats-widget'], false],
     'the sidebar' => [[Sidebar::class], true],
 ]);
+
+it('places the lists where the app wants and lets it change or hide dashboard menu items', function (): void {
+    FilamentDashboardsPlugin::get()
+        ->navigationGroup('Analytics')
+        ->navigationSort(10)
+        ->modifyDashboardNavigationItemUsing(fn (NavigationItem $item, Dashboard $dashboard): ?NavigationItem => $dashboard->slug === 'hidden' ? null : $item->badge('new'));
+    $me = user();
+    dashboard($me, ['name' => 'Shown', 'show_in_navigation' => true]);
+    dashboard($me, ['name' => 'Hidden one', 'slug' => 'hidden', 'show_in_navigation' => true]);
+
+    expect(DashboardResource::getNavigationGroup())->toBe('Analytics')
+        ->and(BuilderWidgetResource::getNavigationSort())->toBe(11);
+
+    $this->actingAs($me)
+        ->get('/demo')
+        ->assertOk()
+        ->assertSee('Shown')
+        ->assertDontSee('Hidden one');
+});
+
+it('passes the app grid sizes and stacking width to the grid', function (): void {
+    FilamentDashboardsPlugin::get()->gridOptions(['cellHeight' => 30, 'stackBelow' => 768]);
+    $me = user();
+    $dashboard = dashboard($me);
+    $dashboard->items()->create(['widget' => 'orders-overview', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 2]);
+
+    $this->actingAs($me)
+        ->get("/demo/custom-dashboards/{$dashboard->slug}")
+        ->assertSee('options: JSON.parse(\'{\u0022cellHeight\u0022:30,\u0022margin\u0022:8,\u0022stackBelow\u0022:768}\')', false);
+});

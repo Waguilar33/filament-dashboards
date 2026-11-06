@@ -63,10 +63,10 @@ class Home extends FilamentDashboard
         $home = $this->getHome();
 
         return $home === null ? [] : [
-            Action::make('openHome')
+            FilamentDashboardsPlugin::get()->modifyAction(Action::make('openHome')
                 ->label(__('filament-dashboards::dashboards.actions.open'))
                 ->color('gray')
-                ->url(DashboardResource::getUrl('view', ['record' => $home])),
+                ->url(DashboardResource::getUrl('view', ['record' => $home])), 'home.openHome'),
         ];
     }
 

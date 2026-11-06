@@ -61,7 +61,7 @@ class SendDashboardNotificationsCommand extends Command
     protected function sendDigest(DashboardSubscription $subscription, Model $user, Dashboard $dashboard, BuildDashboardDigest $buildDigest): void
     {
         $now = CarbonImmutable::now(FilamentDashboardsPlugin::get()->getTimezone());
-        $since = $subscription->frequency === DigestFrequency::Weekly ? $now->startOfWeek() : $now->startOfDay();
+        $since = $subscription->frequency === DigestFrequency::Weekly ? $now->startOfWeek(FilamentDashboardsPlugin::get()->getWeekStart()) : $now->startOfDay();
 
         if ($now->hour < self::SEND_HOUR || ($subscription->last_sent_at !== null && $subscription->last_sent_at->greaterThanOrEqualTo($since))) {
             return;
@@ -72,7 +72,7 @@ class SendDashboardNotificationsCommand extends Command
         }
 
         $range = $subscription->frequency === DigestFrequency::Weekly
-            ? new DateRange($now->subWeek()->startOfWeek(), $now->subWeek()->endOfWeek())
+            ? new DateRange($now->subWeek()->startOfWeek(FilamentDashboardsPlugin::get()->getWeekStart()), $now->subWeek()->startOfWeek(FilamentDashboardsPlugin::get()->getWeekStart())->addDays(6)->endOfDay())
             : new DateRange($now->subDay()->startOfDay(), $now->subDay()->endOfDay());
         $digest = $buildDigest->handle($dashboard, $user, $subscription->tenant, $range);
 
@@ -80,8 +80,8 @@ class SendDashboardNotificationsCommand extends Command
             $dashboard->name,
             DashboardResource::getUrl('view', ['record' => $dashboard], tenant: $subscription->tenant),
             $range->start->isSameDay($range->end)
-                ? $range->start->translatedFormat('j M Y')
-                : $range->start->translatedFormat('j M').' – '.$range->end->translatedFormat('j M Y'),
+                ? FilamentDashboardsPlugin::get()->formatDate($range->start, 'range')
+                : FilamentDashboardsPlugin::get()->formatDate($range->start, 'range').' – '.FilamentDashboardsPlugin::get()->formatDate($range->end, 'range'),
             $digest['sections'],
             $digest['others'],
         ));
@@ -120,7 +120,8 @@ class SendDashboardNotificationsCommand extends Command
         }
 
         $range = $evaluateCards->range($card, $today);
-        $previous = $range?->previous(is_string($card['period'] ?? null) ? $card['period'] : null);
+        $datePeriod = FilamentDashboardsPlugin::get()->getDatePeriod(is_string($card['period'] ?? null) ? $card['period'] : 'today') ?? FilamentDashboardsPlugin::get()->getDatePeriod('today');
+        $previous = $range === null ? null : $datePeriod?->range($range->start->subSecond());
         $period = $previous?->start->toDateString() ?? $now->toDateString();
 
         if ($now->hour < self::SEND_HOUR || $alert->last_period === $period) {

@@ -8,10 +8,10 @@ use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Radio;
 use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\BuilderWidgetVersion;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
@@ -29,7 +29,7 @@ class WidgetHistoryAction extends Action
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.history'))
-            ->icon(Heroicon::OutlinedClock)
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::HISTORY))
             ->visible(fn (?BuilderWidget $record): bool => $record?->canBeEditedBy(DashboardResource::user()) ?? false)
             ->slideOver()
             ->modalWidth(Width::Medium)

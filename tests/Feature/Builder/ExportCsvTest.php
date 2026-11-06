@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Livewire\Livewire;
+use Waguilar\FilamentDashboards\Exports\CsvExporter;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Tests\Fixtures\NoExportOrdersSource;
 use Waguilar\FilamentDashboards\Widgets\BuilderSummaryWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
 use Workbench\Database\Factories\DemoOrderFactory;
@@ -16,7 +19,7 @@ beforeEach(function (): void {
 function exported(string $widget, array $config): string
 {
     $component = Livewire::test($widget, ['previewType' => $config['type'], 'previewConfig' => $config['config']]);
-    $response = (fn () => $this->exportCsv())->call($component->instance());
+    $response = (fn () => $this->exportWith(new CsvExporter))->call($component->instance());
 
     ob_start();
     $response->sendContent();
@@ -41,7 +44,7 @@ it('exports a summary widget with its totals', function (): void {
 
 it('offers export on the table widgets', function (): void {
     Livewire::test(BuilderTableWidget::class, ['previewType' => 'table', 'previewConfig' => ['source' => 'orders', 'columns' => ['customer']]])
-        ->assertTableActionExists('export');
+        ->assertTableActionExists('export_csv');
 });
 
 it('keeps text that looks like a formula from running in a spreadsheet', function (): void {
@@ -50,4 +53,28 @@ it('keeps text that looks like a formula from running in a spreadsheet', functio
     $csv = exported(BuilderTableWidget::class, ['type' => 'table', 'config' => ['source' => 'orders', 'columns' => ['customer', 'total'], 'sort_field' => 'ordered_at', 'sort_direction' => 'desc', 'limit' => 1]]);
 
     expect($csv)->toContain("\"'=HYPERLINK(\"\"http://x\"\")\",-5\n");
+});
+
+it('hides export when the source does not allow it', function (): void {
+    Filament\Facades\Filament::setCurrentPanel('demo');
+    FilamentDashboardsPlugin::get()->dataSources([NoExportOrdersSource::class]);
+
+    Livewire::test(BuilderTableWidget::class, ['previewType' => 'table', 'previewConfig' => ['source' => 'no-export-orders', 'columns' => ['customer']]])
+        ->assertTableActionHidden('export_csv');
+});
+
+it('exports with the app exporters, delimiter and file name', function (): void {
+    Filament\Facades\Filament::setCurrentPanel('demo');
+    $plugin = FilamentDashboardsPlugin::get()
+        ->csvDelimiter(';')
+        ->exportFileNameUsing(fn (string $name): string => 'ventas');
+
+    $component = Livewire::test(BuilderTableWidget::class, ['previewType' => 'table', 'previewConfig' => ['source' => 'orders', 'columns' => ['customer', 'total'], 'sort_field' => 'total', 'sort_direction' => 'desc']]);
+    $response = (fn () => $this->exportWith($plugin->getExporters()[0]))->call($component->instance());
+
+    ob_start();
+    $response->sendContent();
+
+    expect((string) ob_get_clean())->toContain("Customer;Total\n")
+        ->and($response->headers->get('content-disposition'))->toContain('ventas.csv');
 });

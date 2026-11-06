@@ -14,6 +14,8 @@ class SaveDashboardLayout
 
     public const MAX_HEIGHT = 24;
 
+    public const MIN_FIXED_HEIGHT = 4;
+
     /**
      * @param  array<mixed>  $layout
      */
@@ -34,12 +36,14 @@ class SaveDashboardLayout
                 }
 
                 $w = $this->clamp($position['w'] ?? $item->w, 1, self::COLUMNS);
+                $fitsContent = is_bool($position['fitsContent'] ?? null) ? $position['fitsContent'] : $item->fits_content;
 
                 $item->update([
                     'x' => $this->clamp($position['x'] ?? $item->x, 0, self::COLUMNS - $w),
                     'y' => $this->clamp($position['y'] ?? $item->y, 0, PHP_INT_MAX),
                     'w' => $w,
-                    'h' => $this->clamp($position['h'] ?? $item->h, 1, self::MAX_HEIGHT),
+                    'h' => $this->clamp($position['h'] ?? $item->h, $fitsContent ? 1 : self::MIN_FIXED_HEIGHT, self::MAX_HEIGHT),
+                    'fits_content' => $fitsContent,
                 ]);
             }
         });

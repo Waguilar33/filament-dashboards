@@ -34,12 +34,12 @@ it('keeps only the latest versions and drops them with the widget', function ():
     $owner = user();
     $widget = builderWidget($owner);
 
-    foreach (range(1, BuilderWidgetVersion::KEEP + 3) as $index) {
+    foreach (range(1, 20 + 3) as $index) {
         saveAs($widget, "Name {$index}", $owner);
     }
 
-    expect($widget->versions()->count())->toBe(BuilderWidgetVersion::KEEP)
-        ->and($widget->versions()->latest('id')->value('name'))->toBe('Name '.(BuilderWidgetVersion::KEEP + 3));
+    expect($widget->versions()->count())->toBe(20)
+        ->and($widget->versions()->latest('id')->value('name'))->toBe('Name '.(20 + 3));
 
     $widget->delete();
 

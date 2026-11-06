@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
  * @property string $widget
  * @property int|null $builder_widget_id
  * @property bool $shares_widget
+ * @property bool $fits_content
  * @property int $x
  * @property int $y
  * @property int $w
@@ -79,6 +80,7 @@ class DashboardItem extends Model
             'h' => 'integer',
             'options' => 'array',
             'shares_widget' => 'boolean',
+            'fits_content' => 'boolean',
         ];
     }
 }

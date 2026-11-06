@@ -15,11 +15,10 @@ use Waguilar\FilamentDashboards\Builder\Actions\FetchRows;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Field;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 
 trait DrillsDownToRecords
 {
-    public const DRILL_DOWN_LIMIT = 100;
-
     /**
      * @param  array<mixed>  $arguments
      * @return array{part: array<mixed>, rule: ?array{field: string, operator: string, value?: mixed}, title: string}|null
@@ -28,11 +27,11 @@ trait DrillsDownToRecords
 
     public function drillDownAction(): Action
     {
-        return Action::make('drillDown')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('drillDown')
             ->slideOver()
             ->modalWidth(Width::FourExtraLarge)
             ->modalHeading(fn (array $arguments): string => $this->drillDownTarget($arguments)['title'] ?? '')
-            ->modalDescription(__('filament-dashboards::dashboards.modals.drill_down.description', ['count' => self::DRILL_DOWN_LIMIT]))
+            ->modalDescription(__('filament-dashboards::dashboards.modals.drill_down.description', ['count' => FilamentDashboardsPlugin::get()->getBuilderLimit('drill_down')]))
             ->modalSubmitAction(false)
             ->modalCancelActionLabel(__('filament-dashboards::dashboards.actions.close'))
             ->schema(function (array $arguments): array {
@@ -53,7 +52,7 @@ trait DrillsDownToRecords
                             ->alignment($field->type === FieldType::Number ? Alignment::End : Alignment::Start)
                             ->formatStateUsing(fn (mixed $state): mixed => is_int($state) || is_float($state) ? ($field->format($state) ?? $this->formatNumber($state)) : $state), $fields)),
                 ];
-            });
+            }), 'widget.drillDown');
     }
 
     public function canDrillDown(mixed $source): bool
@@ -98,7 +97,7 @@ trait DrillsDownToRecords
                 $sort?->name,
                 'desc',
                 $filters,
-                self::DRILL_DOWN_LIMIT,
+                FilamentDashboardsPlugin::get()->getBuilderLimit('drill_down'),
                 $this->configString($part, 'dates_field'),
                 $this->dashboardDates($part),
             );

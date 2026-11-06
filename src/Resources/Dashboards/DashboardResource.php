@@ -11,19 +11,23 @@ use Filament\Actions\DeleteAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use UnitEnum;
+use Waguilar\FilamentDashboards\Builders\DashboardBuilder;
 use Waguilar\FilamentDashboards\Filament\Actions\DashboardSettingsAction;
 use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
 use Waguilar\FilamentDashboards\Filament\Actions\RemoveHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\SetHomeAction;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
+use Waguilar\FilamentDashboards\Filament\Actions\TransferOwnershipAction;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ListDashboards;
@@ -40,7 +44,22 @@ class DashboardResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return FilamentDashboardsPlugin::get()->getNavigationGroup() ?? parent::getNavigationGroup();
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        $sort = FilamentDashboardsPlugin::get()->getNavigationSort();
+
+        return $sort === null ? parent::getNavigationSort() : $sort;
+    }
+
+    public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
+    {
+        return FilamentDashboardsIcon::get(FilamentDashboardsIcon::NAVIGATION_DASHBOARDS);
+    }
 
     public static function getModelLabel(): string
     {
@@ -57,9 +76,9 @@ class DashboardResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
-        return Dashboard::query()
-            ->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant())
-            ->visibleTo(self::user());
+        $query = Dashboard::query()->inScope(FilamentDashboardsPlugin::currentPanel()->getId(), Filament::getTenant());
+
+        return FilamentDashboardsPlugin::get()->canManageAny(self::user(), Filament::getTenant()) ? $query : $query->visibleTo(self::user());
     }
 
     public static function getAuthorizationResponse(string|UnitEnum $action, ?Model $record = null): Response
@@ -105,11 +124,18 @@ class DashboardResource extends Resource
                     }),
             ])
             ->defaultSort('name')
+            ->filters([
+                Filter::make('mine')
+                    ->label(__('filament-dashboards::dashboards.filters.mine'))
+                    ->default()
+                    ->visible(fn (): bool => FilamentDashboardsPlugin::get()->canManageAny(self::user(), Filament::getTenant()))
+                    ->query(fn (DashboardBuilder $query): DashboardBuilder => $query->visibleTo(self::user())),
+            ])
             ->recordUrl(fn (Dashboard $record): string => static::getUrl('view', ['record' => $record]))
             ->recordActions([
                 $actions['setAsHome'],
                 $actions['removeHome'],
-                ActionGroup::make([$actions['share'], $actions['settings'], $actions['duplicate'], $actions['delete']]),
+                ActionGroup::make([$actions['share'], $actions['settings'], $actions['duplicate'], $actions['transfer'], $actions['delete']]),
             ]), self::recordActions());
     }
 
@@ -120,16 +146,17 @@ class DashboardResource extends Resource
     {
         $plugin = FilamentDashboardsPlugin::get();
 
-        return [
+        return array_map(fn (Action $action): Action => $plugin->modifyAction($action, "dashboards.{$action->getName()}"), [
             'setAsHome' => SetHomeAction::make(),
             'removeHome' => RemoveHomeAction::make(),
-            'share' => $plugin->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
+            'share' => $plugin->modifyShareAction(ShareAction::make()->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::SHARE))),
             'settings' => $plugin->modifySettingsAction(DashboardSettingsAction::make()),
             'duplicate' => DuplicateDashboardAction::make(),
+            'transfer' => TransferOwnershipAction::make(),
             'delete' => DeleteAction::make()
-                ->icon(Heroicon::OutlinedTrash)
+                ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE))
                 ->visible(fn (Dashboard $record): bool => $record->canBeDeletedBy(self::user())),
-        ];
+        ]);
     }
 
     public static function getPages(): array

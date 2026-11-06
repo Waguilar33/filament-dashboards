@@ -366,7 +366,7 @@ it('shows edit with share, duplicate and delete in a menu by default', function 
 
     expect($actions[0]->getName())->toBe('edit')
         ->and($actions[1])->toBeInstanceOf(ActionGroup::class)
-        ->and(array_map(fn (Action $action): ?string => $action->getName(), $actions[1]->getActions()))->toBe(['share', 'history', 'duplicate', 'delete'])
+        ->and(array_map(fn (Action $action): ?string => $action->getName(), $actions[1]->getActions()))->toBe(['share', 'history', 'duplicate', 'transfer', 'delete'])
         ->and(array_keys($table->getColumns()))->toBe(['name', 'type', 'kind']);
 });
 

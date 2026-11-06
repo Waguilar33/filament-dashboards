@@ -23,6 +23,11 @@ abstract class DataSource
         return true;
     }
 
+    public function canExport(Model $user, ?Model $tenant): bool
+    {
+        return true;
+    }
+
     /**
      * @return list<string>
      */

@@ -7,8 +7,8 @@ namespace Waguilar\FilamentDashboards\Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
-use Filament\Support\Icons\Heroicon;
 use Waguilar\FilamentDashboards\Actions\SetHomeDashboard;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardHome;
@@ -42,7 +42,7 @@ class SetHomeAction extends Action
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.set_home'))
-            ->icon(Heroicon::OutlinedHome)
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::HOME))
             ->hidden(fn (Dashboard $record): bool => self::isHome($record))
             ->action(function (Dashboard $record): void {
                 app(SetHomeDashboard::class)->handle($record, DashboardResource::user(), Filament::getTenant());

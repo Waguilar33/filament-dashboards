@@ -81,6 +81,15 @@ FilamentDashboardsPlugin::make()->systemDashboards([OverviewDashboard::class]);
 
 Run `php artisan dashboards:sync` on every deploy. Names come from `name()` in the viewer's language, so it can return a translation. Everyone can view system dashboards and clone them; nobody can edit or delete them.
 
+Limit a system dashboard or system widget to some people with `canView`:
+
+```php
+public function canView(Model $user, ?Model $tenant): bool
+{
+    return $user->can('view-finance');
+}
+```
+
 ## The widget builder
 
 Register the data your users may build widgets from. Each data source returns its own query, already limited to what that user and tenant may see; the builder never reaches any other model or column.
@@ -154,11 +163,54 @@ FilamentDashboardsPlugin::make()->systemWidgets([OrdersByChannel::class]);
 
 A system dashboard can place a system widget by listing its class in `items()`.
 
-A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty. Table, summary and figures widgets have an Export button that downloads what is shown as a CSV file.
+A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty. Table, summary and figures widgets have an Export button that downloads what is shown as a CSV file. Choose the delimiter and file name, add your own formats by extending `WidgetExporter` (several formats turn Export into a menu), and refuse export for a source with `canExport($user, $tenant)`:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->csvDelimiter(';')
+    ->exportFileNameUsing(fn (string $widgetName): string => Str::slug($widgetName))
+    ->exporters([new CsvExporter(';'), new XlsxExporter]);
+```
+
+Limit the builder to the widget types you want, change the fields a type shows, cap rows (`series` caps the lines or bar groups of a split chart; the rest fold into Other) and set the shortest auto-refresh (`null` turns auto-refresh off):
+
+```php
+FilamentDashboardsPlugin::make()
+    ->builderWidgetTypes([BuilderWidgetType::Stats, BuilderWidgetType::Table, BuilderWidgetType::Bar])
+    ->modifyBuilderWidgetFieldsUsing(fn (array $fields, BuilderWidgetType $type): array => $fields)
+    ->builderLimits(['table' => 50, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100, 'series' => 10])
+    ->minRefreshInterval(60);
+```
+
+Pick the paper size for Print, the chart colors and options, how many versions History keeps, and mark fields where a drop is good news:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->printPageSize('A4')
+    ->chartColors(['#0ea5e9', '#22c55e', '#f43f5e'])
+    ->modifyChartOptionsUsing(fn (array $options, string $type): array => $options)
+    ->widgetVersionsToKeep(50);
+
+Field::number('refunds', 'Refunds')->lowerIsBetter();
+```
+
+Put the Dashboards and Widgets lists in your own menu group and order, change or hide the menu items of dashboards, and size the grid (row height, gap, and the width below which widgets stack in one column):
+
+```php
+FilamentDashboardsPlugin::make()
+    ->navigationGroup('Analytics')
+    ->navigationSort(10)
+    ->modifyDashboardNavigationItemUsing(fn (NavigationItem $item, Dashboard $dashboard): ?NavigationItem => $item)
+    ->gridOptions(['cellHeight' => 40, 'margin' => 8, 'stackBelow' => 1024]);
+```
+
+### Widget heights
+
+Widgets fit their content. A chart or table (any Filament `ChartWidget` or `TableWidget`, built or your own) can also be given a height in Edit layout by dragging its bottom edge; the plot or rows stretch to it, rows scroll inside, and Fit height returns it to its content. A new builder chart starts at its type's default height. Printing always shows full content.
 
 ## Dashboard dates
 
-A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and Custom, which shows a start and end date. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:
+A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and Custom, which shows a From–To date field beside them; the widgets reload when Apply is pressed. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:
 
 ```php
 use Waguilar\FilamentDashboards\Concerns\InteractsWithDashboardDates;
@@ -177,13 +229,22 @@ class SalesByCategory extends TableWidget implements DashboardWidget
 }
 ```
 
-`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. Builder widgets follow the dates too: pick a *Dashboard date field* (stats cards, tables, breakdown and scatter charts), or the *Dashboard dates* period on line and bar charts, which then span the chosen range. Without it they ignore the bar. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters`: `preset` is a number of days or `custom`, and `startDate` and `endDate` are set only for `custom`. Change the presets, the default and the time zone:
+`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. Builder widgets follow the dates too: pick a *Dashboard date field* (stats cards, tables, breakdown and scatter charts), or the *Dashboard dates* period on line and bar charts, which then span the chosen range. Without it they ignore the bar. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters`: `preset` is a number of days, a period key or `custom`, and `startDate` and `endDate` are set only for `custom`. Change the presets, the default and the time zone:
 
 ```php
 FilamentDashboardsPlugin::make()
     ->datePresets([1, 7, 30, 365])
     ->defaultDatePreset(7)
     ->timezoneUsing(fn (): string => auth()->user()->timezone);
+```
+
+Named periods (today, this week, this month, last month, this quarter, this year, last 30 days) are offered on stats cards and line and bar charts, and can be date bar presets next to day counts. Add your own, such as a fiscal year, by extending `DatePeriod` (key, label, `range($now)` and, for calendar periods, `previous($range)` used by comparisons). Weeks start on Monday unless you choose another day:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->datePeriods([FiscalYear::class])
+    ->datePresets([1, 30, 'month', 'fiscal'])
+    ->weekStartsOn(CarbonInterface::SUNDAY);
 ```
 
 ## Coded table widgets
@@ -251,9 +312,24 @@ FilamentDashboardsPlugin::make()
     ->shareableUsersUsing(fn (?Model $tenant): Builder => ...);
 ```
 
-`shareableUsersUsing` limits the users offered in Share, for example to the members of the current tenant.
+`shareableUsersUsing` limits the users offered in Share, for example to the members of the current tenant. People are found by typing (up to 50 matches, by `name` unless you search another way), roles are limited the same way, and anything not offered is dropped when saving:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->searchShareableUsersUsing(fn (Builder $query, string $search): Builder => $query->where('email', 'like', "%{$search}%"))
+    ->shareableRolesUsing(fn (?Model $tenant): Builder => Role::query()->where('name', '!=', 'super_admin'));
+```
 
 A policy you register for the dashboard model decides who sees the Dashboards list (`viewAny`) and who creates dashboards (`create`); anyone who owns a dashboard or has one shared with them sees the list and opens it regardless. Register a policy for `BuilderWidget` with `viewAny` and `create` to gate the Widgets list and building widgets from roles the same way; users still need at least one data source. Viewing, editing, sharing and deleting a given dashboard or widget always follow ownership and shares. With no policy, every user with a data source can use the Widgets list and build widgets.
+
+Name managers who can open, edit, share, delete and transfer anyone's dashboards and widgets in their panel and company (system ones stay read-only). In the lists they turn off *Mine and shared with me* to see everyone's:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->canManageAnyUsing(fn (Model $user, ?Model $tenant): bool => $user->hasRole('admin'));
+```
+
+*Transfer* hands a dashboard or widget to someone else; the previous owner keeps Edit access.
 
 ## Changing the plugin's screens
 
@@ -266,6 +342,35 @@ FilamentDashboardsPlugin::make()
     ->modifySettingsActionUsing(fn (EditAction $action): EditAction => $action)
     ->modifyShareActionUsing(fn (ShareAction $action): ShareAction => $action)
     ->modifyAddWidgetActionUsing(fn (Action $action): Action => $action);
+```
+
+Every other action the plugin builds passes through one hook with its name, after the specific hooks above: `dashboard.*` on the dashboard page (`edit`, `share`, `settings`, `emailMe`, `alerts`, `print`, `duplicate`, `setAsHome`, `removeHome`, `delete`, `doneEditing`, `addWidget`, `buildWidget`, `editWidget`, `widgetHistory`, `duplicateItem`, `removeItem`), `dashboards.*` on the Dashboards list (`create` and the row actions), `widgets.*` on the Widgets list (`create`, `buildWidget`, `edit`, `duplicate`, `share`, `history`, `delete`), `home.openHome`, and `widget.export` / `widget.drillDown` inside widgets:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->modifyActionUsing(fn (Action $action, string $name): Action => match ($name) {
+        'dashboard.print' => $action->label('Imprimir'),
+        default => $action,
+    });
+```
+
+Numbers and dates the plugin writes (cards, percentages, chart labels, printed ranges) go through two hooks, for local separators and date styles. A data source field's own `formatUsing` still wins for its values:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->formatNumbersUsing(fn (int|float $value, int $decimals): string => number_format($value, $decimals, '.', ','))
+    ->formatDatesUsing(fn (CarbonInterface $date, string $context): string => $date->translatedFormat($context === 'range' ? 'd/m/Y' : 'M j'));
+```
+
+`$context` is `day`, `week`, `month` or `year` for chart labels and `range` for date ranges.
+
+Every icon the plugin draws has a Filament icon alias, so an app using another icon set swaps them the Filament way; the aliases are the constants on `FilamentDashboardsIcon`:
+
+```php
+FilamentIcon::register([
+    FilamentDashboardsIcon::NAVIGATION_DASHBOARDS => 'fas-table-columns',
+    FilamentDashboardsIcon::PRINT => 'fas-print',
+]);
 ```
 
 The dashboard page's header shows Edit and Share, and a menu with Settings, Duplicate, Set as home (or Remove as home) and Delete. Rearrange, regroup or drop them; the hook receives the built actions keyed by `edit`, `share`, `settings`, `duplicate`, `setAsHome`, `removeHome` and `delete`, and returns the header:

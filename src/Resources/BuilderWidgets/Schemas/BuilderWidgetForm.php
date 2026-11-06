@@ -65,10 +65,11 @@ class BuilderWidgetForm
                             ->helperText(__(self::T.'refresh_interval_helper'))
                             ->suffix(__(self::T.'seconds'))
                             ->integer()
-                            ->minValue(5),
+                            ->minValue(FilamentDashboardsPlugin::get()->getMinRefreshInterval() ?? 0)
+                            ->visible(FilamentDashboardsPlugin::get()->getMinRefreshInterval() !== null),
                     ]),
                     // Config sits at the form root: under a 'config' key a stats card filter rule passes Livewire's nesting depth of 10.
-                    Group::make(self::configFields($type)),
+                    Group::make(FilamentDashboardsPlugin::get()->modifyBuilderWidgetFields(self::configFields($type), $type)),
                 ]),
                 Tab::make(__('filament-dashboards::dashboards.builder.tabs.preview'))->schema([
                     Livewire::make(
@@ -150,7 +151,7 @@ class BuilderWidgetForm
                         self::datesField(),
                         Select::make('period')
                             ->label(__(self::T.'card_period'))
-                            ->options(fn (): array => __('filament-dashboards::dashboards.builder.card_periods'))
+                            ->options(fn (): array => self::periodOptions(__('filament-dashboards::dashboards.builder.periods.dashboard')))
                             ->default('dashboard')
                             ->selectablePlaceholder(false)
                             ->visible(fn (Get $get): bool => filled($get('dates_field'))),
@@ -174,7 +175,7 @@ class BuilderWidgetForm
                     ...self::metricFields(),
                     Select::make('period')
                         ->label(__(self::T.'period'))
-                        ->options(fn (): array => __('filament-dashboards::dashboards.builder.periods'))
+                        ->options(fn (): array => [...__('filament-dashboards::dashboards.builder.periods'), ...array_diff_key(self::periodOptions(), __('filament-dashboards::dashboards.builder.periods'))])
                         ->default('12m')
                         ->selectablePlaceholder(false)
                         ->live(),
@@ -182,6 +183,9 @@ class BuilderWidgetForm
                         ->label(__(self::T.'grouping'))
                         ->options(TimeGrouping::class)
                         ->live(),
+                    self::fieldSelect('split_field', FieldType::Choice, FieldType::Text, FieldType::Boolean)
+                        ->label(__(self::T.'group_field'))
+                        ->helperText(__(self::T.'split_field_helper', ['count' => FilamentDashboardsPlugin::get()->getBuilderLimit('series')])),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                 ]),
                 self::filters(),
@@ -190,7 +194,7 @@ class BuilderWidgetForm
                 Grid::make(2)->schema([
                     self::sourceSelect(),
                     self::fieldSelect('group_field', FieldType::Choice, FieldType::Text, FieldType::Boolean)->label(__(self::T.'group_field'))->required(),
-                    TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(100)->default(20)->live(onBlur: true),
+                    TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(FilamentDashboardsPlugin::get()->getBuilderLimit('summary'))->default(20)->live(onBlur: true),
                     self::datesField(),
                     Toggle::make('total_row')->label(__(self::T.'total_row'))->live(),
                 ]),
@@ -294,7 +298,7 @@ class BuilderWidgetForm
             BuilderWidgetType::Table => [
                 Grid::make(2)->schema([
                     self::sourceSelect(),
-                    TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(100)->default(10)->live(onBlur: true),
+                    TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(FilamentDashboardsPlugin::get()->getBuilderLimit('table'))->default(10)->live(onBlur: true),
                     self::fieldSelect('columns', ...FieldType::cases())->label(__(self::T.'columns'))->multiple()->required()->columnSpanFull(),
                     self::fieldSelect('sort_field', ...FieldType::cases())->label(__(self::T.'sort_field')),
                     Select::make('sort_direction')
@@ -312,7 +316,7 @@ class BuilderWidgetForm
                     self::sourceSelect(),
                     self::fieldSelect('group_field', FieldType::Choice, FieldType::Text, FieldType::Boolean)->label(__(self::T.'group_field'))->required(),
                     ...self::metricFields(),
-                    TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(20)->default(10)->live(onBlur: true),
+                    TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(FilamentDashboardsPlugin::get()->getBuilderLimit('breakdown'))->default(10)->live(onBlur: true),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                     self::datesField(),
                 ]),
@@ -358,6 +362,20 @@ class BuilderWidgetForm
                 ->required()
                 ->visible(fn (Get $get): bool => self::metric($get('metric'))?->requiresNumberField() ?? false),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected static function periodOptions(?string $dashboardLabel = null): array
+    {
+        $options = $dashboardLabel === null ? [] : ['dashboard' => $dashboardLabel];
+
+        foreach (FilamentDashboardsPlugin::get()->getDatePeriods() as $key => $period) {
+            $options[$key] = $period->label();
+        }
+
+        return $options;
     }
 
     protected static function datesField(): Select

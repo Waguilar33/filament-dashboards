@@ -10,6 +10,7 @@ return [
     'yes' => 'Sí',
     'no' => 'No',
     'empty' => 'Vacío',
+    'other' => 'Otros',
     'field_types' => [
         'number' => 'Número',
         'text' => 'Texto',

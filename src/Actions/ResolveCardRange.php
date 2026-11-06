@@ -10,19 +10,10 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 
 class ResolveCardRange
 {
-    public const PERIODS = ['dashboard', 'today', 'week', 'month', 'year', '30d'];
-
     public function handle(string $period): ?DateRange
     {
-        $today = CarbonImmutable::now(FilamentDashboardsPlugin::get()->getTimezone());
+        $plugin = FilamentDashboardsPlugin::get();
 
-        return match ($period) {
-            'today' => new DateRange($today->startOfDay(), $today->endOfDay()),
-            'week' => new DateRange($today->startOfWeek(), $today->endOfDay()),
-            'month' => new DateRange($today->startOfMonth(), $today->endOfDay()),
-            'year' => new DateRange($today->startOfYear(), $today->endOfDay()),
-            '30d' => new DateRange($today->subDays(29)->startOfDay(), $today->endOfDay()),
-            default => null,
-        };
+        return $plugin->getDatePeriod($period)?->range(CarbonImmutable::now($plugin->getTimezone()));
     }
 }

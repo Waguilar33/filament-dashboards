@@ -32,9 +32,10 @@ return [
     ],
     'dates' => [
         'today' => 'Hoy',
-        'days' => '{1} :count día|[2,*] :count días',
-        'from' => 'Fecha inicial',
-        'until' => 'Fecha final',
+        'days' => ':count d',
+        'from' => 'Desde',
+        'until' => 'Hasta',
+        'apply' => 'Aplicar',
         'custom' => 'Personalizado',
     ],
     'navigation_positions' => [
@@ -61,6 +62,7 @@ return [
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'transfer' => 'Transferir',
         'email_me' => 'Enviarme por correo',
         'alerts' => 'Alertas',
         'close' => 'Cerrar',
@@ -82,12 +84,17 @@ return [
         'set_home' => 'Usar como inicio',
         'remove_home' => 'Quitar como inicio',
         'delete' => 'Eliminar',
+        'fit_height' => 'Ajustar altura',
         'remove' => 'Quitar',
         'edit' => 'Editar',
         'previous' => 'Anterior',
         'next' => 'Siguiente',
     ],
     'modals' => [
+        'transfer' => [
+            'description' => 'Entrégalo a otra persona. Se vuelve su dueño y tú conservas acceso para editar.',
+            'owner' => 'Nuevo dueño',
+        ],
         'drill_down' => [
             'description' => 'Hasta :count registros, los más recientes primero.',
             'empty' => 'Sin registros.',
@@ -182,6 +189,7 @@ return [
             'grouping' => 'Agrupar por',
             'period' => 'Periodo',
             'group_field' => 'Separar por',
+            'split_field_helper' => 'Una línea o barra por valor; pasadas :count, las menores van a Otros.',
             'limit' => 'Mostrar como máximo',
             'x_field' => 'Eje horizontal',
             'y_field' => 'Eje vertical',
@@ -226,6 +234,8 @@ return [
             'month' => 'Este mes',
             'year' => 'Este año',
             '30d' => 'Últimos 30 días',
+            'last_month' => 'Mes anterior',
+            'quarter' => 'Este trimestre',
         ],
         'periods' => [
             'dashboard' => 'Fechas del escritorio',
@@ -278,7 +288,14 @@ return [
             'body' => 'En :dashboard ahora es :value.',
         ],
     ],
+    'exports' => [
+        'csv' => 'CSV',
+    ],
+    'filters' => [
+        'mine' => 'Míos y compartidos conmigo',
+    ],
     'notifications' => [
+        'transferred' => 'Se transfirió.',
         'saved' => 'Guardado.',
         'version_restored' => 'Versión restaurada.',
         'shares_saved' => 'Se guardó el acceso compartido.',

@@ -21,8 +21,6 @@ class BuilderChartWidget extends ChartWidget
 {
     use InteractsWithBuilderWidget;
 
-    public const PALETTE = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
-
     protected static bool $isDiscovered = false;
 
     public function getHeading(): ?string
@@ -75,10 +73,14 @@ class BuilderChartWidget extends ChartWidget
      */
     protected function getOptions(): ?array
     {
-        return match ($this->widgetType()) {
-            'pie', 'doughnut', 'polarArea' => ['scales' => ['x' => ['display' => false], 'y' => ['display' => false]]],
-            default => null,
+        $options = match (true) {
+            in_array($this->widgetType(), ['pie', 'doughnut', 'polarArea'], true) => ['scales' => ['x' => ['display' => false], 'y' => ['display' => false]]],
+            $this->widgetType() === 'bar' && filled($this->configString($this->widgetConfig(), 'split_field')) => ['scales' => ['x' => ['stacked' => true], 'y' => ['stacked' => true]]],
+            default => [],
         };
+        $options = FilamentDashboardsPlugin::get()->modifyChartOptions($options, $this->widgetType());
+
+        return $options === [] ? null : $options;
     }
 
     /**
@@ -88,15 +90,20 @@ class BuilderChartWidget extends ChartWidget
     protected function trend(array $config, DataSource $source, Metric $metric, string $label): array
     {
         $dates = app(ResolveDateRange::class)->handle($this->pageFilters);
-        $days = (int) $dates->start->diffInDays($dates->end) + 1;
         $today = CarbonImmutable::now(FilamentDashboardsPlugin::get()->getTimezone());
 
-        [$from, $to, $grouping] = match ($this->configString($config, 'period') ?? '12m') {
-            'dashboard' => [$dates->start, $dates->end, match (true) {
-                $days <= 31 => TimeGrouping::Day,
-                $days <= 180 => TimeGrouping::Week,
-                default => TimeGrouping::Month,
-            }],
+        $period = $this->configString($config, 'period') ?? '12m';
+        $registered = in_array($period, ['dashboard', '7d', '30d', '90d', '12m', 'ytd'], true) ? null : FilamentDashboardsPlugin::get()->getDatePeriod($period)?->range($today);
+        $span = $registered ?? $dates;
+        $spanDays = (int) $span->start->diffInDays($span->end) + 1;
+        $byLength = match (true) {
+            $spanDays <= 31 => TimeGrouping::Day,
+            $spanDays <= 180 => TimeGrouping::Week,
+            default => TimeGrouping::Month,
+        };
+
+        [$from, $to, $grouping] = $registered !== null ? [$registered->start, $registered->end, $byLength] : match ($period) {
+            'dashboard' => [$dates->start, $dates->end, $byLength],
             '7d' => [$today->subDays(6)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
             '30d' => [$today->subDays(29)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
             '90d' => [$today->subDays(89)->startOfDay(), $today->endOfDay(), TimeGrouping::Week],
@@ -117,10 +124,26 @@ class BuilderChartWidget extends ChartWidget
             $metric,
             $this->configString($config, 'field'),
             $this->filters($config),
+            $this->configString($config, 'split_field'),
+            FilamentDashboardsPlugin::get()->getBuilderLimit('series'),
         );
 
+        if ($trend['series'] === []) {
+            return [
+                'datasets' => [['label' => $label, 'data' => $trend['values']]],
+                'labels' => $trend['labels'],
+            ];
+        }
+
+        $colors = FilamentDashboardsPlugin::get()->getChartColors();
+
         return [
-            'datasets' => [['label' => $label, 'data' => $trend['values']]],
+            'datasets' => array_map(fn (array $series, int $index): array => [
+                'label' => $series['label'],
+                'data' => $series['values'],
+                'backgroundColor' => $colors[$index % count($colors)],
+                'borderColor' => $colors[$index % count($colors)],
+            ], $trend['series'], array_keys($trend['series'])),
             'labels' => $trend['labels'],
         ];
     }
@@ -141,16 +164,18 @@ class BuilderChartWidget extends ChartWidget
             $metric,
             $this->configString($config, 'field'),
             $this->filters($config),
-            is_numeric($limit) ? max(1, min(20, (int) $limit)) : 10,
+            is_numeric($limit) ? max(1, min(FilamentDashboardsPlugin::get()->getBuilderLimit('breakdown'), (int) $limit)) : 10,
             $this->configString($config, 'dates_field'),
             $this->dashboardDates($config),
         );
+
+        $colors = FilamentDashboardsPlugin::get()->getChartColors();
 
         return [
             'datasets' => [[
                 'label' => $label,
                 'data' => $breakdown['values'],
-                'backgroundColor' => array_slice(array_merge(self::PALETTE, self::PALETTE), 0, count($breakdown['values'])),
+                'backgroundColor' => array_map(fn (int $index): string => $colors[$index % count($colors)], array_keys($breakdown['values'])),
                 'borderWidth' => 0,
             ]],
             'labels' => $breakdown['labels'],
@@ -173,7 +198,7 @@ class BuilderChartWidget extends ChartWidget
                     $this->configString($config, 'x_field') ?? '',
                     $this->configString($config, 'y_field') ?? '',
                     $this->filters($config),
-                    500,
+                    FilamentDashboardsPlugin::get()->getBuilderLimit('scatter'),
                     $this->configString($config, 'dates_field'),
                     $this->dashboardDates($config),
                 ),

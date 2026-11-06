@@ -17,8 +17,8 @@
 
                 @if ($section['carousel'])
                     <div class="fi-dashboards-picker-arrows">
-                        <x-filament::icon-button :icon="Heroicon::ChevronLeft" :label="__('filament-dashboards::dashboards.actions.previous')" x-on:click="scroll(-1)" />
-                        <x-filament::icon-button :icon="Heroicon::ChevronRight" :label="__('filament-dashboards::dashboards.actions.next')" x-on:click="scroll(1)" />
+                        <x-filament::icon-button :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::PICKER_PREVIOUS)" :label="__('filament-dashboards::dashboards.actions.previous')" x-on:click="scroll(-1)" />
+                        <x-filament::icon-button :icon="\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::PICKER_NEXT)" :label="__('filament-dashboards::dashboards.actions.next')" x-on:click="scroll(1)" />
                     </div>
                 @endif
             </div>
@@ -33,7 +33,7 @@
                         wire:key="picker-option-{{ $value }}"
                     >
                         <span class="fi-dashboards-card-check" x-show="state === @js($value)" x-cloak>
-                            {{ generate_icon_html(Heroicon::CheckCircle) }}
+                            {{ generate_icon_html(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::get(\Waguilar\FilamentDashboards\FilamentDashboardsIcon::PICKER_SELECTED)) }}
                         </span>
 
                         <span class="fi-dashboards-card-preview">

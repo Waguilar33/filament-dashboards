@@ -21,6 +21,7 @@ final readonly class Field
         public int|float $divisor = 1,
         public ?Closure $formatter = null,
         public bool $dateOnly = false,
+        public bool $lowerIsBetter = false,
     ) {}
 
     public static function number(string $name, string $label): self
@@ -53,7 +54,7 @@ final readonly class Field
 
     public function divideBy(int|float $divisor): self
     {
-        return new self($this->name, $this->label, $this->type, $this->options, $divisor, $this->formatter, $this->dateOnly);
+        return new self($this->name, $this->label, $this->type, $this->options, $divisor, $this->formatter, $this->dateOnly, $this->lowerIsBetter);
     }
 
     /**
@@ -61,12 +62,17 @@ final readonly class Field
      */
     public function formatUsing(Closure $formatter): self
     {
-        return new self($this->name, $this->label, $this->type, $this->options, $this->divisor, $formatter, $this->dateOnly);
+        return new self($this->name, $this->label, $this->type, $this->options, $this->divisor, $formatter, $this->dateOnly, $this->lowerIsBetter);
+    }
+
+    public function lowerIsBetter(): self
+    {
+        return new self($this->name, $this->label, $this->type, $this->options, $this->divisor, $this->formatter, $this->dateOnly, true);
     }
 
     public function dateOnly(): self
     {
-        return new self($this->name, $this->label, $this->type, $this->options, $this->divisor, $this->formatter, true);
+        return new self($this->name, $this->label, $this->type, $this->options, $this->divisor, $this->formatter, true, $this->lowerIsBetter);
     }
 
     public function alias(): string

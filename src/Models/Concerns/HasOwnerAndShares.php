@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Models\Concerns;
 
+use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\DashboardShare;
 
 trait HasOwnerAndShares
@@ -53,9 +55,20 @@ trait HasOwnerAndShares
         return $this->owner()->is($user);
     }
 
+    public function isManagedBy(Model $user): bool
+    {
+        $tenant = Filament::getTenant();
+
+        return ! $this->isSystem()
+            && FilamentDashboardsPlugin::forPanel($this->panel)?->canManageAny($user, $tenant) === true
+            && Filament::getCurrentPanel()?->getId() === $this->panel
+            && $this->tenant_type === $tenant?->getMorphClass()
+            && $this->tenant_id == $tenant?->getKey();
+    }
+
     public function canBeViewedBy(Model $user): bool
     {
-        return static::query()->whereKey($this->getKey())->visibleTo($user)->exists();
+        return static::query()->whereKey($this->getKey())->visibleTo($user)->exists() || $this->isManagedBy($user);
     }
 
     public function canBeEditedBy(Model $user): bool
@@ -64,12 +77,12 @@ trait HasOwnerAndShares
             return false;
         }
 
-        return $this->isOwnedBy($user) || $this->shares()->sharedWith($user, ShareLevel::Edit)->exists();
+        return $this->isOwnedBy($user) || $this->isManagedBy($user) || $this->shares()->sharedWith($user, ShareLevel::Edit)->exists();
     }
 
     public function canBeDeletedBy(Model $user): bool
     {
-        return ! $this->isSystem() && $this->isOwnedBy($user);
+        return ! $this->isSystem() && ($this->isOwnedBy($user) || $this->isManagedBy($user));
     }
 
     public function canBeSharedBy(Model $user): bool

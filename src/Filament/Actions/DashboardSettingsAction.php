@@ -7,7 +7,7 @@ namespace Waguilar\FilamentDashboards\Filament\Actions;
 use Filament\Actions\EditAction;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
+use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Schemas\DashboardForm;
@@ -25,7 +25,7 @@ class DashboardSettingsAction extends EditAction
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.settings'))
-            ->icon(Heroicon::OutlinedCog6Tooth)
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::SETTINGS))
             ->visible(fn (Dashboard $record): bool => $record->canBeEditedBy(DashboardResource::user()))
             ->slideOver()
             ->modalWidth(Width::Medium)

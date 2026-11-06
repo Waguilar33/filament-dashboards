@@ -37,19 +37,23 @@ class RegisterDashboardNavigation
 
         $groups = FilamentDashboardsPlugin::get()->getNavigationGroups($panel);
 
-        $panel->navigationItems(Dashboard::query()
+        $dashboards = Dashboard::query()
             ->inScope($panel->getId(), $tenant)
             ->visibleTo($user)
             ->where('show_in_navigation', true)
             ->get()
             ->sortBy(fn (Dashboard $dashboard): string => mb_strtolower(filled($dashboard->navigation_label) ? $dashboard->navigation_label : $dashboard->name))
-            ->map(fn (Dashboard $dashboard): NavigationItem => NavigationItem::make(filled($dashboard->navigation_label) ? $dashboard->navigation_label : $dashboard->name)
+            ->values();
+
+        $panel->navigationItems($dashboards
+            ->map(fn (Dashboard $dashboard): ?NavigationItem => FilamentDashboardsPlugin::get()->modifyDashboardNavigationItem(NavigationItem::make(filled($dashboard->navigation_label) ? $dashboard->navigation_label : $dashboard->name)
                 ->url(DashboardResource::getUrl('view', ['record' => $dashboard]))
                 ->icon($dashboard->navigation_icon)
                 ->group($dashboard->navigation_group === null ? null : ($groups[$dashboard->navigation_group] ?? $dashboard->navigation_group))
                 ->sort($dashboard->navigation_position === NavigationPosition::Start ? -1000 : 1000)
                 ->isActiveWhen(fn (): bool => $request->routeIs(DashboardResource::getRouteBaseName().'.view')
-                    && $request->route('record') === $dashboard->slug))
+                    && $request->route('record') === $dashboard->slug), $dashboard))
+            ->filter()
             ->all());
 
         return $next($request);

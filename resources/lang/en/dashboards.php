@@ -32,9 +32,10 @@ return [
     ],
     'dates' => [
         'today' => 'Today',
-        'days' => '{1} :count day|[2,*] :count days',
-        'from' => 'Start date',
-        'until' => 'End date',
+        'days' => ':count d',
+        'from' => 'From',
+        'until' => 'To',
+        'apply' => 'Apply',
         'custom' => 'Custom',
     ],
     'navigation_positions' => [
@@ -61,6 +62,7 @@ return [
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'transfer' => 'Transfer',
         'email_me' => 'Email me',
         'alerts' => 'Alerts',
         'close' => 'Close',
@@ -82,12 +84,17 @@ return [
         'set_home' => 'Set as home',
         'remove_home' => 'Remove as home',
         'delete' => 'Delete',
+        'fit_height' => 'Fit height',
         'remove' => 'Remove',
         'edit' => 'Edit',
         'previous' => 'Previous',
         'next' => 'Next',
     ],
     'modals' => [
+        'transfer' => [
+            'description' => 'Give this to someone else. They become its owner, and you keep Edit access.',
+            'owner' => 'New owner',
+        ],
         'drill_down' => [
             'description' => 'Up to :count records, newest first.',
             'empty' => 'No records.',
@@ -182,6 +189,7 @@ return [
             'grouping' => 'Group by',
             'period' => 'Period',
             'group_field' => 'Split by',
+            'split_field_helper' => 'One line or bar per value; past :count, the smallest go into Other.',
             'limit' => 'Show at most',
             'x_field' => 'Horizontal axis',
             'y_field' => 'Vertical axis',
@@ -226,6 +234,8 @@ return [
             'month' => 'This month',
             'year' => 'This year',
             '30d' => 'Last 30 days',
+            'last_month' => 'Last month',
+            'quarter' => 'This quarter',
         ],
         'periods' => [
             'dashboard' => 'Dashboard dates',
@@ -278,7 +288,14 @@ return [
             'body' => 'On :dashboard it is now :value.',
         ],
     ],
+    'exports' => [
+        'csv' => 'CSV',
+    ],
+    'filters' => [
+        'mine' => 'Mine and shared with me',
+    ],
     'notifications' => [
+        'transferred' => 'Ownership transferred.',
         'saved' => 'Saved.',
         'version_restored' => 'Version restored.',
         'shares_saved' => 'Sharing saved.',
