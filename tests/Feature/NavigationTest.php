@@ -89,14 +89,14 @@ it('places the lists where the app wants and lets it change or hide dashboard me
         ->navigationSort(10)
         ->modifyDashboardNavigationItemUsing(fn (NavigationItem $item, Dashboard $dashboard): ?NavigationItem => $dashboard->slug === 'hidden' ? null : $item->badge('new'));
     $me = user();
-    dashboard($me, ['name' => 'Shown', 'show_in_navigation' => true]);
+    $shown = dashboard($me, ['name' => 'Shown', 'show_in_navigation' => true]);
     dashboard($me, ['name' => 'Hidden one', 'slug' => 'hidden', 'show_in_navigation' => true]);
 
     expect(DashboardResource::getNavigationGroup())->toBe('Analytics')
         ->and(BuilderWidgetResource::getNavigationSort())->toBe(11);
 
     $this->actingAs($me)
-        ->get('/demo')
+        ->get("/demo/custom-dashboards/{$shown->slug}")
         ->assertOk()
         ->assertSee('Shown')
         ->assertDontSee('Hidden one');

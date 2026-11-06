@@ -42,6 +42,7 @@ class SetHomeAction extends Action
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.set_home'))
+            ->tooltip(__('filament-dashboards::dashboards.actions.set_home_tooltip'))
             ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::HOME))
             ->hidden(fn (Dashboard $record): bool => self::isHome($record))
             ->action(function (Dashboard $record): void {

@@ -20,6 +20,8 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardShare;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
+use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 
 class ShareAction extends Action
 {
@@ -40,7 +42,7 @@ class ShareAction extends Action
 
         $this
             ->label(__('filament-dashboards::dashboards.actions.share'))
-            ->visible(fn (Dashboard|BuilderWidget $record): bool => $record->canBeSharedBy($viewer))
+            ->visible(fn (Dashboard|BuilderWidget $record): bool => $record instanceof Dashboard ? DashboardResource::canShare($record) : BuilderWidgetResource::canShare($record))
             ->slideOver()
             ->modalWidth(Width::TwoExtraLarge)
             ->modalHeading(__('filament-dashboards::dashboards.modals.share.heading'))

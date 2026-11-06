@@ -35,6 +35,8 @@ final class FilamentDashboardsIcon
 
     public const HOME = 'filament-dashboards::actions.home';
 
+    public const PICK_DASHBOARD = 'filament-dashboards::actions.pick-dashboard';
+
     public const SETTINGS = 'filament-dashboards::actions.settings';
 
     public const EXPORT = 'filament-dashboards::actions.export';
@@ -70,6 +72,7 @@ final class FilamentDashboardsIcon
         self::ALERTS => Heroicon::OutlinedBellAlert,
         self::HISTORY => Heroicon::OutlinedClock,
         self::HOME => Heroicon::OutlinedHome,
+        self::PICK_DASHBOARD => Heroicon::ChevronDown,
         self::SETTINGS => Heroicon::OutlinedCog6Tooth,
         self::EXPORT => Heroicon::OutlinedArrowDownTray,
         self::TRANSFER => Heroicon::OutlinedArrowsRightLeft,

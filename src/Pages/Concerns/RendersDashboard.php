@@ -60,7 +60,7 @@ trait RendersDashboard
             ->orderBy('x')
             ->orderBy('id')
             ->get()
-            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $user, $canCreateWidgets, $printing): ?array {
+            ->map(function (DashboardItem $item) use ($widgets, $builderWidgets, $canCreateWidgets, $printing): ?array {
                 $builderWidget = $builderWidgets->get($item->widget);
                 $component = $builderWidget instanceof BuilderWidget
                     ? BuilderWidgetForm::component($builderWidget->type)
@@ -77,7 +77,7 @@ trait RendersDashboard
                     'widget' => $component,
                     'props' => [...($printing ? [] : $component::getDefaultProperties()), ...($builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [])],
                     'version' => $builderWidget?->updated_at?->timestamp,
-                    'builderWidgetId' => $builderWidget instanceof BuilderWidget && $builderWidget->canBeEditedBy($user) ? $builderWidget->id : null,
+                    'builderWidgetId' => $builderWidget instanceof BuilderWidget && BuilderWidgetResource::canEdit($builderWidget) ? $builderWidget->id : null,
                     'duplicable' => ! $builderWidget instanceof BuilderWidget || $canCreateWidgets,
                     'label' => $builderWidget instanceof BuilderWidget ? $builderWidget->name : $component::dashboardLabel(),
                     'followsDates' => $builderWidget instanceof BuilderWidget

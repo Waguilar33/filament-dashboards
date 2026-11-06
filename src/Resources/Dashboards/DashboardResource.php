@@ -85,18 +85,27 @@ class DashboardResource extends Resource
     {
         $user = self::user();
         $allowed = match ($action) {
-            'viewAny' => Gate::getPolicyFor(Dashboard::class) === null
-                || parent::getAuthorizationResponse($action)->allowed()
-                || FilamentDashboardsPlugin::get()->canCreateDashboards($user)
-                || self::getEloquentQuery()->whereNull('system_key')->exists(),
+            'viewAny' => self::policyAllows($action),
             'create' => FilamentDashboardsPlugin::get()->canCreateDashboards($user),
             'view' => $record instanceof Dashboard && $record->canBeViewedBy($user),
-            'update' => $record instanceof Dashboard && $record->canBeEditedBy($user),
-            'delete' => $record instanceof Dashboard && $record->canBeDeletedBy($user),
+            'update' => $record instanceof Dashboard && $record->canBeEditedBy($user) && self::policyAllows('viewAny') && self::policyAllows($action, $record),
+            'delete' => $record instanceof Dashboard && $record->canBeDeletedBy($user) && self::policyAllows('viewAny') && self::policyAllows($action, $record),
             default => false,
         };
 
         return $allowed ? Response::allow() : Response::deny();
+    }
+
+    public static function canShare(Dashboard $record): bool
+    {
+        return $record->canBeSharedBy(self::user()) && static::canViewAny();
+    }
+
+    protected static function policyAllows(string $action, ?Dashboard $record = null): bool
+    {
+        $policy = Gate::getPolicyFor(Dashboard::class);
+
+        return ! (is_object($policy) || is_string($policy)) || ! method_exists($policy, $action) || parent::getAuthorizationResponse($action, $record)->allowed();
     }
 
     public static function form(Schema $schema): Schema
@@ -155,7 +164,7 @@ class DashboardResource extends Resource
             'transfer' => TransferOwnershipAction::make(),
             'delete' => DeleteAction::make()
                 ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE))
-                ->visible(fn (Dashboard $record): bool => $record->canBeDeletedBy(self::user())),
+                ->visible(fn (Dashboard $record): bool => static::canDelete($record)),
         ]);
     }
 

@@ -603,25 +603,79 @@ it('opens a shared dashboard for a viewer the app policy keeps off the dashboard
     $this->actingAs($reader)->get(DashboardResource::getUrl('view', ['record' => dashboard($owner, ['slug' => 'private'])->slug]))->assertNotFound();
 });
 
-it('shows the dashboards list to someone with an own or shared dashboard whatever the policy says', function (): void {
+it('leaves the dashboards list to the app policy, also for owners and shares', function (): void {
     Gate::policy(Dashboard::class, NoDashboardsListPolicy::class);
     $owner = user();
     $reader = user();
-    $outsider = user();
     $dashboard = dashboard($owner);
     share($dashboard, $reader, ShareLevel::Read);
-    dashboard(attributes: ['system_key' => 'sales', 'slug' => 'system']);
 
-    $this->actingAs($reader)->get(DashboardResource::getUrl())->assertOk();
-    $this->actingAs($owner)->get(DashboardResource::getUrl())->assertOk();
-    $this->actingAs($outsider)->get(DashboardResource::getUrl())->assertForbidden();
+    $this->actingAs($reader)->get(DashboardResource::getUrl())->assertForbidden();
+    $this->actingAs($owner)->get(DashboardResource::getUrl())->assertForbidden();
 });
 
-it('shows the dashboards list to someone who may create dashboards whatever the list policy says', function (): void {
+it('keeps the dashboards list closed to someone the policy only lets create', function (): void {
     Gate::policy(Dashboard::class, CreateOnlyDashboardsPolicy::class);
 
-    $this->actingAs(user())->get(DashboardResource::getUrl())->assertOk();
+    $this->actingAs(user())->get(DashboardResource::getUrl())->assertForbidden();
 });
+
+it('shows a shared dashboard without its management to someone off the dashboards list', function (): void {
+    Gate::policy(Dashboard::class, NoDashboardsListPolicy::class);
+    $owner = user();
+    $editor = user();
+    $dashboard = dashboard($owner);
+    $widget = builderWidget($owner);
+    $item = $dashboard->items()->create(['widget' => $widget->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 4]);
+    share($dashboard, $editor, ShareLevel::Edit);
+
+    $page = viewAs($editor, $dashboard)
+        ->assertOk()
+        ->assertActionHidden('edit')
+        ->assertActionHidden('settings')
+        ->assertActionHidden('delete')
+        ->assertActionVisible('setAsHome');
+
+    expect($page->instance()->getBreadcrumbs())->toBe([]);
+
+    $page->call('saveDashboardLayout', [['id' => $item->id, 'x' => 6, 'y' => 0, 'w' => 6, 'h' => 4]])->assertForbidden();
+
+    expect($item->refresh()->x)->toBe(0)
+        ->and(DashboardResource::canShare($dashboard))->toBeFalse();
+    $this->actingAs($owner);
+    expect(DashboardResource::canShare($dashboard))->toBeFalse()
+        ->and(DashboardResource::canEdit($dashboard))->toBeFalse();
+});
+
+it('lets an app policy refuse editing and deleting a dashboard its owner may otherwise change', function (): void {
+    Gate::policy(Dashboard::class, ReadOnlyDashboardsPolicy::class);
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $this->actingAs($owner);
+
+    expect(DashboardResource::canViewAny())->toBeTrue()
+        ->and(DashboardResource::canEdit($dashboard))->toBeFalse()
+        ->and(DashboardResource::canDelete($dashboard))->toBeFalse()
+        ->and(DashboardResource::canShare($dashboard))->toBeTrue();
+});
+
+final class ReadOnlyDashboardsPolicy
+{
+    public function viewAny(): bool
+    {
+        return true;
+    }
+
+    public function update(): bool
+    {
+        return false;
+    }
+
+    public function delete(): bool
+    {
+        return false;
+    }
+}
 
 final class CreateOnlyDashboardsPolicy
 {
