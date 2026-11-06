@@ -13,10 +13,12 @@ use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateSummary;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderSummaryWidget extends TableWidget
 {
+    use ExportsCsv;
     use InteractsWithBuilderWidget;
 
     protected static bool $isDiscovered = false;
@@ -58,6 +60,7 @@ class BuilderSummaryWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->headerActions([$this->exportAction()])
             ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(fn (): array => $source === null || $metrics === [] ? [] : $this->rows($config, $source, $metrics))
             ->columns($columns)

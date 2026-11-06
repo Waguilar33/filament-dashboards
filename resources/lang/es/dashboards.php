@@ -61,6 +61,7 @@ return [
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'export' => 'Exportar',
         'open' => 'Abrir',
         'resize_card' => 'Cambiar ancho de la tarjeta (flechas izquierda y derecha)',
         'create' => 'Crear',

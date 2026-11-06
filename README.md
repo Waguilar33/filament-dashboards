@@ -154,7 +154,7 @@ FilamentDashboardsPlugin::make()->systemWidgets([OrdersByChannel::class]);
 
 A system dashboard can place a system widget by listing its class in `items()`.
 
-A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty.
+A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty. Table, summary and figures widgets have an Export button that downloads what is shown as a CSV file.
 
 ## Dashboard dates
 

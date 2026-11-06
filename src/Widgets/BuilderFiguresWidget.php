@@ -16,10 +16,12 @@ use Waguilar\FilamentDashboards\Builder\Actions\CalculateFigureTable;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateMetric;
 use Waguilar\FilamentDashboards\Builder\Enums\Arithmetic;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
 class BuilderFiguresWidget extends TableWidget
 {
+    use ExportsCsv;
     use InteractsWithBuilderWidget;
 
     public const NUMBER = 'number';
@@ -55,6 +57,7 @@ class BuilderFiguresWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->headerActions([$this->exportAction()])
             ->description(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(fn (): array => array_map(fn (array $row): array => [
                 'label' => $row['label'],
