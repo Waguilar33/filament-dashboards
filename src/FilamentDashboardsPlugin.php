@@ -1068,6 +1068,25 @@ final class FilamentDashboardsPlugin implements Plugin
         return $this->recipientContextUsing === null ? $next() : ($this->recipientContextUsing)($user, $tenant, $next);
     }
 
+    /**
+     * @return list<string>
+     */
+    public function getHiddenSystemKeys(string $kind, Model $user, ?Model $tenant): array
+    {
+        $definitions = $kind === 'widgets' ? $this->getSystemWidgets() : $this->getSystemDashboards();
+        $hidden = [];
+
+        foreach ($definitions as $definition) {
+            $definition = new $definition;
+
+            if (! $definition->canView($user, $tenant)) {
+                $hidden[] = $definition->key();
+            }
+        }
+
+        return $hidden;
+    }
+
     public function getTimezone(): string
     {
         return $this->timezoneUsing === null ? Config::string('app.timezone') : ($this->timezoneUsing)();

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use Spatie\Permission\Models\Role;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardShare;
+use Waguilar\FilamentDashboards\Tests\Fixtures\FinanceDashboard;
 use Waguilar\FilamentDashboards\Tests\Fixtures\PlainUser;
 
 it('shows a private dashboard only to its owner', function (): void {
@@ -112,4 +114,18 @@ it('removes the shares of a deleted dashboard', function (): void {
     $dashboard->delete();
 
     expect(DashboardShare::query()->count())->toBe(0);
+});
+
+it('shows a system dashboard only to the people its definition allows', function (): void {
+    Filament\Facades\Filament::setCurrentPanel('demo');
+    FilamentDashboardsPlugin::get()->systemDashboards([FinanceDashboard::class]);
+    $finance = user();
+    $other = user();
+    FinanceDashboard::$allowed = $finance->getKey();
+    $dashboard = dashboard(attributes: ['system_key' => 'finance', 'slug' => 'finance']);
+    $legacy = dashboard(attributes: ['system_key' => 'retired', 'slug' => 'retired']);
+
+    expect($dashboard->canBeViewedBy($finance))->toBeTrue()
+        ->and($dashboard->canBeViewedBy($other))->toBeFalse()
+        ->and($legacy->canBeViewedBy($other))->toBeTrue();
 });

@@ -81,6 +81,15 @@ FilamentDashboardsPlugin::make()->systemDashboards([OverviewDashboard::class]);
 
 Run `php artisan dashboards:sync` on every deploy. Names come from `name()` in the viewer's language, so it can return a translation. Everyone can view system dashboards and clone them; nobody can edit or delete them.
 
+Limit a system dashboard or system widget to some people with `canView`:
+
+```php
+public function canView(Model $user, ?Model $tenant): bool
+{
+    return $user->can('view-finance');
+}
+```
+
 ## The widget builder
 
 Register the data your users may build widgets from. Each data source returns its own query, already limited to what that user and tenant may see; the builder never reaches any other model or column.
