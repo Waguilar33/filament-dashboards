@@ -247,7 +247,7 @@ FilamentDashboardsPlugin::make()
     ->weekStartsOn(CarbonInterface::SUNDAY);
 ```
 
-On a dashboard, every builder widget with dates has a Dates control in its card header (charts and titled stats or table widgets), so a viewer can change that one widget's dates on the spot: back to its saved dates, the dashboard dates, a preset or a custom From–To range. The pick is the viewer's own, kept in their session for that dashboard item; the saved widget and everyone else's view stay as they were. Change the presets it offers (by default the date bar presets plus the next 7, 30, 60 and 90 days):
+A builder widget with dates can let viewers change its dates on the card: turn on *Let viewers change the dates on the card* in the widget builder (off by default). On a dashboard it then has a Dates control in its card header, so a viewer can change that one widget's dates on the spot: back to its saved dates, the dashboard dates, a preset or a custom From–To range. The pick is the viewer's own, kept in their session for that dashboard item; the saved widget and everyone else's view stay as they were. Change the presets it offers (by default the date bar presets plus the next 7, 30, 60 and 90 days):
 
 ```php
 FilamentDashboardsPlugin::make()

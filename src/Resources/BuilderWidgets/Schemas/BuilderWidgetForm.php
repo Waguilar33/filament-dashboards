@@ -63,6 +63,10 @@ class BuilderWidgetForm
                             ->inline(false)
                             ->live()
                             ->visible($type === BuilderWidgetType::Stats),
+                        Toggle::make('viewer_dates')
+                            ->label(__(self::T.'viewer_dates'))
+                            ->helperText(__(self::T.'viewer_dates_helper'))
+                            ->inline(false),
                         TextInput::make('refresh_interval')
                             ->label(__(self::T.'refresh_interval'))
                             ->helperText(__(self::T.'refresh_interval_helper'))
