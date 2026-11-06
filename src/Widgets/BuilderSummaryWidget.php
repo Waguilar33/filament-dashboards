@@ -68,6 +68,7 @@ class BuilderSummaryWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->description($this->ownRangeLabel([$config]))
             ->headerActions([$this->exportAction()])
             ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(fn (): array => $source === null || $metrics === [] ? [] : $this->rows($config, $source, $metrics))

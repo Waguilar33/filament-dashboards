@@ -36,6 +36,12 @@ use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
 use Waguilar\FilamentDashboards\Dates\DatePeriod;
 use Waguilar\FilamentDashboards\Dates\Periods\LastMonth;
 use Waguilar\FilamentDashboards\Dates\Periods\LastThirtyDays;
+use Waguilar\FilamentDashboards\Dates\Periods\NextNinetyDays;
+use Waguilar\FilamentDashboards\Dates\Periods\NextSevenDays;
+use Waguilar\FilamentDashboards\Dates\Periods\NextSixtyDays;
+use Waguilar\FilamentDashboards\Dates\Periods\NextThirtyDays;
+use Waguilar\FilamentDashboards\Dates\Periods\RestOfMonth;
+use Waguilar\FilamentDashboards\Dates\Periods\RestOfYear;
 use Waguilar\FilamentDashboards\Dates\Periods\ThisMonth;
 use Waguilar\FilamentDashboards\Dates\Periods\ThisQuarter;
 use Waguilar\FilamentDashboards\Dates\Periods\ThisWeek;
@@ -125,7 +131,7 @@ final class FilamentDashboardsPlugin implements Plugin
     /**
      * @var list<class-string<DatePeriod>|DatePeriod>
      */
-    protected array $datePeriods = [Today::class, ThisWeek::class, ThisMonth::class, LastMonth::class, ThisQuarter::class, ThisYear::class, LastThirtyDays::class];
+    protected array $datePeriods = [Today::class, ThisWeek::class, ThisMonth::class, LastMonth::class, ThisQuarter::class, ThisYear::class, LastThirtyDays::class, NextSevenDays::class, NextThirtyDays::class, NextSixtyDays::class, NextNinetyDays::class, RestOfMonth::class, RestOfYear::class];
 
     protected int $weekStart = CarbonInterface::MONDAY;
 

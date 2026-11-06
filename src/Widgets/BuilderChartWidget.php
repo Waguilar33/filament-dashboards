@@ -8,12 +8,14 @@ use Carbon\CarbonImmutable;
 use Filament\Widgets\ChartWidget;
 use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
+use Waguilar\FilamentDashboards\Actions\ResolveWidgetRange;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateBreakdown;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateScatter;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateTrend;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
+use Waguilar\FilamentDashboards\Dates\DateRange;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
@@ -60,7 +62,23 @@ class BuilderChartWidget extends ChartWidget
     {
         $this->getCachedData();
 
-        return $this->needsAttention ? $this->needsAttentionText() : null;
+        if ($this->needsAttention) {
+            return $this->needsAttentionText();
+        }
+
+        $config = $this->widgetConfig();
+
+        if (! in_array($this->widgetType(), ['line', 'bar'], true)) {
+            return $this->ownRangeLabel([$config]);
+        }
+
+        if (($this->configString($config, 'period') ?? '12m') === 'dashboard') {
+            return null;
+        }
+
+        [$from, $to] = $this->trendSpan($config);
+
+        return $this->rangeLabel(new DateRange(CarbonImmutable::instance($from), CarbonImmutable::instance($to)));
     }
 
     protected function getType(): string
@@ -89,29 +107,7 @@ class BuilderChartWidget extends ChartWidget
      */
     protected function trend(array $config, DataSource $source, Metric $metric, string $label): array
     {
-        $dates = app(ResolveDateRange::class)->handle($this->pageFilters);
-        $today = CarbonImmutable::now(FilamentDashboardsPlugin::get()->getTimezone());
-
-        $period = $this->configString($config, 'period') ?? '12m';
-        $registered = in_array($period, ['dashboard', '7d', '30d', '90d', '12m', 'ytd'], true) ? null : FilamentDashboardsPlugin::get()->getDatePeriod($period)?->range($today);
-        $span = $registered ?? $dates;
-        $spanDays = (int) $span->start->diffInDays($span->end) + 1;
-        $byLength = match (true) {
-            $spanDays <= 31 => TimeGrouping::Day,
-            $spanDays <= 180 => TimeGrouping::Week,
-            default => TimeGrouping::Month,
-        };
-
-        [$from, $to, $grouping] = $registered !== null ? [$registered->start, $registered->end, $byLength] : match ($period) {
-            'dashboard' => [$dates->start, $dates->end, $byLength],
-            '7d' => [$today->subDays(6)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
-            '30d' => [$today->subDays(29)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
-            '90d' => [$today->subDays(89)->startOfDay(), $today->endOfDay(), TimeGrouping::Week],
-            'ytd' => [$today->startOfYear(), $today->endOfDay(), TimeGrouping::Month],
-            default => [$today->startOfMonth()->subMonths(11), $today->endOfDay(), TimeGrouping::Month],
-        };
-
-        $grouping = TimeGrouping::tryFrom($this->configString($config, 'grouping') ?? '') ?? $grouping;
+        [$from, $to, $grouping] = $this->trendSpan($config);
 
         $trend = app(CalculateTrend::class)->handle(
             $source,
@@ -146,6 +142,39 @@ class BuilderChartWidget extends ChartWidget
             ], $trend['series'], array_keys($trend['series'])),
             'labels' => $trend['labels'],
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return array{CarbonImmutable, CarbonImmutable, TimeGrouping}
+     */
+    protected function trendSpan(array $config): array
+    {
+        $dates = app(ResolveDateRange::class)->handle($this->pageFilters);
+        $today = CarbonImmutable::now(FilamentDashboardsPlugin::get()->getTimezone());
+
+        $period = $this->configString($config, 'period') ?? '12m';
+        $registered = in_array($period, ['dashboard', '7d', '30d', '90d', '12m', 'ytd'], true) ? null : app(ResolveWidgetRange::class)->handle($config);
+        $span = $registered ?? $dates;
+        $spanDays = (int) $span->start->diffInDays($span->end) + 1;
+        $byLength = match (true) {
+            $spanDays <= 31 => TimeGrouping::Day,
+            $spanDays <= 180 => TimeGrouping::Week,
+            default => TimeGrouping::Month,
+        };
+
+        [$from, $to, $grouping] = $registered !== null ? [$registered->start, $registered->end, $byLength] : match ($period) {
+            'dashboard' => [$dates->start, $dates->end, $byLength],
+            '7d' => [$today->subDays(6)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
+            '30d' => [$today->subDays(29)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
+            '90d' => [$today->subDays(89)->startOfDay(), $today->endOfDay(), TimeGrouping::Week],
+            'ytd' => [$today->startOfYear(), $today->endOfDay(), TimeGrouping::Month],
+            default => [$today->startOfMonth()->subMonths(11), $today->endOfDay(), TimeGrouping::Month],
+        };
+
+        $grouping = TimeGrouping::tryFrom($this->configString($config, 'grouping') ?? '') ?? $grouping;
+
+        return [$from, $to, $grouping];
     }
 
     /**

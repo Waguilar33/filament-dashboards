@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Resources\BuilderWidgets\Schemas;
 
+use Closure;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -19,6 +21,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Waguilar\FilamentDashboards\Actions\ResolveWidgetRange;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Arithmetic;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
@@ -148,13 +151,7 @@ class BuilderWidgetForm
                         TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255)->columnSpanFull(),
                         self::sourceSelect(),
                         ...self::metricFields(),
-                        self::datesField(),
-                        Select::make('period')
-                            ->label(__(self::T.'card_period'))
-                            ->options(fn (): array => self::periodOptions(__('filament-dashboards::dashboards.builder.periods.dashboard')))
-                            ->default('dashboard')
-                            ->selectablePlaceholder(false)
-                            ->visible(fn (Get $get): bool => filled($get('dates_field'))),
+                        ...self::datesFields(),
                         Toggle::make('compare')
                             ->label(__(self::T.'compare'))
                             ->helperText(__(self::T.'compare_helper'))
@@ -175,10 +172,15 @@ class BuilderWidgetForm
                     ...self::metricFields(),
                     Select::make('period')
                         ->label(__(self::T.'period'))
-                        ->options(fn (): array => [...__('filament-dashboards::dashboards.builder.periods'), ...array_diff_key(self::periodOptions(), __('filament-dashboards::dashboards.builder.periods'))])
+                        ->options(fn (): array => [
+                            ...__('filament-dashboards::dashboards.builder.periods'),
+                            ...array_diff_key(self::periodOptions(), __('filament-dashboards::dashboards.builder.periods')),
+                            ResolveWidgetRange::OWN_RANGE => __('filament-dashboards::dashboards.builder.card_periods.custom'),
+                        ])
                         ->default('12m')
                         ->selectablePlaceholder(false)
                         ->live(),
+                    ...self::ownRangeFields(fn (Get $get): bool => $get('period') === ResolveWidgetRange::OWN_RANGE),
                     Select::make('grouping')
                         ->label(__(self::T.'grouping'))
                         ->options(TimeGrouping::class)
@@ -195,7 +197,7 @@ class BuilderWidgetForm
                     self::sourceSelect(),
                     self::fieldSelect('group_field', FieldType::Choice, FieldType::Text, FieldType::Boolean)->label(__(self::T.'group_field'))->required(),
                     TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(FilamentDashboardsPlugin::get()->getBuilderLimit('summary'))->default(20)->live(onBlur: true),
-                    self::datesField(),
+                    ...self::datesFields(),
                     Toggle::make('total_row')->label(__(self::T.'total_row'))->live(),
                 ]),
                 Repeater::make('metrics')
@@ -238,7 +240,7 @@ class BuilderWidgetForm
                         Group::make([
                             self::sourceSelect(),
                             ...self::metricFields(),
-                            self::datesField(),
+                            ...self::datesFields(),
                             self::filters(),
                         ])
                             ->columns(2)
@@ -291,7 +293,7 @@ class BuilderWidgetForm
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                     self::fieldSelect('x_field', FieldType::Number)->label(__(self::T.'x_field'))->required(),
                     self::fieldSelect('y_field', FieldType::Number)->label(__(self::T.'y_field'))->required(),
-                    self::datesField(),
+                    ...self::datesFields(),
                 ]),
                 self::filters(),
             ],
@@ -307,7 +309,7 @@ class BuilderWidgetForm
                         ->default('desc')
                         ->selectablePlaceholder(false)
                         ->live(),
-                    self::datesField(),
+                    ...self::datesFields(),
                 ]),
                 self::filters(),
             ],
@@ -318,7 +320,7 @@ class BuilderWidgetForm
                     ...self::metricFields(),
                     TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(FilamentDashboardsPlugin::get()->getBuilderLimit('breakdown'))->default(10)->live(onBlur: true),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
-                    self::datesField(),
+                    ...self::datesFields(),
                 ]),
                 self::filters(),
             ],
@@ -376,6 +378,48 @@ class BuilderWidgetForm
         }
 
         return $options;
+    }
+
+    /**
+     * @return array<Component>
+     */
+    protected static function datesFields(): array
+    {
+        return [
+            self::datesField(),
+            Select::make('period')
+                ->label(__(self::T.'card_period'))
+                ->options(fn (): array => [
+                    ...self::periodOptions(__('filament-dashboards::dashboards.builder.periods.dashboard')),
+                    ResolveWidgetRange::OWN_RANGE => __('filament-dashboards::dashboards.builder.card_periods.custom'),
+                ])
+                ->default('dashboard')
+                ->selectablePlaceholder(false)
+                ->live()
+                ->visible(fn (Get $get): bool => filled($get('dates_field'))),
+            ...self::ownRangeFields(fn (Get $get): bool => filled($get('dates_field')) && $get('period') === ResolveWidgetRange::OWN_RANGE),
+        ];
+    }
+
+    /**
+     * @param  Closure(Get): bool  $visible
+     * @return array<Component>
+     */
+    protected static function ownRangeFields(Closure $visible): array
+    {
+        return [
+            DatePicker::make('period_start')
+                ->label(__('filament-dashboards::dashboards.dates.from'))
+                ->required()
+                ->live()
+                ->visible($visible),
+            DatePicker::make('period_end')
+                ->label(__('filament-dashboards::dashboards.dates.until'))
+                ->required()
+                ->afterOrEqual('period_start')
+                ->live()
+                ->visible($visible),
+        ];
     }
 
     protected static function datesField(): Select

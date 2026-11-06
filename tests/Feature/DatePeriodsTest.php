@@ -6,8 +6,8 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Filament\Facades\Filament;
 use Waguilar\FilamentDashboards\Actions\EvaluateStatsCards;
-use Waguilar\FilamentDashboards\Actions\ResolveCardRange;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
+use Waguilar\FilamentDashboards\Actions\ResolveWidgetRange;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
 use Waguilar\FilamentDashboards\Dates\DatePeriod;
 use Waguilar\FilamentDashboards\Dates\DateRange;
@@ -44,15 +44,15 @@ function rangeText(?DateRange $range): string
 }
 
 it('ships calendar periods including last month and this quarter', function (): void {
-    expect(rangeText(app(ResolveCardRange::class)->handle('last_month')))->toBe('2026-10-01 - 2026-10-31')
-        ->and(rangeText(app(ResolveCardRange::class)->handle('quarter')))->toBe('2026-10-01 - 2026-11-18')
-        ->and(app(ResolveCardRange::class)->handle('dashboard'))->toBeNull();
+    expect(rangeText(app(ResolveWidgetRange::class)->handle(['period' => 'last_month'])))->toBe('2026-10-01 - 2026-10-31')
+        ->and(rangeText(app(ResolveWidgetRange::class)->handle(['period' => 'quarter'])))->toBe('2026-10-01 - 2026-11-18')
+        ->and(app(ResolveWidgetRange::class)->handle(['period' => 'dashboard']))->toBeNull();
 });
 
 it('lets the app add its own periods for cards, charts and the date bar', function (): void {
     FilamentDashboardsPlugin::get()->datePeriods([FiscalYear::class])->datePresets([1, 30, 'month', 'fiscal']);
 
-    expect(rangeText(app(ResolveCardRange::class)->handle('fiscal')))->toBe('2026-07-01 - 2026-11-18')
+    expect(rangeText(app(ResolveWidgetRange::class)->handle(['period' => 'fiscal'])))->toBe('2026-07-01 - 2026-11-18')
         ->and(rangeText(app(ResolveDateRange::class)->handle(['preset' => 'fiscal'])))->toBe('2026-07-01 - 2026-11-18')
         ->and(rangeText(app(ResolveDateRange::class)->handle(['preset' => 'month'])))->toBe('2026-11-01 - 2026-11-18')
         ->and(rangeText(app(ResolveDateRange::class)->handle(['preset' => 'quarter'])))->toBe('2026-10-20 - 2026-11-18');
@@ -61,7 +61,7 @@ it('lets the app add its own periods for cards, charts and the date bar', functi
 it('starts weeks on the day the app chooses, everywhere', function (): void {
     FilamentDashboardsPlugin::get()->weekStartsOn(CarbonInterface::SUNDAY);
 
-    expect(rangeText(app(ResolveCardRange::class)->handle('week')))->toBe('2026-11-15 - 2026-11-18')
+    expect(rangeText(app(ResolveWidgetRange::class)->handle(['period' => 'week'])))->toBe('2026-11-15 - 2026-11-18')
         ->and(TimeGrouping::Week->start(CarbonImmutable::parse('2026-11-18'))->toDateString())->toBe('2026-11-15');
 });
 

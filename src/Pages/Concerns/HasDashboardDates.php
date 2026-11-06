@@ -43,6 +43,7 @@ trait HasDashboardDates
                         ->options($presets)
                         ->default($plugin->getDefaultDatePreset())
                         ->grouped()
+                        ->required()
                         ->extraAttributes(['class' => 'fi-dashboards-dates'])
                         ->grow(false)
                         ->afterStateUpdated(function (Set $set, mixed $state, mixed $old): void {

@@ -7,11 +7,12 @@ namespace Waguilar\FilamentDashboards\Widgets\Concerns;
 use Filament\Facades\Filament;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use Livewire\Attributes\Locked;
 use Waguilar\FilamentDashboards\Actions\BuildFilters;
 use Waguilar\FilamentDashboards\Actions\FindBuilderWidget;
-use Waguilar\FilamentDashboards\Actions\ResolveCardRange;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
+use Waguilar\FilamentDashboards\Actions\ResolveWidgetRange;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Field;
 use Waguilar\FilamentDashboards\Dates\DateRange;
@@ -116,6 +117,41 @@ trait InteractsWithBuilderWidget
     }
 
     /**
+     * @param  list<array<mixed>>  $parts
+     */
+    protected function ownRangeLabel(array $parts): ?string
+    {
+        $labels = [];
+
+        foreach ($parts as $part) {
+            if ($this->configString($part, 'dates_field') === null) {
+                continue;
+            }
+
+            try {
+                $range = app(ResolveWidgetRange::class)->handle($part);
+            } catch (InvalidArgumentException) {
+                return null;
+            }
+
+            if ($range === null) {
+                return null;
+            }
+
+            $labels[] = $this->rangeLabel($range);
+        }
+
+        return count(array_unique($labels)) === 1 ? $labels[0] : null;
+    }
+
+    protected function rangeLabel(DateRange $range): string
+    {
+        $plugin = FilamentDashboardsPlugin::get();
+
+        return $plugin->formatDate($range->start, 'range').' – '.$plugin->formatDate($range->end, 'range');
+    }
+
+    /**
      * @param  array<mixed>  $config
      */
     protected function dashboardDates(array $config): ?DateRange
@@ -124,7 +160,7 @@ trait InteractsWithBuilderWidget
             return null;
         }
 
-        return app(ResolveCardRange::class)->handle($this->configString($config, 'period') ?? 'dashboard')
+        return app(ResolveWidgetRange::class)->handle($config)
             ?? app(ResolveDateRange::class)->handle($this->pageFilters);
     }
 
