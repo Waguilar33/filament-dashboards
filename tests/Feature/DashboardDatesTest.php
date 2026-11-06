@@ -98,6 +98,7 @@ it('shows the dates on a dashboard with a widget that reads page filters', funct
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
         ->assertSeeHtml('filtersForm.preset')
         ->assertSeeHtml('wire:loading.class="fi-dashboards-loading"')
+        ->assertSeeHtml('data-follows-dates')
         ->assertSet('filters', ['preset' => 30, 'startDate' => null, 'endDate' => null])
         ->assertFormFieldHidden('startDate', 'filtersForm');
 });

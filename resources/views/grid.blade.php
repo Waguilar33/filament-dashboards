@@ -42,6 +42,9 @@
                     gs-max-h="{{ \Waguilar\FilamentDashboards\Actions\SaveDashboardLayout::MAX_HEIGHT }}"
                     data-adjustable-height
                 @endif
+                @if ($item['followsDates'])
+                    data-follows-dates
+                @endif
                 @if ($item['fixedHeight'])
                     data-fixed-height
                 @endif

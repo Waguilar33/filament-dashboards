@@ -14,14 +14,58 @@
     background: transparent;
 }
 
-.fi-dashboards-loading .fi-dashboards-item {
-    pointer-events: none;
-    animation: fi-dashboards-pulse 1.2s ease-in-out infinite;
+.fi-dashboards-item {
+    position: relative;
 }
 
-@keyframes fi-dashboards-pulse {
-    50% {
-        opacity: 0.4;
+.fi-dashboards-loading [data-follows-dates] .fi-dashboards-item {
+    pointer-events: none;
+}
+
+.fi-dashboards-loading [data-follows-dates] .fi-dashboards-item > * {
+    visibility: hidden;
+}
+
+.fi-dashboards-loading [data-follows-dates] .fi-dashboards-item::before,
+.fi-dashboards-loading [data-follows-dates] .fi-dashboards-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 0.75rem;
+}
+
+.fi-dashboards-loading [data-follows-dates] .fi-dashboards-item::before {
+    border: 1px solid var(--gray-200);
+    background:
+        linear-gradient(var(--gray-200), var(--gray-200)) 1.5rem 1.5rem / 35% 0.75rem no-repeat,
+        linear-gradient(var(--gray-100), var(--gray-100)) 1.5rem 3.5rem / calc(100% - 3rem) calc(100% - 5rem) no-repeat,
+        var(--white, #fff);
+}
+
+.fi-dashboards-loading [data-follows-dates] .fi-dashboards-item::after {
+    background: linear-gradient(100deg, transparent 30%, color-mix(in oklab, var(--white, #fff) 60%, transparent) 50%, transparent 70%) 0 0 / 200% 100% no-repeat;
+    animation: fi-dashboards-shimmer 1.4s ease-in-out infinite;
+}
+
+.dark .fi-dashboards-loading [data-follows-dates] .fi-dashboards-item::before {
+    border-color: color-mix(in oklab, var(--white, #fff) 10%, transparent);
+    background:
+        linear-gradient(var(--gray-700), var(--gray-700)) 1.5rem 1.5rem / 35% 0.75rem no-repeat,
+        linear-gradient(var(--gray-800), var(--gray-800)) 1.5rem 3.5rem / calc(100% - 3rem) calc(100% - 5rem) no-repeat,
+        var(--gray-900);
+}
+
+.dark .fi-dashboards-loading [data-follows-dates] .fi-dashboards-item::after {
+    background-image: linear-gradient(100deg, transparent 30%, color-mix(in oklab, var(--white, #fff) 6%, transparent) 50%, transparent 70%);
+}
+
+@keyframes fi-dashboards-shimmer {
+    from {
+        background-position: 150% 0;
+    }
+
+    to {
+        background-position: -50% 0;
     }
 }
 
@@ -264,9 +308,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .fi-dashboards-loading .fi-dashboards-item {
+    .fi-dashboards-loading [data-follows-dates] .fi-dashboards-item::after {
         animation: none;
-        opacity: 0.5;
     }
 }
 
