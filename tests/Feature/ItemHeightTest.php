@@ -89,3 +89,25 @@ it('keeps a chosen height when the item is duplicated or the dashboard cloned', 
     expect($dashboard->items()->whereKeyNot($item->id)->sole()->fits_content)->toBeFalse()
         ->and($clone->items()->pluck('fits_content')->all())->toBe([false, false]);
 });
+
+it('gives each grid item a skeleton shaped like its widget', function (): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $keys = [
+        'signups-chart' => 'chart',
+        'orders-overview' => 'stats',
+        builderWidget($owner, ['type' => BuilderWidgetType::Table, 'config' => ['source' => 'orders', 'columns' => ['customer']]])->dashboardKey() => 'table',
+        builderWidget($owner, ['type' => BuilderWidgetType::Doughnut, 'config' => ['source' => 'orders', 'group_field' => 'channel', 'metric' => 'count']])->dashboardKey() => 'pie',
+    ];
+
+    foreach (array_keys($keys) as $index => $key) {
+        $dashboard->items()->create(['widget' => $key, 'x' => 0, 'y' => $index * 4, 'w' => 6, 'h' => 4]);
+    }
+
+    $this->actingAs($owner);
+    $items = Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->instance()
+        ->getSchema('content')?->getComponent(fn (mixed $component): bool => $component instanceof View, withHidden: true)?->getViewData()['items'] ?? [];
+
+    expect(array_combine(array_column($items, 'id'), array_column($items, 'skeleton')))
+        ->toBe(array_combine($dashboard->items()->orderBy('y')->pluck('id')->all(), array_values($keys)));
+});

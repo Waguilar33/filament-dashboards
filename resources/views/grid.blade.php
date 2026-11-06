@@ -1,5 +1,7 @@
 @php
     use Filament\Support\Facades\FilamentAsset;
+
+    $gridOptions = \Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->getGridOptions();
 @endphp
 
 <div
@@ -9,7 +11,7 @@
     wire:target="filters, applyDashboardDates"
     x-load
     x-load-src="{{ FilamentAsset::getAlpineComponentSrc('dashboard-grid', 'waguilar33/filament-dashboards') }}"
-    x-data="dashboardGrid({ editable: @js($editable), printing: @js($printing), options: @js(\Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->getGridOptions()) })"
+    x-data="dashboardGrid({ editable: @js($editable), printing: @js($printing), options: @js($gridOptions) })"
     class="fi-dashboards-grid"
     data-editable="{{ $editable ? 'true' : 'false' }}"
 >
@@ -36,6 +38,8 @@
                 gs-y="{{ $item['y'] }}"
                 gs-w="{{ $item['w'] }}"
                 gs-h="{{ $item['h'] }}"
+                data-skeleton="{{ $item['skeleton'] }}"
+                style="--fi-dashboards-item-height: {{ $item['h'] * $gridOptions['cellHeight'] - 2 * $gridOptions['margin'] }}px"
                 @if ($item['adjustableHeight'])
                     gs-resize-handles="e,w,s"
                     gs-min-h="{{ \Waguilar\FilamentDashboards\Actions\SaveDashboardLayout::MIN_FIXED_HEIGHT }}"

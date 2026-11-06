@@ -13,10 +13,12 @@ use Filament\Schemas\Components\EmptyState;
 use Filament\Schemas\Components\View;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\TableWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
+use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
@@ -87,6 +89,13 @@ trait RendersDashboard
                     'h' => $item->h,
                     'adjustableHeight' => $adjustableHeight,
                     'fixedHeight' => $adjustableHeight && ! $item->fits_content,
+                    'skeleton' => match (true) {
+                        is_a($component, StatsOverviewWidget::class, true) => 'stats',
+                        $builderWidget instanceof BuilderWidget && in_array($builderWidget->type, [BuilderWidgetType::Pie, BuilderWidgetType::Doughnut, BuilderWidgetType::PolarArea], true) => 'pie',
+                        is_a($component, ChartWidget::class, true) => 'chart',
+                        is_a($component, TableWidget::class, true) => 'table',
+                        default => 'card',
+                    },
                 ];
             })
             ->filter()
