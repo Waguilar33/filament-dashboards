@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Livewire;
+use Waguilar\FilamentDashboards\Actions\AddDashboardWidget;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Enums\ShareLevel;
@@ -85,4 +86,33 @@ it('opens the history of a widget from the dashboard being edited', function ():
         ->assertHasNoActionErrors();
 
     expect($widget->refresh()->name)->toBe('First');
+});
+
+it('says how many dashboards use a widget and saves a copy for this dashboard only', function (): void {
+    $owner = user();
+    $editor = user();
+    $dashboard = dashboard($owner);
+    $other = dashboard($owner, ['slug' => 'other']);
+    share($dashboard, $editor, ShareLevel::Edit);
+    $widget = builderWidget($owner, ['name' => 'Revenue']);
+    $item = app(AddDashboardWidget::class)->handle($dashboard, $widget->dashboardKey(), ['w' => 6, 'h' => 4], $owner);
+    app(AddDashboardWidget::class)->handle($other, $widget->dashboardKey(), ['w' => 6, 'h' => 4], $owner);
+    $this->actingAs($editor);
+
+    $page = Livewire::withQueryParams(['editing' => 1])->test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->mountAction(TestAction::make('editWidget')->arguments(['widget' => $widget->id, 'item' => $item->id]));
+
+    expect($page->instance()->getMountedAction()?->getModalDescription())->toBe('Used on 2 dashboards; saving changes it on all of them.');
+
+    $page->fillForm(['name' => 'My revenue'])
+        ->callMountedAction(['copy' => true])
+        ->assertHasNoActionErrors();
+
+    $copy = BuilderWidget::query()->where('name', 'My revenue')->sole();
+
+    expect($widget->refresh()->name)->toBe('Revenue')
+        ->and($copy->isOwnedBy($editor))->toBeTrue()
+        ->and($item->refresh()->widget)->toBe($copy->dashboardKey())
+        ->and($item->shares_widget)->toBeTrue()
+        ->and($copy->canBeViewedBy($owner))->toBeTrue();
 });

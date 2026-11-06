@@ -61,6 +61,7 @@ return [
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'save_as_copy' => 'Guardar como mi copia',
         'history' => 'Historial',
         'restore' => 'Restaurar',
         'print' => 'Imprimir',
@@ -84,6 +85,9 @@ return [
         'next' => 'Siguiente',
     ],
     'modals' => [
+        'edit_widget' => [
+            'used_on' => '{0} Aún no está en ningún escritorio.|{1} Se usa en 1 escritorio.|[2,*] Se usa en :count escritorios; al guardar cambia en todos.',
+        ],
         'history' => [
             'heading' => 'Historial',
             'description' => 'Versión actual: :current. Elige una anterior para restaurarla; al restaurar, esta también queda en el historial.',

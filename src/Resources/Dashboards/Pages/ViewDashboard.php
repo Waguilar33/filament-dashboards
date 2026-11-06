@@ -299,12 +299,31 @@ class ViewDashboard extends Page
             ->slideOver()
             ->modalWidth(Width::FourExtraLarge)
             ->modalHeading(fn (array $arguments): string => $this->editableWidget($arguments)->name)
+            ->modalDescription(fn (array $arguments): string => trans_choice('filament-dashboards::dashboards.modals.edit_widget.used_on', $count = $this->editableWidget($arguments)->placements()->distinct()->count('dashboard_id'), ['count' => $count]))
             ->fillForm(fn (array $arguments): array => BuilderWidgetForm::fill($this->editableWidget($arguments)))
             ->schema(fn (array $arguments): array => BuilderWidgetForm::components($this->editableWidget($arguments)->type))
+            ->extraModalFooterActions(fn (Action $action, array $arguments): array => BuilderWidgetResource::canCreate() && filled($arguments['item'] ?? null) ? [
+                $action->makeModalSubmitAction('saveAsCopy', arguments: ['copy' => true])
+                    ->label(__('filament-dashboards::dashboards.actions.save_as_copy'))
+                    ->color('gray'),
+            ] : [])
             ->action(function (array $data, array $arguments): void {
                 $widget = $this->editableWidget($arguments);
 
-                app(SaveBuilderWidget::class)->handle($widget, $widget->type, $data, DashboardResource::user());
+                if ((bool) ($arguments['copy'] ?? false)) {
+                    abort_unless(BuilderWidgetResource::canCreate(), 403);
+
+                    $item = $this->editableItem($arguments);
+                    $copy = app(SaveBuilderWidget::class)->handle(
+                        SaveBuilderWidget::newFor(DashboardResource::user(), Filament::getTenant(), $widget->panel),
+                        $widget->type,
+                        $data,
+                        DashboardResource::user(),
+                    );
+                    $item->update(['widget' => $copy->dashboardKey(), 'shares_widget' => true]);
+                } else {
+                    app(SaveBuilderWidget::class)->handle($widget, $widget->type, $data, DashboardResource::user());
+                }
 
                 $this->reloadDashboard();
             });

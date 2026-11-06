@@ -41,7 +41,7 @@
                                         <x-filament::link
                                             tag="button"
                                             :icon="\Filament\Support\Icons\Heroicon::OutlinedPencilSquare"
-                                            wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }} })"
+                                            wire:click="mountAction('editWidget', { widget: {{ $item['builderWidgetId'] }}, item: {{ $item['id'] }} })"
                                         >
                                             {{ __('filament-dashboards::dashboards.actions.edit') }}
                                         </x-filament::link>

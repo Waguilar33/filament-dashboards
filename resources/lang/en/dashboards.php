@@ -61,6 +61,7 @@ return [
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'save_as_copy' => 'Save as my copy',
         'history' => 'History',
         'restore' => 'Restore',
         'print' => 'Print',
@@ -84,6 +85,9 @@ return [
         'next' => 'Next',
     ],
     'modals' => [
+        'edit_widget' => [
+            'used_on' => '{0} Not on any dashboard yet.|{1} Used on 1 dashboard.|[2,*] Used on :count dashboards; saving changes it on all of them.',
+        ],
         'history' => [
             'heading' => 'History',
             'description' => 'Current version: :current. Pick an earlier one to restore it; restoring keeps this one in the history too.',

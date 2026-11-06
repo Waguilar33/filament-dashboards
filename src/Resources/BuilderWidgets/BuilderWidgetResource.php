@@ -122,6 +122,7 @@ class BuilderWidgetResource extends Resource
                 ->visible(fn (BuilderWidget $record): bool => $record->canBeEditedBy(DashboardResource::user()))
                 ->slideOver()
                 ->modalWidth(Width::FourExtraLarge)
+                ->modalDescription(fn (BuilderWidget $record): string => trans_choice('filament-dashboards::dashboards.modals.edit_widget.used_on', $count = $record->placements()->distinct()->count('dashboard_id'), ['count' => $count]))
                 ->fillForm(fn (BuilderWidget $record): array => BuilderWidgetForm::fill($record))
                 ->schema(fn (BuilderWidget $record): array => BuilderWidgetForm::components($record->type))
                 ->action(fn (array $data, BuilderWidget $record): BuilderWidget => app(SaveBuilderWidget::class)->handle($record, $record->type, $data, DashboardResource::user())),

@@ -409,7 +409,7 @@ it('frames each item with its actions while editing, and edit only for builder w
         ->assertSee('Revenue')
         ->assertSeeHtml("mountAction('duplicateItem', { item: {$code->id} })")
         ->assertSeeHtml("mountAction('removeItem', { item: {$code->id} })")
-        ->assertSeeHtml("mountAction('editWidget', { widget: {$builder->id} })")
+        ->assertSeeHtml("mountAction('editWidget', { widget: {$builder->id}, item: {$built->id} })")
         ->assertSeeHtml("mountAction('duplicateItem', { item: {$built->id} })")
         ->assertSeeHtml("mountAction('removeItem', { item: {$built->id} })");
 
