@@ -55,6 +55,15 @@ class ViewDashboard extends Page
     #[Url(as: 'editing')]
     public bool $isEditingLayout = false;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        $record = $parameters['record'] ?? null;
+
+        return $record instanceof Dashboard ? DashboardResource::canView($record) : parent::canAccess($parameters);
+    }
+
+    public static function authorizeResourceAccess(): void {}
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);

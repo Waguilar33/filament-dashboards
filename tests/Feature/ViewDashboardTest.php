@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Waguilar\FilamentDashboards\Enums\NavigationPosition;
@@ -25,6 +26,7 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
 use Waguilar\FilamentDashboards\Models\DashboardHome;
+use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ViewDashboard;
 use Workbench\App\Models\User;
 
@@ -588,3 +590,23 @@ it('leaves widgets an editor cannot see where they are', function (): void {
     expect($hidden->refresh()->only(['x', 'y', 'w', 'h']))->toBe(['x' => 0, 'y' => 0, 'w' => 6, 'h' => 4])
         ->and($dashboard->items()->pluck('id')->sort()->values()->all())->toBe([$hidden->id, $visible->id]);
 });
+
+it('opens a shared dashboard for a viewer the app policy keeps off the dashboards list', function (): void {
+    Gate::policy(Dashboard::class, NoDashboardsListPolicy::class);
+    $owner = user();
+    $reader = user();
+    $dashboard = dashboard($owner);
+    share($dashboard, $reader, ShareLevel::Read);
+
+    $this->actingAs($reader)->get(DashboardResource::getUrl('view', ['record' => $dashboard->slug]))->assertOk();
+    $this->actingAs($reader)->get(DashboardResource::getUrl('view', ['record' => dashboard($owner, ['slug' => 'private'])->slug]))->assertNotFound();
+    $this->actingAs($reader)->get(DashboardResource::getUrl())->assertForbidden();
+});
+
+final class NoDashboardsListPolicy
+{
+    public function viewAny(): bool
+    {
+        return false;
+    }
+}
