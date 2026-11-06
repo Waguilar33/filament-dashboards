@@ -14,6 +14,7 @@ use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
 use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
@@ -29,6 +30,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use LogicException;
+use UnitEnum;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
 use Waguilar\FilamentDashboards\Dates\DatePeriod;
@@ -159,6 +161,20 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $modifyChartOptionsUsing = null;
 
     protected int $widgetVersionsToKeep = 20;
+
+    protected string|UnitEnum|null $navigationGroup = null;
+
+    protected ?int $navigationSort = null;
+
+    /**
+     * @var (Closure(NavigationItem, Dashboard): ?NavigationItem)|null
+     */
+    protected ?Closure $modifyDashboardNavigationItemUsing = null;
+
+    /**
+     * @var array{cellHeight: int, margin: int, stackBelow: int}
+     */
+    protected array $gridOptions = ['cellHeight' => 40, 'margin' => 8, 'stackBelow' => 1024];
 
     /**
      * @var (Closure(string): string)|null
@@ -852,6 +868,63 @@ final class FilamentDashboardsPlugin implements Plugin
     public function modifyChartOptions(array $options, string $type): array
     {
         return $this->modifyChartOptionsUsing === null ? $options : ($this->modifyChartOptionsUsing)($options, $type);
+    }
+
+    public function navigationGroup(string|UnitEnum|null $group): static
+    {
+        $this->navigationGroup = $group;
+
+        return $this;
+    }
+
+    public function getNavigationGroup(): string|UnitEnum|null
+    {
+        return $this->navigationGroup;
+    }
+
+    public function navigationSort(?int $sort): static
+    {
+        $this->navigationSort = $sort;
+
+        return $this;
+    }
+
+    public function getNavigationSort(): ?int
+    {
+        return $this->navigationSort;
+    }
+
+    /**
+     * @param  (Closure(NavigationItem, Dashboard): ?NavigationItem)|null  $callback
+     */
+    public function modifyDashboardNavigationItemUsing(?Closure $callback): static
+    {
+        $this->modifyDashboardNavigationItemUsing = $callback;
+
+        return $this;
+    }
+
+    public function modifyDashboardNavigationItem(NavigationItem $item, Dashboard $dashboard): ?NavigationItem
+    {
+        return $this->modifyDashboardNavigationItemUsing === null ? $item : ($this->modifyDashboardNavigationItemUsing)($item, $dashboard);
+    }
+
+    /**
+     * @param  array{cellHeight?: int, margin?: int, stackBelow?: int}  $options
+     */
+    public function gridOptions(array $options): static
+    {
+        $this->gridOptions = [...$this->gridOptions, ...$options];
+
+        return $this;
+    }
+
+    /**
+     * @return array{cellHeight: int, margin: int, stackBelow: int}
+     */
+    public function getGridOptions(): array
+    {
+        return $this->gridOptions;
     }
 
     public function widgetVersionsToKeep(int $count): static

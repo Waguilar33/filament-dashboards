@@ -40,6 +40,18 @@ class BuilderWidgetResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return FilamentDashboardsPlugin::get()->getNavigationGroup() ?? parent::getNavigationGroup();
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        $sort = FilamentDashboardsPlugin::get()->getNavigationSort();
+
+        return $sort === null ? parent::getNavigationSort() : $sort + 1;
+    }
+
     public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
     {
         return FilamentDashboardsIcon::get(FilamentDashboardsIcon::NAVIGATION_WIDGETS);

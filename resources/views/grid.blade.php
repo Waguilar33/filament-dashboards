@@ -9,7 +9,7 @@
     wire:target="filters"
     x-load
     x-load-src="{{ FilamentAsset::getAlpineComponentSrc('dashboard-grid', 'waguilar33/filament-dashboards') }}"
-    x-data="dashboardGrid({ editable: @js($editable), printing: @js($printing) })"
+    x-data="dashboardGrid({ editable: @js($editable), printing: @js($printing), options: @js(\Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->getGridOptions()) })"
     class="fi-dashboards-grid"
     data-editable="{{ $editable ? 'true' : 'false' }}"
 >

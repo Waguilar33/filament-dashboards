@@ -232,14 +232,12 @@
     display: none;
 }
 
-@media (width < 1024px) {
-    .fi-dashboards-narrow-notice {
-        display: inline;
-    }
+.fi-main:has(.fi-dashboards-grid[data-narrow]) .fi-dashboards-narrow-notice {
+    display: inline;
+}
 
-    .fi-dashboards-stat-resize {
-        display: none;
-    }
+.fi-dashboards-grid[data-narrow] .fi-dashboards-stat-resize {
+    display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -4,7 +4,7 @@ const COLUMNS = 12
 
 const SPAN_VARIABLES = ['--col-span-csm', '--col-span-ncmd', '--col-span-cxl', '--col-span-nclg']
 
-export default function dashboardGrid({ editable, printing }) {
+export default function dashboardGrid({ editable, printing, options }) {
     return {
         grid: null,
 
@@ -14,15 +14,15 @@ export default function dashboardGrid({ editable, printing }) {
             this.grid = GridStack.init(
                 {
                     column: COLUMNS,
-                    cellHeight: 40,
-                    margin: 8,
+                    cellHeight: options.cellHeight,
+                    margin: options.margin,
                     float: false,
                     animate: true,
                     sizeToContent: true,
                     staticGrid: !editable,
                     draggable: { cancel: 'input,textarea,button,select,option,a,.fi-dashboards-item-actions,.fi-dashboards-stat-resize' },
                     resizable: { handles: 'e, w', autoHide: false },
-                    columnOpts: { breakpointForWindow: true, breakpoints: [{ w: 1024, c: 1 }] },
+                    columnOpts: { breakpointForWindow: true, breakpoints: [{ w: options.stackBelow, c: 1 }] },
                 },
                 this.$refs.grid,
             )
@@ -37,8 +37,11 @@ export default function dashboardGrid({ editable, printing }) {
             this.grid.on('dragstop resizestop', () => setTimeout(() => this.save()))
 
             if (editable) {
-                this.wide = window.matchMedia('(min-width: 1024px)')
-                this.lockWhenNarrow = () => this.grid.setStatic(!this.wide.matches)
+                this.wide = window.matchMedia(`(min-width: ${options.stackBelow}px)`)
+                this.lockWhenNarrow = () => {
+                    this.grid.setStatic(!this.wide.matches)
+                    this.$root.toggleAttribute('data-narrow', !this.wide.matches)
+                }
                 this.wide.addEventListener('change', this.lockWhenNarrow)
                 this.lockWhenNarrow()
             }
