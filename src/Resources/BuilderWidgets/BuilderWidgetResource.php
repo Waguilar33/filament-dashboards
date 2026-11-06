@@ -115,7 +115,7 @@ class BuilderWidgetResource extends Resource
      */
     protected static function recordActions(): array
     {
-        return [
+        return array_map(fn (Action $action): Action => FilamentDashboardsPlugin::get()->modifyAction($action, "widgets.{$action->getName()}"), [
             'edit' => Action::make('edit')
                 ->label(__('filament-dashboards::dashboards.actions.edit'))
                 ->icon(Heroicon::OutlinedPencilSquare)
@@ -142,7 +142,7 @@ class BuilderWidgetResource extends Resource
             'share' => FilamentDashboardsPlugin::get()->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
             'history' => WidgetHistoryAction::make(),
             'delete' => DeleteAction::make()->icon(Heroicon::OutlinedTrash),
-        ];
+        ]);
     }
 
     public static function getPages(): array

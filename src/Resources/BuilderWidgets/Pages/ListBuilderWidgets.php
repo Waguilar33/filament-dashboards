@@ -9,6 +9,7 @@ use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Arr;
 use Waguilar\FilamentDashboards\Filament\Actions\BuildWidgetAction;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 
@@ -18,15 +19,15 @@ class ListBuilderWidgets extends ListRecords
 
     public function buildWidgetAction(): Action
     {
-        return BuildWidgetAction::make()
+        return FilamentDashboardsPlugin::get()->modifyAction(BuildWidgetAction::make()
             ->visible(BuilderWidgetResource::canCreate())
-            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.create'));
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.create')), 'widgets.buildWidget');
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('create')
+            FilamentDashboardsPlugin::get()->modifyAction(Action::make('create')
                 ->label(__('filament-dashboards::dashboards.actions.create'))
                 ->visible(BuilderWidgetResource::canCreate())
                 ->slideOver()
@@ -39,7 +40,7 @@ class ListBuilderWidgets extends ListRecords
                         ->required()
                         ->sections([BuildWidgetAction::pickerSection()]),
                 ])
-                ->action(fn (array $data) => $this->replaceMountedAction('buildWidget', ['type' => Arr::string($data, 'type')])),
+                ->action(fn (array $data) => $this->replaceMountedAction('buildWidget', ['type' => Arr::string($data, 'type')])), 'widgets.create'),
         ];
     }
 }

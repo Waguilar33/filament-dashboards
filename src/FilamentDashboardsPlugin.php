@@ -138,6 +138,11 @@ final class FilamentDashboardsPlugin implements Plugin
      */
     protected ?Closure $modifyAddWidgetActionUsing = null;
 
+    /**
+     * @var (Closure(Action, string): Action)|null
+     */
+    protected ?Closure $modifyActionUsing = null;
+
     public static function make(): static
     {
         return app(self::class);
@@ -466,6 +471,32 @@ final class FilamentDashboardsPlugin implements Plugin
     public function modifyAddWidgetAction(Action $action): Action
     {
         return $this->modifyAddWidgetActionUsing === null ? $action : ($this->modifyAddWidgetActionUsing)($action);
+    }
+
+    /**
+     * @param  (Closure(Action, string): Action)|null  $callback
+     */
+    public function modifyActionUsing(?Closure $callback): static
+    {
+        $this->modifyActionUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @template TAction of Action
+     *
+     * @param  TAction  $action
+     * @return TAction
+     */
+    public function modifyAction(Action $action, string $name): Action
+    {
+        if ($this->modifyActionUsing === null) {
+            return $action;
+        }
+
+        /** @var TAction */
+        return ($this->modifyActionUsing)($action, $name);
     }
 
     /**

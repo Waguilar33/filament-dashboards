@@ -268,6 +268,16 @@ FilamentDashboardsPlugin::make()
     ->modifyAddWidgetActionUsing(fn (Action $action): Action => $action);
 ```
 
+Every other action the plugin builds passes through one hook with its name, after the specific hooks above: `dashboard.*` on the dashboard page (`edit`, `share`, `settings`, `emailMe`, `alerts`, `print`, `duplicate`, `setAsHome`, `removeHome`, `delete`, `doneEditing`, `addWidget`, `buildWidget`, `editWidget`, `widgetHistory`, `duplicateItem`, `removeItem`), `dashboards.*` on the Dashboards list (`create` and the row actions), `widgets.*` on the Widgets list (`create`, `buildWidget`, `edit`, `duplicate`, `share`, `history`, `delete`), `home.openHome`, and `widget.export` / `widget.drillDown` inside widgets:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->modifyActionUsing(fn (Action $action, string $name): Action => match ($name) {
+        'dashboard.print' => $action->label('Imprimir'),
+        default => $action,
+    });
+```
+
 The dashboard page's header shows Edit and Share, and a menu with Settings, Duplicate, Set as home (or Remove as home) and Delete. Rearrange, regroup or drop them; the hook receives the built actions keyed by `edit`, `share`, `settings`, `duplicate`, `setAsHome`, `removeHome` and `delete`, and returns the header:
 
 ```php

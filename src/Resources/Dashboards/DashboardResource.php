@@ -120,7 +120,7 @@ class DashboardResource extends Resource
     {
         $plugin = FilamentDashboardsPlugin::get();
 
-        return [
+        return array_map(fn (Action $action): Action => $plugin->modifyAction($action, "dashboards.{$action->getName()}"), [
             'setAsHome' => SetHomeAction::make(),
             'removeHome' => RemoveHomeAction::make(),
             'share' => $plugin->modifyShareAction(ShareAction::make()->icon(Heroicon::OutlinedShare)),
@@ -129,7 +129,7 @@ class DashboardResource extends Resource
             'delete' => DeleteAction::make()
                 ->icon(Heroicon::OutlinedTrash)
                 ->visible(fn (Dashboard $record): bool => $record->canBeDeletedBy(self::user())),
-        ];
+        ]);
     }
 
     public static function getPages(): array

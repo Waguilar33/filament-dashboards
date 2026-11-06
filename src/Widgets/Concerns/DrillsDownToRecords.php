@@ -15,6 +15,7 @@ use Waguilar\FilamentDashboards\Builder\Actions\FetchRows;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\FieldType;
 use Waguilar\FilamentDashboards\Builder\Field;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 
 trait DrillsDownToRecords
 {
@@ -28,7 +29,7 @@ trait DrillsDownToRecords
 
     public function drillDownAction(): Action
     {
-        return Action::make('drillDown')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('drillDown')
             ->slideOver()
             ->modalWidth(Width::FourExtraLarge)
             ->modalHeading(fn (array $arguments): string => $this->drillDownTarget($arguments)['title'] ?? '')
@@ -53,7 +54,7 @@ trait DrillsDownToRecords
                             ->alignment($field->type === FieldType::Number ? Alignment::End : Alignment::Start)
                             ->formatStateUsing(fn (mixed $state): mixed => is_int($state) || is_float($state) ? ($field->format($state) ?? $this->formatNumber($state)) : $state), $fields)),
                 ];
-            });
+            }), 'widget.drillDown');
     }
 
     public function canDrillDown(mixed $source): bool

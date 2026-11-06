@@ -19,7 +19,7 @@ class ListDashboards extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            FilamentDashboardsPlugin::get()->modifyCreateDashboardAction(CreateAction::make()
+            FilamentDashboardsPlugin::get()->modifyAction(FilamentDashboardsPlugin::get()->modifyCreateDashboardAction(CreateAction::make()
                 ->slideOver()
                 ->modalWidth(Width::Medium)
                 ->mutateDataUsing(fn (array $data): array => [
@@ -30,7 +30,7 @@ class ListDashboards extends ListRecords
                     'tenant_type' => Filament::getTenant()?->getMorphClass(),
                     'tenant_id' => Filament::getTenant()?->getKey(),
                 ])
-                ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record]))),
+                ->successRedirectUrl(fn (Dashboard $record): string => DashboardResource::getUrl('view', ['record' => $record]))), 'dashboards.create'),
         ];
     }
 }

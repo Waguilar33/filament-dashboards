@@ -11,17 +11,18 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 
 trait ExportsCsv
 {
     protected function exportAction(): Action
     {
-        return Action::make('export')
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('export')
             ->label(__('filament-dashboards::dashboards.actions.export'))
             ->icon(Heroicon::OutlinedArrowDownTray)
             ->color('gray')
             ->size('sm')
-            ->action(fn (): StreamedResponse => $this->exportCsv());
+            ->action(fn (): StreamedResponse => $this->exportCsv()), 'widget.export');
     }
 
     protected function exportCsv(): StreamedResponse
