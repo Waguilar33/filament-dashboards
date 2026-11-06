@@ -114,7 +114,7 @@ class EvaluateStatsCards
 
         if ($range !== null && (bool) ($card['compare'] ?? false)) {
             $current = $range->upTo(CarbonImmutable::now($range->end->getTimezone()));
-            $previous = $calculate($current->previous($period));
+            $previous = $calculate(FilamentDashboardsPlugin::get()->getDatePeriod($period)?->previous($current) ?? $current->previous());
             $currentValue = $current->end->equalTo($range->end) ? $value : $calculate($current);
 
             if ($previous == 0 && $currentValue != 0) {

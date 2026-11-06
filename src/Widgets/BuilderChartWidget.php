@@ -88,15 +88,20 @@ class BuilderChartWidget extends ChartWidget
     protected function trend(array $config, DataSource $source, Metric $metric, string $label): array
     {
         $dates = app(ResolveDateRange::class)->handle($this->pageFilters);
-        $days = (int) $dates->start->diffInDays($dates->end) + 1;
         $today = CarbonImmutable::now(FilamentDashboardsPlugin::get()->getTimezone());
 
-        [$from, $to, $grouping] = match ($this->configString($config, 'period') ?? '12m') {
-            'dashboard' => [$dates->start, $dates->end, match (true) {
-                $days <= 31 => TimeGrouping::Day,
-                $days <= 180 => TimeGrouping::Week,
-                default => TimeGrouping::Month,
-            }],
+        $period = $this->configString($config, 'period') ?? '12m';
+        $registered = in_array($period, ['dashboard', '7d', '30d', '90d', '12m', 'ytd'], true) ? null : FilamentDashboardsPlugin::get()->getDatePeriod($period)?->range($today);
+        $span = $registered ?? $dates;
+        $spanDays = (int) $span->start->diffInDays($span->end) + 1;
+        $byLength = match (true) {
+            $spanDays <= 31 => TimeGrouping::Day,
+            $spanDays <= 180 => TimeGrouping::Week,
+            default => TimeGrouping::Month,
+        };
+
+        [$from, $to, $grouping] = $registered !== null ? [$registered->start, $registered->end, $byLength] : match ($period) {
+            'dashboard' => [$dates->start, $dates->end, $byLength],
             '7d' => [$today->subDays(6)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
             '30d' => [$today->subDays(29)->startOfDay(), $today->endOfDay(), TimeGrouping::Day],
             '90d' => [$today->subDays(89)->startOfDay(), $today->endOfDay(), TimeGrouping::Week],

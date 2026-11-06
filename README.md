@@ -177,13 +177,22 @@ class SalesByCategory extends TableWidget implements DashboardWidget
 }
 ```
 
-`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. Builder widgets follow the dates too: pick a *Dashboard date field* (stats cards, tables, breakdown and scatter charts), or the *Dashboard dates* period on line and bar charts, which then span the chosen range. Without it they ignore the bar. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters`: `preset` is a number of days or `custom`, and `startDate` and `endDate` are set only for `custom`. Change the presets, the default and the time zone:
+`dateRange()` returns whole days in the app's time zone (`start` at 00:00:00, `end` at 23:59:59, both `CarbonImmutable`); on a page without the date bar it returns the default preset. Builder widgets follow the dates too: pick a *Dashboard date field* (stats cards, tables, breakdown and scatter charts), or the *Dashboard dates* period on line and bar charts, which then span the chosen range. Without it they ignore the bar. A widget may use Filament's `InteractsWithPageFilters` directly and read `$this->pageFilters`: `preset` is a number of days, a period key or `custom`, and `startDate` and `endDate` are set only for `custom`. Change the presets, the default and the time zone:
 
 ```php
 FilamentDashboardsPlugin::make()
     ->datePresets([1, 7, 30, 365])
     ->defaultDatePreset(7)
     ->timezoneUsing(fn (): string => auth()->user()->timezone);
+```
+
+Named periods (today, this week, this month, last month, this quarter, this year, last 30 days) are offered on stats cards and line and bar charts, and can be date bar presets next to day counts. Add your own, such as a fiscal year, by extending `DatePeriod` (key, label, `range($now)` and, for calendar periods, `previous($range)` used by comparisons). Weeks start on Monday unless you choose another day:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->datePeriods([FiscalYear::class])
+    ->datePresets([1, 30, 'month', 'fiscal'])
+    ->weekStartsOn(CarbonInterface::SUNDAY);
 ```
 
 ## Coded table widgets

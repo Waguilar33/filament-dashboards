@@ -226,6 +226,8 @@ return [
             'month' => 'This month',
             'year' => 'This year',
             '30d' => 'Last 30 days',
+            'last_month' => 'Last month',
+            'quarter' => 'This quarter',
         ],
         'periods' => [
             'dashboard' => 'Dashboard dates',

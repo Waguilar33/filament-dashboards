@@ -29,6 +29,14 @@ use Illuminate\Support\Facades\Gate;
 use LogicException;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
+use Waguilar\FilamentDashboards\Dates\DatePeriod;
+use Waguilar\FilamentDashboards\Dates\Periods\LastMonth;
+use Waguilar\FilamentDashboards\Dates\Periods\LastThirtyDays;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisMonth;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisQuarter;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisWeek;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisYear;
+use Waguilar\FilamentDashboards\Dates\Periods\Today;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterTenantDashboardNavigation;
@@ -86,11 +94,18 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $modifyWidgetsTableUsing = null;
 
     /**
-     * @var list<int>
+     * @var list<int|string>
      */
     protected array $datePresets = [1, 15, 30, 60, 90];
 
-    protected int $defaultDatePreset = 30;
+    protected int|string $defaultDatePreset = 30;
+
+    /**
+     * @var list<class-string<DatePeriod>|DatePeriod>
+     */
+    protected array $datePeriods = [Today::class, ThisWeek::class, ThisMonth::class, LastMonth::class, ThisQuarter::class, ThisYear::class, LastThirtyDays::class];
+
+    protected int $weekStart = CarbonInterface::MONDAY;
 
     /**
      * @var (Closure(): string)|null
@@ -559,33 +574,75 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @param  list<int>  $days
+     * @param  list<int|string>  $presets
      */
-    public function datePresets(array $days): static
+    public function datePresets(array $presets): static
     {
-        $this->datePresets = $days;
+        $this->datePresets = $presets;
 
         return $this;
     }
 
     /**
-     * @return list<int>
+     * @return list<int|string>
      */
     public function getDatePresets(): array
     {
-        return $this->datePresets;
+        return array_values(array_filter($this->datePresets, fn (int|string $preset): bool => is_int($preset) || $this->getDatePeriod($preset) !== null));
     }
 
-    public function defaultDatePreset(int $days): static
+    public function defaultDatePreset(int|string $preset): static
     {
-        $this->defaultDatePreset = $days;
+        $this->defaultDatePreset = $preset;
 
         return $this;
     }
 
-    public function getDefaultDatePreset(): int
+    public function getDefaultDatePreset(): int|string
     {
         return $this->defaultDatePreset;
+    }
+
+    /**
+     * @param  list<class-string<DatePeriod>|DatePeriod>  $periods
+     */
+    public function datePeriods(array $periods): static
+    {
+        $this->datePeriods = [...$this->datePeriods, ...$periods];
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, DatePeriod>
+     */
+    public function getDatePeriods(): array
+    {
+        $periods = [];
+
+        foreach ($this->datePeriods as $period) {
+            $period = $period instanceof DatePeriod ? $period : new $period;
+            $periods[$period->key()] = $period;
+        }
+
+        return $periods;
+    }
+
+    public function getDatePeriod(string $key): ?DatePeriod
+    {
+        return $this->getDatePeriods()[$key] ?? null;
+    }
+
+    public function weekStartsOn(int $day): static
+    {
+        $this->weekStart = $day;
+
+        return $this;
+    }
+
+    public function getWeekStart(): int
+    {
+        return $this->weekStart;
     }
 
     /**

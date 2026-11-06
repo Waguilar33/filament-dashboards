@@ -27,7 +27,7 @@ enum TimeGrouping: string implements HasLabel
 
         return match ($this) {
             self::Day => $date->startOfDay(),
-            self::Week => $date->startOfWeek(CarbonInterface::MONDAY),
+            self::Week => $date->startOfWeek(FilamentDashboardsPlugin::get()->getWeekStart()),
             self::Month => $date->startOfMonth(),
             self::Year => $date->startOfYear(),
         };

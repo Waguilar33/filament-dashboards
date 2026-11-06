@@ -150,7 +150,7 @@ class BuilderWidgetForm
                         self::datesField(),
                         Select::make('period')
                             ->label(__(self::T.'card_period'))
-                            ->options(fn (): array => __('filament-dashboards::dashboards.builder.card_periods'))
+                            ->options(fn (): array => self::periodOptions(__('filament-dashboards::dashboards.builder.periods.dashboard')))
                             ->default('dashboard')
                             ->selectablePlaceholder(false)
                             ->visible(fn (Get $get): bool => filled($get('dates_field'))),
@@ -174,7 +174,7 @@ class BuilderWidgetForm
                     ...self::metricFields(),
                     Select::make('period')
                         ->label(__(self::T.'period'))
-                        ->options(fn (): array => __('filament-dashboards::dashboards.builder.periods'))
+                        ->options(fn (): array => [...__('filament-dashboards::dashboards.builder.periods'), ...array_diff_key(self::periodOptions(), __('filament-dashboards::dashboards.builder.periods'))])
                         ->default('12m')
                         ->selectablePlaceholder(false)
                         ->live(),
@@ -358,6 +358,20 @@ class BuilderWidgetForm
                 ->required()
                 ->visible(fn (Get $get): bool => self::metric($get('metric'))?->requiresNumberField() ?? false),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected static function periodOptions(?string $dashboardLabel = null): array
+    {
+        $options = $dashboardLabel === null ? [] : ['dashboard' => $dashboardLabel];
+
+        foreach (FilamentDashboardsPlugin::get()->getDatePeriods() as $key => $period) {
+            $options[$key] = $period->label();
+        }
+
+        return $options;
     }
 
     protected static function datesField(): Select

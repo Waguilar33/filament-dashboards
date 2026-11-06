@@ -6,6 +6,7 @@ use Carbon\CarbonImmutable;
 use Filament\Facades\Filament;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Dates\DateRange;
+use Waguilar\FilamentDashboards\Dates\Periods\ThisMonth;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 use Workbench\Database\Factories\DemoOrderFactory;
 
@@ -76,6 +77,6 @@ it('measures the period before a range by its length in days', function (): void
     expect($range->previous()->start->toDateTimeString())->toBe('2026-10-26 00:00:00')
         ->and($range->previous()->end->toDateTimeString())->toBe('2026-10-31 23:59:59')
         ->and($range->upTo(CarbonImmutable::parse('2026-11-03 08:00:00'))->end->toDateTimeString())->toBe('2026-11-03 08:00:00')
-        ->and($range->previous('month')->start->toDateTimeString())->toBe('2026-10-01 00:00:00')
-        ->and((new DateRange(CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-31 12:00:00')))->previous('month')->end->toDateString())->toBe('2026-02-28');
+        ->and((new ThisMonth)->previous($range)->start->toDateTimeString())->toBe('2026-10-01 00:00:00')
+        ->and((new ThisMonth)->previous(new DateRange(CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-31 12:00:00')))->end->toDateString())->toBe('2026-02-28');
 });

@@ -226,6 +226,8 @@ return [
             'month' => 'Este mes',
             'year' => 'Este año',
             '30d' => 'Últimos 30 días',
+            'last_month' => 'Mes anterior',
+            'quarter' => 'Este trimestre',
         ],
         'periods' => [
             'dashboard' => 'Fechas del escritorio',
