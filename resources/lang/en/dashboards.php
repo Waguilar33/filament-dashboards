@@ -61,6 +61,8 @@ return [
         'heading' => 'Edit mode',
     ],
     'actions' => [
+        'email_me' => 'Email me',
+        'alerts' => 'Alerts',
         'close' => 'Close',
         'save_as_copy' => 'Save as my copy',
         'history' => 'History',
@@ -248,7 +250,36 @@ return [
             'system' => 'System',
         ],
     ],
+    'digest' => [
+        'frequency' => 'Send me this dashboard',
+        'off' => 'Never',
+        'description' => 'Its stats cards arrive by email at :hour:00, for the day or week before.',
+        'frequencies' => [
+            'daily' => 'Every morning',
+            'weekly' => 'Every Monday',
+        ],
+        'subject' => ':dashboard · :range',
+        'others' => 'Also on this dashboard: :widgets.',
+        'open' => 'Open dashboard',
+    ],
+    'alerts' => [
+        'description' => 'Get an email when a stats card goes above a number (checked every hour, for today), or ends a day, week or month below one (checked at :hour:00).',
+        'add' => 'Add alert',
+        'card' => 'Card',
+        'when' => 'When',
+        'threshold' => 'Value',
+        'operators' => [
+            'above' => 'Goes above',
+            'below' => 'Ends below',
+        ],
+        'notification' => [
+            'above' => ':card went above your alert',
+            'below' => ':card ended below your alert',
+            'body' => 'On :dashboard it is now :value.',
+        ],
+    ],
     'notifications' => [
+        'saved' => 'Saved.',
         'version_restored' => 'Version restored.',
         'shares_saved' => 'Sharing saved.',
         'home_set' => 'This dashboard is now your home page.',

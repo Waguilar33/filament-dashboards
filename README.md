@@ -336,6 +336,25 @@ Guardian finds dashboard widgets the same way it finds every panel widget. Check
 
 Role sharing switches on whenever the user model has a spatie/laravel-permission `roles()` relationship.
 
+## Emails and alerts
+
+Turn on dashboard emails and stats card alerts, and schedule the command that sends them:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->scheduledNotifications()
+    ->recipientContextUsing(function (Model $user, ?Model $tenant, Closure $next): mixed {
+        // Set anything your data sources need for this person and company, such as a team id, then run $next().
+        return $next();
+    });
+```
+
+```php
+Schedule::command('dashboards:notify')->hourly();
+```
+
+Anyone who can open a dashboard can then choose *Email me* (every morning or every Monday, from 7:00 in the dashboard time zone) and set *Alerts* on its stats cards. Each email and alert is computed as its recipient, in their panel, company and language. Publish and run the new migrations after updating the plugin.
+
 ## Tenancy
 
 On a panel with tenancy, dashboards, shares and home pages belong to the current tenant; system dashboards are shared by every tenant.

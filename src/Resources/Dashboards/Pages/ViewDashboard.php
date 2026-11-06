@@ -8,6 +8,10 @@ use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Section;
@@ -27,6 +31,10 @@ use Waguilar\FilamentDashboards\Actions\DuplicateDashboardItem;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveCardWidths;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
+use Waguilar\FilamentDashboards\Commands\SendDashboardNotificationsCommand;
+use Waguilar\FilamentDashboards\Enums\AlertOperator;
+use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\Enums\DigestFrequency;
 use Waguilar\FilamentDashboards\Filament\Actions\BuildWidgetAction;
 use Waguilar\FilamentDashboards\Filament\Actions\DashboardSettingsAction;
 use Waguilar\FilamentDashboards\Filament\Actions\DuplicateDashboardAction;
@@ -38,7 +46,9 @@ use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Forms\WidgetPicker;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Models\DashboardAlert;
 use Waguilar\FilamentDashboards\Models\DashboardItem;
+use Waguilar\FilamentDashboards\Models\DashboardSubscription;
 use Waguilar\FilamentDashboards\Pages\Concerns\HasDashboardDates;
 use Waguilar\FilamentDashboards\Pages\Concerns\RendersDashboard;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
@@ -194,6 +204,8 @@ class ViewDashboard extends Page
             'edit' => $this->editLayoutAction(),
             'share' => $this->shareAction(),
             'settings' => $this->settingsAction(),
+            'emailMe' => $this->emailMeAction(),
+            'alerts' => $this->alertsAction(),
             'print' => Action::make('print')
                 ->label(__('filament-dashboards::dashboards.actions.print'))
                 ->icon(Heroicon::OutlinedPrinter)
@@ -330,6 +342,152 @@ class ViewDashboard extends Page
 
                 $this->reloadDashboard();
             });
+    }
+
+    protected function emailMeAction(): Action
+    {
+        $find = fn (): ?DashboardSubscription => DashboardSubscription::query()
+            ->where('panel', $this->getDashboard()->panel)
+            ->where('dashboard_id', $this->getDashboard()->getKey())
+            ->whereMorphedTo('user', DashboardResource::user())
+            ->where('tenant_type', Filament::getTenant()?->getMorphClass())
+            ->where('tenant_id', Filament::getTenant()?->getKey())
+            ->first();
+
+        return Action::make('emailMe')
+            ->label(__('filament-dashboards::dashboards.actions.email_me'))
+            ->icon(Heroicon::OutlinedEnvelope)
+            ->visible(FilamentDashboardsPlugin::get()->hasScheduledNotifications())
+            ->modalWidth(Width::Medium)
+            ->modalDescription(__('filament-dashboards::dashboards.digest.description', ['hour' => SendDashboardNotificationsCommand::SEND_HOUR]))
+            ->fillForm(fn (): array => ['frequency' => $find()?->frequency->value])
+            ->schema([
+                Select::make('frequency')
+                    ->label(__('filament-dashboards::dashboards.digest.frequency'))
+                    ->placeholder(__('filament-dashboards::dashboards.digest.off'))
+                    ->options(collect(DigestFrequency::cases())->mapWithKeys(fn (DigestFrequency $frequency): array => [$frequency->value => $frequency->getLabel()])->all()),
+            ])
+            ->action(function (array $data) use ($find): void {
+                $frequency = DigestFrequency::tryFrom(is_string($data['frequency'] ?? null) ? $data['frequency'] : '');
+                $subscription = $find();
+
+                if ($frequency === null) {
+                    $subscription?->delete();
+
+                    return;
+                }
+
+                $subscription ??= new DashboardSubscription([
+                    'panel' => $this->getDashboard()->panel,
+                    'dashboard_id' => $this->getDashboard()->getKey(),
+                ]);
+                $subscription->user()->associate(DashboardResource::user());
+                $subscription->tenant()->associate(Filament::getTenant());
+                $subscription->frequency = $frequency;
+                $subscription->save();
+            })
+            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.saved'));
+    }
+
+    protected function alertsAction(): Action
+    {
+        $mine = fn (): Builder => DashboardAlert::query()
+            ->where('dashboard_id', $this->getDashboard()->getKey())
+            ->whereMorphedTo('user', DashboardResource::user())
+            ->where('tenant_type', Filament::getTenant()?->getMorphClass())
+            ->where('tenant_id', Filament::getTenant()?->getKey());
+
+        return Action::make('alerts')
+            ->label(__('filament-dashboards::dashboards.actions.alerts'))
+            ->icon(Heroicon::OutlinedBellAlert)
+            ->visible(FilamentDashboardsPlugin::get()->hasScheduledNotifications())
+            ->slideOver()
+            ->modalWidth(Width::TwoExtraLarge)
+            ->modalDescription(__('filament-dashboards::dashboards.alerts.description', ['hour' => SendDashboardNotificationsCommand::SEND_HOUR]))
+            ->fillForm(fn (): array => ['alerts' => $mine()->get()->map(fn (DashboardAlert $alert): array => [
+                'card' => "{$alert->builder_widget_id}:{$alert->card_key}",
+                'operator' => $alert->operator->value,
+                'threshold' => $alert->threshold,
+            ])->all()])
+            ->schema(fn (): array => [
+                Repeater::make('alerts')
+                    ->hiddenLabel()
+                    ->defaultItems(0)
+                    ->reorderable(false)
+                    ->compact()
+                    ->addActionLabel(__('filament-dashboards::dashboards.alerts.add'))
+                    ->table([
+                        TableColumn::make(__('filament-dashboards::dashboards.alerts.card'))->markAsRequired()->alignStart(),
+                        TableColumn::make(__('filament-dashboards::dashboards.alerts.when'))->markAsRequired()->alignStart(),
+                        TableColumn::make(__('filament-dashboards::dashboards.alerts.threshold'))->markAsRequired()->alignStart(),
+                    ])
+                    ->schema([
+                        Select::make('card')->options($this->alertableCards())->required(),
+                        Select::make('operator')
+                            ->options(collect(AlertOperator::cases())->mapWithKeys(fn (AlertOperator $operator): array => [$operator->value => $operator->getLabel()])->all())
+                            ->default(AlertOperator::Above->value)
+                            ->selectablePlaceholder(false)
+                            ->required(),
+                        TextInput::make('threshold')->numeric()->required(),
+                    ]),
+            ])
+            ->action(function (array $data) use ($mine): void {
+                $cards = $this->alertableCards();
+                $mine()->delete();
+
+                foreach (Arr::array($data, 'alerts') as $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+
+                    $card = is_string($row['card'] ?? null) ? $row['card'] : '';
+                    $operator = AlertOperator::tryFrom(is_string($row['operator'] ?? null) ? $row['operator'] : '');
+                    $threshold = $row['threshold'] ?? null;
+
+                    if (! array_key_exists($card, $cards) || $operator === null || ! is_numeric($threshold)) {
+                        continue;
+                    }
+
+                    [$widget, $key] = explode(':', $card, 2);
+                    $alert = new DashboardAlert([
+                        'panel' => $this->getDashboard()->panel,
+                        'dashboard_id' => $this->getDashboard()->getKey(),
+                        'builder_widget_id' => (int) $widget,
+                        'card_key' => $key,
+                        'operator' => $operator,
+                        'threshold' => $threshold + 0,
+                    ]);
+                    $alert->user()->associate(DashboardResource::user());
+                    $alert->tenant()->associate(Filament::getTenant());
+                    $alert->save();
+                }
+            })
+            ->successNotificationTitle(__('filament-dashboards::dashboards.notifications.saved'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function alertableCards(): array
+    {
+        $options = [];
+        $widgets = BuilderWidget::query()
+            ->inScope($this->getDashboard()->panel, Filament::getTenant())
+            ->visibleTo(DashboardResource::user())
+            ->where('type', BuilderWidgetType::Stats)
+            ->whereIn('id', $this->getDashboard()->items()->whereNotNull('builder_widget_id')->select('builder_widget_id'))
+            ->get();
+
+        foreach ($widgets as $widget) {
+            foreach (is_array($widget->config['cards'] ?? null) ? $widget->config['cards'] : [] as $card) {
+                if (is_array($card) && is_string($card['key'] ?? null) && filled($card['key'])) {
+                    $label = is_string($card['label'] ?? null) && filled($card['label']) ? $card['label'] : (is_string($card['source'] ?? null) ? $card['source'] : '');
+                    $options["{$widget->id}:{$card['key']}"] = "{$widget->name} · {$label}";
+                }
+            }
+        }
+
+        return $options;
     }
 
     public function widgetHistoryAction(): Action

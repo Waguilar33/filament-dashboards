@@ -53,6 +53,7 @@ class BuilderWidget extends Model
         static::deleting(function (self $widget): void {
             $widget->placements()->delete();
             $widget->versions()->delete();
+            DashboardAlert::query()->where('builder_widget_id', $widget->getKey())->delete();
         });
     }
 

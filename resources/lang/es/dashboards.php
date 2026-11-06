@@ -61,6 +61,8 @@ return [
         'heading' => 'Modo edición',
     ],
     'actions' => [
+        'email_me' => 'Enviarme por correo',
+        'alerts' => 'Alertas',
         'close' => 'Cerrar',
         'save_as_copy' => 'Guardar como mi copia',
         'history' => 'Historial',
@@ -248,7 +250,36 @@ return [
             'system' => 'Del sistema',
         ],
     ],
+    'digest' => [
+        'frequency' => 'Enviarme este escritorio',
+        'off' => 'Nunca',
+        'description' => 'Sus tarjetas de cifras llegan por correo a las :hour:00, del día o la semana anterior.',
+        'frequencies' => [
+            'daily' => 'Cada mañana',
+            'weekly' => 'Cada lunes',
+        ],
+        'subject' => ':dashboard · :range',
+        'others' => 'También en este escritorio: :widgets.',
+        'open' => 'Abrir escritorio',
+    ],
+    'alerts' => [
+        'description' => 'Recibe un correo cuando una tarjeta de cifras pase de un número (se revisa cada hora, para hoy) o cierre un día, semana o mes por debajo de uno (se revisa a las :hour:00).',
+        'add' => 'Agregar alerta',
+        'card' => 'Tarjeta',
+        'when' => 'Cuándo',
+        'threshold' => 'Valor',
+        'operators' => [
+            'above' => 'Pasa de',
+            'below' => 'Cierra por debajo de',
+        ],
+        'notification' => [
+            'above' => ':card pasó de tu alerta',
+            'below' => ':card cerró por debajo de tu alerta',
+            'body' => 'En :dashboard ahora es :value.',
+        ],
+    ],
     'notifications' => [
+        'saved' => 'Guardado.',
         'version_restored' => 'Versión restaurada.',
         'shares_saved' => 'Se guardó el acceso compartido.',
         'home_set' => 'Este escritorio ahora es tu página de inicio.',

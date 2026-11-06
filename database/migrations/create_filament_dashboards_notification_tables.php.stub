@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $morphs = fn (Blueprint $table, string $name, string $keys, bool $nullable = false) => $table->{match (config("filament-dashboards.key_types.{$keys}")) {
+            'int' => $nullable ? 'nullableNumericMorphs' : 'numericMorphs',
+            'uuid' => $nullable ? 'nullableUuidMorphs' : 'uuidMorphs',
+            'ulid' => $nullable ? 'nullableUlidMorphs' : 'ulidMorphs',
+            default => $nullable ? 'nullableMorphs' : 'morphs',
+        }}($name);
+
+        Schema::create(config('filament-dashboards.tables.subscriptions', 'custom_dashboard_subscriptions'), function (Blueprint $table) use ($morphs): void {
+            $table->id();
+            $table->string('panel');
+            $morphs($table, 'tenant', 'tenants', nullable: true);
+            $table->unsignedBigInteger('dashboard_id')->index();
+            $morphs($table, 'user', 'users');
+            $table->string('frequency');
+            $table->timestamp('last_sent_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create(config('filament-dashboards.tables.alerts', 'custom_dashboard_alerts'), function (Blueprint $table) use ($morphs): void {
+            $table->id();
+            $table->string('panel');
+            $morphs($table, 'tenant', 'tenants', nullable: true);
+            $table->unsignedBigInteger('dashboard_id')->index();
+            $table->unsignedBigInteger('builder_widget_id')->index();
+            $table->string('card_key');
+            $morphs($table, 'user', 'users');
+            $table->string('operator');
+            $table->decimal('threshold', 20, 4);
+            $table->boolean('triggered')->default(false);
+            $table->string('last_period')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists(config('filament-dashboards.tables.alerts', 'custom_dashboard_alerts'));
+        Schema::dropIfExists(config('filament-dashboards.tables.subscriptions', 'custom_dashboard_subscriptions'));
+    }
+};

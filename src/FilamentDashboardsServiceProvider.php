@@ -10,6 +10,7 @@ use Filament\Support\Facades\FilamentAsset;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Waguilar\FilamentDashboards\Commands\SendDashboardNotificationsCommand;
 use Waguilar\FilamentDashboards\Commands\SyncDashboardsCommand;
 
 final class FilamentDashboardsServiceProvider extends PackageServiceProvider
@@ -25,8 +26,8 @@ final class FilamentDashboardsServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews(self::NAME)
             ->hasTranslations()
-            ->hasMigrations(['create_filament_dashboards_tables', 'link_filament_dashboards_items_to_widgets', 'create_filament_dashboards_widget_versions_table'])
-            ->hasCommand(SyncDashboardsCommand::class)
+            ->hasMigrations(['create_filament_dashboards_tables', 'link_filament_dashboards_items_to_widgets', 'create_filament_dashboards_widget_versions_table', 'create_filament_dashboards_notification_tables'])
+            ->hasCommands([SyncDashboardsCommand::class, SendDashboardNotificationsCommand::class])
             ->hasInstallCommand(fn (InstallCommand $command): InstallCommand => $command
                 ->publishConfigFile()
                 ->publishMigrations()

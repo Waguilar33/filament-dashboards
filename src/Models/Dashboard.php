@@ -67,6 +67,14 @@ class Dashboard extends Model
         return $this->hasMany(DashboardItem::class);
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $dashboard): void {
+            DashboardSubscription::query()->where('dashboard_id', $dashboard->getKey())->delete();
+            DashboardAlert::query()->where('dashboard_id', $dashboard->getKey())->delete();
+        });
+    }
+
     /**
      * @return Attribute<string, never>
      */

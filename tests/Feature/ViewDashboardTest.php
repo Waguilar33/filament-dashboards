@@ -339,7 +339,7 @@ it('lays out the header as edit, share and a menu by default, without add widget
     expect(headerLayout($actions))->toBe([
         'edit:primary:no-icon',
         'share:gray:no-icon',
-        ['settings:icon', 'print:icon', 'duplicate:icon', 'setAsHome:icon', 'removeHome:icon', 'delete:icon'],
+        ['settings:icon', 'emailMe:icon', 'alerts:icon', 'print:icon', 'duplicate:icon', 'setAsHome:icon', 'removeHome:icon', 'delete:icon'],
     ]);
 });
 
