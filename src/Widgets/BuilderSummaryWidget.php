@@ -58,6 +58,7 @@ class BuilderSummaryWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(fn (): array => $source === null || $metrics === [] ? [] : $this->rows($config, $source, $metrics))
             ->columns($columns)
             ->paginated(false)
@@ -111,6 +112,8 @@ class BuilderSummaryWidget extends TableWidget
                 $this->dashboardDates($config),
             );
         } catch (InvalidArgumentException) {
+            $this->needsAttention = true;
+
             return [];
         }
 

@@ -38,6 +38,13 @@ trait InteractsWithBuilderWidget
 
     protected ?BuilderWidget $resolvedBuilderWidget = null;
 
+    protected bool $needsAttention = false;
+
+    protected function needsAttentionText(): string
+    {
+        return __('filament-dashboards::builder.needs_attention');
+    }
+
     protected function builderWidget(): ?BuilderWidget
     {
         if ($this->builderWidgetId === null) {

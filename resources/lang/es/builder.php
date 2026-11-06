@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+    'needs_attention' => 'Requiere atención: un campo o filtro de este widget ya no existe. Edita el widget para corregirlo.',
     'yes' => 'Sí',
     'no' => 'No',
     'empty' => 'Vacío',

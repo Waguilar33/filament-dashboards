@@ -52,8 +52,17 @@ class BuilderChartWidget extends ChartWidget
                 default => $this->breakdown($config, $source, $metric, $label),
             };
         } catch (InvalidArgumentException) {
+            $this->needsAttention = true;
+
             return ['datasets' => [], 'labels' => []];
         }
+    }
+
+    public function getDescription(): ?string
+    {
+        $this->getCachedData();
+
+        return $this->needsAttention ? $this->needsAttentionText() : null;
     }
 
     protected function getType(): string

@@ -55,6 +55,7 @@ class BuilderFiguresWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->description(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(fn (): array => array_map(fn (array $row): array => [
                 'label' => $row['label'],
                 ...array_combine(
@@ -121,6 +122,8 @@ class BuilderFiguresWidget extends TableWidget
         try {
             $value = app(CalculateMetric::class)->handle($source, $this->viewer(), $this->tenant(), $metric, $this->configString($column, 'field'), $this->filters($column), $this->configString($column, 'dates_field'), $this->dashboardDates($column));
         } catch (InvalidArgumentException) {
+            $this->needsAttention = true;
+
             return [null, $title, null];
         }
 

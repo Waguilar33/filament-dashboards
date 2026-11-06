@@ -31,6 +31,7 @@ class BuilderTableWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(function () use ($source, $config, $columns, $limit): array {
                 if ($source === null) {
                     return [];
@@ -50,6 +51,8 @@ class BuilderTableWidget extends TableWidget
                         $this->dashboardDates($config),
                     );
                 } catch (InvalidArgumentException) {
+                    $this->needsAttention = true;
+
                     return [];
                 }
             })

@@ -76,6 +76,13 @@ class BuilderStatsWidget extends StatsOverviewWidget
             try {
                 $value = app(CalculateMetric::class)->handle($source, $this->viewer(), $this->tenant(), $metric, $this->configString($card, 'field'), $this->filters($card), $this->configString($card, 'dates_field'), $this->dashboardDates($card));
             } catch (InvalidArgumentException) {
+                $stats[] = DashboardStat::make($this->configString($card, 'label') ?? $source->label(), '—')
+                    ->translateLabel(false)
+                    ->description($this->needsAttentionText())
+                    ->color('warning')
+                    ->cardKey($this->configString($card, 'key') ?? (string) $index)
+                    ->resizable($this->resizableCards);
+
                 continue;
             }
 

@@ -617,6 +617,25 @@ it('shows the dashboards list to someone with an own or shared dashboard whateve
     $this->actingAs($outsider)->get(DashboardResource::getUrl())->assertForbidden();
 });
 
+it('shows the dashboards list to someone who may create dashboards whatever the list policy says', function (): void {
+    Gate::policy(Dashboard::class, CreateOnlyDashboardsPolicy::class);
+
+    $this->actingAs(user())->get(DashboardResource::getUrl())->assertOk();
+});
+
+final class CreateOnlyDashboardsPolicy
+{
+    public function viewAny(): bool
+    {
+        return false;
+    }
+
+    public function create(): bool
+    {
+        return true;
+    }
+}
+
 final class NoDashboardsListPolicy
 {
     public function viewAny(): bool
