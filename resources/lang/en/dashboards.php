@@ -32,7 +32,7 @@ return [
     ],
     'dates' => [
         'today' => 'Today',
-        'days' => '{1} :count day|[2,*] :count days',
+        'days' => ':count d',
         'from' => 'From',
         'until' => 'To',
         'apply' => 'Apply',

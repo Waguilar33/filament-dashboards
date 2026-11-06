@@ -387,7 +387,7 @@
     flex: none;
 }
 
-.fi-dashboards-custom-dates .fi-input-wrp {
+.fi-dashboards-custom-dates .fi-grid-col:last-child .fi-input-wrp {
     overflow: hidden;
 }
 
@@ -408,4 +408,26 @@
 .fi-dashboards-custom-dates .fi-input-wrp-actions .fi-btn {
     border-radius: 0;
     box-shadow: none;
+}
+
+@media (width < 30rem) {
+    .fi-dashboards-custom-dates .fi-input-wrp-prefix {
+        display: none;
+    }
+
+    .fi-dashboards-dates .fi-btn {
+        padding-inline: 0.5rem;
+    }
+}
+
+.fi-dashboards-date-bar {
+    flex-wrap: wrap;
+}
+
+.fi-dashboards-custom-dates {
+    max-width: 100%;
+}
+
+.fi-dashboards-date-bar > * {
+    flex-shrink: 0;
 }

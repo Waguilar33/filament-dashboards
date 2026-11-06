@@ -46,14 +46,7 @@ trait HasDashboardDates
                         ->extraAttributes(['class' => 'fi-dashboards-dates'])
                         ->grow(false)
                         ->afterStateUpdated(function (Set $set, mixed $state, mixed $old): void {
-                            if ($state !== ResolveDateRange::CUSTOM) {
-                                $set('startDate', null);
-                                $set('endDate', null);
-
-                                return;
-                            }
-
-                            $range = app(ResolveDateRange::class)->handle(['preset' => $old]);
+                            $range = app(ResolveDateRange::class)->handle(['preset' => $state === ResolveDateRange::CUSTOM ? $old : $state]);
                             $set('startDate', $range->start->toDateString());
                             $set('endDate', $range->end->toDateString());
                         }),
@@ -61,25 +54,43 @@ trait HasDashboardDates
                         DatePicker::make('startDate')
                             ->hiddenLabel()
                             ->live(condition: false)
-                            ->prefix(__('filament-dashboards::dashboards.dates.from')),
+                            ->prefix(__('filament-dashboards::dashboards.dates.from'))
+                            ->extraInputAttributes(['x-on:input' => 'edited = true'])
+                            ->afterStateHydrated(fn (DatePicker $component, Get $get) => $this->showPresetRange($component, $get, 'start')),
                         DatePicker::make('endDate')
                             ->hiddenLabel()
                             ->live(condition: false)
                             ->prefix(__('filament-dashboards::dashboards.dates.until'))
+                            ->extraInputAttributes(['x-on:input' => 'edited = true'])
+                            ->afterStateHydrated(fn (DatePicker $component, Get $get) => $this->showPresetRange($component, $get, 'end'))
                             ->suffixAction(Action::make('applyDates')
                                 ->label(__('filament-dashboards::dashboards.dates.apply'))
                                 ->button()
-                                ->alpineClickHandler('$wire.applyDashboardDates()')),
+                                ->extraAttributes(['x-bind:disabled' => '! edited'])
+                                ->alpineClickHandler('edited = false; $wire.applyDashboardDates()')),
                     ])
-                        ->columns(2)
-                        ->extraAttributes(['class' => 'fi-dashboards-dates fi-dashboards-custom-dates'])
-                        ->grow(false)
-                        ->visible(fn (Get $get): bool => $get('preset') === ResolveDateRange::CUSTOM),
+                        ->columns(['default' => 2])
+                        ->extraAttributes(['class' => 'fi-dashboards-dates fi-dashboards-custom-dates', 'x-data' => '{ edited: false }'])
+                        ->grow(false),
                 ])
-                    ->from('lg')
+                    ->from('sm')
+                    ->extraAttributes(['class' => 'fi-dashboards-date-bar'])
                     ->columnSpanFull(),
             ]);
     }
 
-    public function applyDashboardDates(): void {}
+    public function applyDashboardDates(): void
+    {
+        $this->filters['preset'] = ResolveDateRange::CUSTOM;
+    }
+
+    protected function showPresetRange(DatePicker $component, Get $get, string $edge): void
+    {
+        if ($get('preset') === ResolveDateRange::CUSTOM && filled($component->getState())) {
+            return;
+        }
+
+        $range = app(ResolveDateRange::class)->handle(['preset' => $get('preset')]);
+        $component->state(($edge === 'start' ? $range->start : $range->end)->toDateString());
+    }
 }
