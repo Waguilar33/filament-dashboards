@@ -21,8 +21,6 @@ use Illuminate\Support\Carbon;
  */
 class BuilderWidgetVersion extends Model
 {
-    public const KEEP = 20;
-
     public const UPDATED_AT = null;
 
     protected $guarded = [];

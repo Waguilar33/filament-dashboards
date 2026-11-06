@@ -69,7 +69,7 @@ class EvaluateStatsCards
                 $source,
                 $value,
                 $format($value),
-                ...$this->describe($card, $range, $value, $format, $calculate),
+                ...$this->describe($card, $range, $value, $format, $calculate, $field instanceof Field && $field->lowerIsBetter),
             );
         }
 
@@ -94,7 +94,7 @@ class EvaluateStatsCards
      * @param  Closure(?DateRange): (int|float)  $calculate
      * @return array{description: ?string, color: ?string, icon: string|BackedEnum|null}
      */
-    protected function describe(array $card, ?DateRange $range, int|float $value, Closure $format, Closure $calculate): array
+    protected function describe(array $card, ?DateRange $range, int|float $value, Closure $format, Closure $calculate, bool $lowerIsBetter = false): array
     {
         $period = self::text($card, 'period') ?? 'dashboard';
         $goal = is_numeric($card['goal'] ?? null) ? $card['goal'] + 0 : null;
@@ -122,7 +122,7 @@ class EvaluateStatsCards
             } elseif ($previous != 0) {
                 $change = ($currentValue - $previous) / abs($previous) * 100;
                 $parts[] = __('filament-dashboards::builder.compare_change', ['change' => ($change > 0 ? '+' : '').FilamentDashboardsPlugin::get()->formatNumber($change, 1).'%']);
-                $color = $change >= 0 ? 'success' : 'danger';
+                $color = ($lowerIsBetter ? $change <= 0 : $change >= 0) ? 'success' : 'danger';
                 $resolved = FilamentDashboardsIcon::get($change >= 0 ? FilamentDashboardsIcon::INCREASE : FilamentDashboardsIcon::DECREASE);
                 $icon = $resolved instanceof Htmlable ? null : $resolved;
             }

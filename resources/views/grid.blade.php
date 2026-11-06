@@ -13,6 +13,14 @@
     class="fi-dashboards-grid"
     data-editable="{{ $editable ? 'true' : 'false' }}"
 >
+    <style>
+        @media print {
+            @page {
+                size: {{ \Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->getPrintPageSize() }};
+            }
+        }
+    </style>
+
     @if ($printRange)
         <p class="fi-dashboards-print-range">
             {{ \Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->formatDate($printRange->start, 'range') }} – {{ \Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->formatDate($printRange->end, 'range') }}

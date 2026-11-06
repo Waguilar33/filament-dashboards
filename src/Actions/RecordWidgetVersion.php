@@ -6,6 +6,7 @@ namespace Waguilar\FilamentDashboards\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\BuilderWidgetVersion;
 
@@ -24,7 +25,7 @@ class RecordWidgetVersion
 
         BuilderWidgetVersion::query()
             ->where('builder_widget_id', $widget->id)
-            ->whereKeyNot(BuilderWidgetVersion::query()->where('builder_widget_id', $widget->id)->latest('id')->limit(BuilderWidgetVersion::KEEP)->pluck('id'))
+            ->whereKeyNot(BuilderWidgetVersion::query()->where('builder_widget_id', $widget->id)->latest('id')->limit(FilamentDashboardsPlugin::get()->getWidgetVersionsToKeep())->pluck('id'))
             ->delete();
 
         return $version;

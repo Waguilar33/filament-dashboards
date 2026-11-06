@@ -173,6 +173,18 @@ FilamentDashboardsPlugin::make()
     ->minRefreshInterval(60);
 ```
 
+Pick the paper size for Print, the chart colors and options, how many versions History keeps, and mark fields where a drop is good news:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->printPageSize('A4')
+    ->chartColors(['#0ea5e9', '#22c55e', '#f43f5e'])
+    ->modifyChartOptionsUsing(fn (array $options, string $type): array => $options)
+    ->widgetVersionsToKeep(50);
+
+Field::number('refunds', 'Refunds')->lowerIsBetter();
+```
+
 ## Dashboard dates
 
 A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and Custom, which shows a start and end date. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:

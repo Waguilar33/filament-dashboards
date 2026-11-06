@@ -21,8 +21,6 @@ class BuilderChartWidget extends ChartWidget
 {
     use InteractsWithBuilderWidget;
 
-    public const PALETTE = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
-
     protected static bool $isDiscovered = false;
 
     public function getHeading(): ?string
@@ -75,10 +73,13 @@ class BuilderChartWidget extends ChartWidget
      */
     protected function getOptions(): ?array
     {
-        return match ($this->widgetType()) {
+        $options = match ($this->widgetType()) {
             'pie', 'doughnut', 'polarArea' => ['scales' => ['x' => ['display' => false], 'y' => ['display' => false]]],
-            default => null,
+            default => [],
         };
+        $options = FilamentDashboardsPlugin::get()->modifyChartOptions($options, $this->widgetType());
+
+        return $options === [] ? null : $options;
     }
 
     /**
@@ -151,11 +152,13 @@ class BuilderChartWidget extends ChartWidget
             $this->dashboardDates($config),
         );
 
+        $colors = FilamentDashboardsPlugin::get()->getChartColors();
+
         return [
             'datasets' => [[
                 'label' => $label,
                 'data' => $breakdown['values'],
-                'backgroundColor' => array_slice(array_merge(self::PALETTE, self::PALETTE), 0, count($breakdown['values'])),
+                'backgroundColor' => array_map(fn (int $index): string => $colors[$index % count($colors)], array_keys($breakdown['values'])),
                 'borderWidth' => 0,
             ]],
             'labels' => $breakdown['labels'],

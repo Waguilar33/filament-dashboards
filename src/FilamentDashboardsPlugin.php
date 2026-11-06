@@ -136,6 +136,20 @@ final class FilamentDashboardsPlugin implements Plugin
 
     protected string $csvDelimiter = ',';
 
+    protected string $printPageSize = 'letter';
+
+    /**
+     * @var list<string>
+     */
+    protected array $chartColors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
+
+    /**
+     * @var (Closure(array<string, mixed>, string): array<string, mixed>)|null
+     */
+    protected ?Closure $modifyChartOptionsUsing = null;
+
+    protected int $widgetVersionsToKeep = 20;
+
     /**
      * @var (Closure(string): string)|null
      */
@@ -735,6 +749,67 @@ final class FilamentDashboardsPlugin implements Plugin
     public function getExporters(): array
     {
         return $this->exporters ?? [new CsvExporter($this->csvDelimiter)];
+    }
+
+    public function printPageSize(string $size): static
+    {
+        $this->printPageSize = $size;
+
+        return $this;
+    }
+
+    public function getPrintPageSize(): string
+    {
+        return $this->printPageSize;
+    }
+
+    /**
+     * @param  list<string>  $colors
+     */
+    public function chartColors(array $colors): static
+    {
+        $this->chartColors = $colors;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getChartColors(): array
+    {
+        return $this->chartColors;
+    }
+
+    /**
+     * @param  (Closure(array<string, mixed>, string): array<string, mixed>)|null  $callback
+     */
+    public function modifyChartOptionsUsing(?Closure $callback): static
+    {
+        $this->modifyChartOptionsUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
+     */
+    public function modifyChartOptions(array $options, string $type): array
+    {
+        return $this->modifyChartOptionsUsing === null ? $options : ($this->modifyChartOptionsUsing)($options, $type);
+    }
+
+    public function widgetVersionsToKeep(int $count): static
+    {
+        $this->widgetVersionsToKeep = $count;
+
+        return $this;
+    }
+
+    public function getWidgetVersionsToKeep(): int
+    {
+        return $this->widgetVersionsToKeep;
     }
 
     public function csvDelimiter(string $delimiter): static

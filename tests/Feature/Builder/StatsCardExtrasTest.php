@@ -7,6 +7,8 @@ use Filament\Facades\Filament;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Dates\DateRange;
 use Waguilar\FilamentDashboards\Dates\Periods\ThisMonth;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Tests\Fixtures\RefundsSource;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 use Workbench\Database\Factories\DemoOrderFactory;
 
@@ -79,4 +81,12 @@ it('measures the period before a range by its length in days', function (): void
         ->and($range->upTo(CarbonImmutable::parse('2026-11-03 08:00:00'))->end->toDateTimeString())->toBe('2026-11-03 08:00:00')
         ->and((new ThisMonth)->previous($range)->start->toDateTimeString())->toBe('2026-10-01 00:00:00')
         ->and((new ThisMonth)->previous(new DateRange(CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-31 12:00:00')))->end->toDateString())->toBe('2026-02-28');
+});
+
+it('shows a drop in green when lower is better for the field', function (): void {
+    FilamentDashboardsPlugin::get()->dataSources([RefundsSource::class]);
+    DemoOrderFactory::new()->create(['total' => 50, 'ordered_at' => '2026-11-18 09:00:00']);
+    DemoOrderFactory::new()->create(['total' => 100, 'ordered_at' => '2026-11-17 09:00:00']);
+
+    expect(statsOf(['source' => 'refunds', 'period' => 'today', 'compare' => true])['color'])->toBe('success');
 });
