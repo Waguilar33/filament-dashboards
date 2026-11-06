@@ -167,6 +167,8 @@ return [
             'name' => 'Nombre',
             'name_helper' => 'Se muestra en el widget y en la lista de widgets.',
             'show_title' => 'Mostrar título',
+            'viewer_dates' => 'Permitir cambiar las fechas en la tarjeta',
+            'viewer_dates_helper' => 'Muestra un control de fechas en el widget para que cada persona elija otras fechas solo para sí; las fechas guardadas siguen siendo las predeterminadas.',
             'refresh_interval' => 'Actualizar cada',
             'refresh_interval_helper' => 'Déjalo vacío para actualizar solo al cargar la página.',
             'seconds' => 'segundos',

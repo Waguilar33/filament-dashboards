@@ -10,6 +10,8 @@ use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Actions\ApplyWidgetDates;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Models\BuilderWidget;
+use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ViewDashboard;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
@@ -44,7 +46,7 @@ it('rewrites only the dated parts of a widget to the viewer’s dates', function
 });
 
 it('lets a viewer change one chart’s dates without touching the saved widget or other charts', function (): void {
-    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
+    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['viewer_dates' => true, 'source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
 
     $chart = Livewire::test(BuilderChartWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7, 'pageFilters' => ['preset' => 30]])
         ->set('deferredFilters.preset', 'next_30d')
@@ -58,7 +60,7 @@ it('lets a viewer change one chart’s dates without touching the saved widget o
 });
 
 it('remembers the viewer’s pick for the widget on that dashboard', function (): void {
-    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
+    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['viewer_dates' => true, 'source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
     session()->put('filament-dashboards.widget-dates.7', ['preset' => 'custom', 'startDate' => '2026-11-10', 'endDate' => '2026-11-30']);
 
     Livewire::test(BuilderChartWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7])
@@ -68,7 +70,7 @@ it('remembers the viewer’s pick for the widget on that dashboard', function ()
 });
 
 it('puts a chart back on its saved dates', function (): void {
-    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
+    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['viewer_dates' => true, 'source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
     session()->put('filament-dashboards.widget-dates.7', ['preset' => 'next_30d']);
 
     Livewire::test(BuilderChartWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7])
@@ -79,7 +81,7 @@ it('puts a chart back on its saved dates', function (): void {
 });
 
 it('needs both dates for a custom range', function (): void {
-    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
+    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['viewer_dates' => true, 'source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
 
     Livewire::test(BuilderChartWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7])
         ->set('deferredFilters.preset', 'custom')
@@ -90,7 +92,7 @@ it('needs both dates for a custom range', function (): void {
 });
 
 it('lists a table’s rows within the viewer’s dates and shows the range', function (): void {
-    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at']]);
+    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['viewer_dates' => true, 'source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at']]);
 
     Livewire::test(BuilderTableWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7, 'pageFilters' => ['preset' => 30]])
         ->assertSee('Ten days ago')
@@ -101,8 +103,8 @@ it('lists a table’s rows within the viewer’s dates and shows the range', fun
 });
 
 it('offers the dashboard dates only to a widget saved with its own dates on a dashboard with a date bar', function (): void {
-    $own = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at', 'period' => 'month']]);
-    $following = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at']]);
+    $own = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['viewer_dates' => true, 'source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at', 'period' => 'month']]);
+    $following = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['viewer_dates' => true, 'source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at']]);
     $options = fn (int $widget, bool $bar): array => (fn (): array => $this->widgetDatesOptions())
         ->call(Livewire::test(BuilderTableWidget::class, ['builderWidgetId' => $widget, 'dashboardItemId' => 7, 'offersDashboardDates' => $bar])->instance());
 
@@ -112,7 +114,7 @@ it('offers the dashboard dates only to a widget saved with its own dates on a da
 });
 
 it('ignores a stored pick the widget does not offer', function (): void {
-    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at', 'period' => 'custom', 'period_start' => '2026-10-20', 'period_end' => '2026-10-30']]);
+    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['viewer_dates' => true, 'source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at', 'period' => 'custom', 'period_start' => '2026-10-20', 'period_end' => '2026-10-30']]);
     session()->put('filament-dashboards.widget-dates.7', ['preset' => 'dashboard']);
 
     Livewire::test(BuilderTableWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7, 'pageFilters' => ['preset' => 1]])
@@ -121,10 +123,44 @@ it('ignores a stored pick the widget does not offer', function (): void {
 });
 
 it('shows the dates action only on a widget with dates placed on a dashboard', function (): void {
-    $dated = builderWidget($this->owner, ['config' => ['show_title' => true, 'cards' => [['source' => 'orders', 'metric' => 'count', 'dates_field' => 'ordered_at']]]]);
-    $undated = builderWidget($this->owner, ['config' => ['show_title' => true, 'cards' => [['source' => 'orders', 'metric' => 'count']]]]);
+    $dated = builderWidget($this->owner, ['config' => ['viewer_dates' => true, 'show_title' => true, 'cards' => [['source' => 'orders', 'metric' => 'count', 'dates_field' => 'ordered_at']]]]);
+    $undated = builderWidget($this->owner, ['config' => ['viewer_dates' => true, 'show_title' => true, 'cards' => [['source' => 'orders', 'metric' => 'count']]]]);
 
     Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $dated->id, 'dashboardItemId' => 7])->assertActionVisible('widgetDates');
     Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $dated->id])->assertActionHidden('widgetDates');
     Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $undated->id, 'dashboardItemId' => 7])->assertActionHidden('widgetDates');
+});
+
+it('keeps the dates control off until the widget allows it, ignoring an earlier pick', function (): void {
+    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'config' => ['source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at']]);
+    session()->put('filament-dashboards.widget-dates.7', ['preset' => 'next_30d']);
+
+    Livewire::test(BuilderTableWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7, 'pageFilters' => ['preset' => 30]])
+        ->assertActionHidden(TestAction::make('widgetDates')->table())
+        ->assertSee('Ten days ago');
+});
+
+it('shows the title of a stats widget whose dates viewers may change', function (): void {
+    $widget = builderWidget($this->owner, ['name' => 'Upcoming orders', 'config' => ['viewer_dates' => true, 'cards' => [['source' => 'orders', 'metric' => 'count', 'dates_field' => 'ordered_at']]]]);
+
+    Livewire::test(BuilderStatsWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7])
+        ->assertSee('Upcoming orders')
+        ->assertActionVisible('widgetDates');
+});
+
+it('saves whether viewers may change the dates with the widget', function (): void {
+    $dashboard = dashboard($this->owner);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->callAction('buildWidget', data: ['name' => 'Upcoming', 'source' => 'orders', 'columns' => ['customer'], 'dates_field' => 'ordered_at', 'viewer_dates' => true], arguments: ['type' => 'table'])
+        ->assertHasNoActionErrors();
+
+    expect(BuilderWidget::query()->sole()->config)->toMatchArray(['viewer_dates' => true]);
+});
+
+it('hides a chart’s dates control until the widget allows it', function (): void {
+    $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Bar, 'config' => ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '30d']]);
+
+    expect(Livewire::test(BuilderChartWidget::class, ['builderWidgetId' => $widget->id, 'dashboardItemId' => 7])->instance()->getFiltersTriggerAction()->getExtraAttributes())
+        ->toBe(['style' => 'display: none']);
 });

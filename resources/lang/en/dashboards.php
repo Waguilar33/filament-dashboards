@@ -167,6 +167,8 @@ return [
             'name' => 'Name',
             'name_helper' => 'Shown on the widget and in the widget list.',
             'show_title' => 'Show title',
+            'viewer_dates' => 'Let viewers change the dates on the card',
+            'viewer_dates_helper' => 'Shows a dates control on the widget so each viewer can pick other dates for themselves; the saved dates stay the default.',
             'refresh_interval' => 'Refresh every',
             'refresh_interval_helper' => 'Leave empty to refresh only when the page loads.',
             'seconds' => 'seconds',

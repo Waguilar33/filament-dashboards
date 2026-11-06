@@ -51,7 +51,7 @@ class BuilderStatsWidget extends StatsOverviewWidget implements HasActions
     {
         $section = parent::getSectionContentComponent();
 
-        if (! $section instanceof Section || ! (bool) ($this->widgetConfig()['show_title'] ?? false)) {
+        if (! $section instanceof Section || ! ((bool) ($this->widgetConfig()['show_title'] ?? false) || $this->offersWidgetDates())) {
             return $section;
         }
 

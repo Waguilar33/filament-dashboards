@@ -45,8 +45,21 @@ class BuilderChartWidget extends ChartWidget
             ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::WIDGET_DATES))
             ->iconButton()
             ->color($this->widgetDates() === null ? 'gray' : 'primary')
-            ->visible($this->offersWidgetDates())
+            // Filament's chart view renders this trigger without checking visibility.
+            ->extraAttributes($this->offersWidgetDates() ? [] : ['style' => 'display: none'])
             ->livewireClickHandlerEnabled(false), 'widget.dates');
+    }
+
+    public function filtersApplyAction(Action $action): Action
+    {
+        return $action->alpineClickHandler('$wire.applyFilters().then(() => $nextTick(() => $el.closest(\'.fi-dropdown-panel\')?.querySelector(\'.fi-fo-field-wrp-error-message\') || close()))');
+    }
+
+    public function filtersResetAction(Action $action): Action
+    {
+        return $action
+            ->color('gray')
+            ->alpineClickHandler('close(); $wire.resetFilters()');
     }
 
     #[Exposed]

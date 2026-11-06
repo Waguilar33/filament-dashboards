@@ -7,9 +7,9 @@ namespace Waguilar\FilamentDashboards\Widgets\Concerns;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\ToggleButtons;
+use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Component;
-use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\Width;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -89,7 +89,12 @@ trait InteractsWithBuilderWidget
 
     protected function offersWidgetDates(): bool
     {
-        return $this->dashboardItemId !== null && $this->builderWidget()?->datedPeriods() !== [];
+        $widget = $this->builderWidget();
+
+        return $this->dashboardItemId !== null
+            && $widget instanceof BuilderWidget
+            && (bool) ($widget->config['viewer_dates'] ?? false)
+            && $widget->datedPeriods() !== [];
     }
 
     /**
@@ -97,7 +102,7 @@ trait InteractsWithBuilderWidget
      */
     protected function widgetDates(): ?array
     {
-        return $this->dashboardItemId === null ? null : $this->validWidgetDates(session()->get($this->widgetDatesKey()));
+        return $this->offersWidgetDates() ? $this->validWidgetDates(session()->get($this->widgetDatesKey())) : null;
     }
 
     protected function widgetDatesKey(): string
@@ -192,7 +197,7 @@ trait InteractsWithBuilderWidget
     }
 
     /**
-     * @return array<Component|ToggleButtons>
+     * @return array<Component|Select>
      */
     protected function widgetDatesComponents(): array
     {
@@ -200,28 +205,28 @@ trait InteractsWithBuilderWidget
         $custom = fn (Get $get): bool => $get('preset') === ResolveDateRange::CUSTOM;
 
         return [
-            ToggleButtons::make('preset')
+            Select::make('preset')
                 ->id("widget-dates-{$this->dashboardItemId}-preset")
-                ->hiddenLabel()
+                ->label(__('filament-dashboards::dashboards.dates.widget'))
                 ->options(fn (): array => $this->widgetDatesOptions())
                 ->default($state['preset'])
-                ->inline()
+                ->native()
+                ->selectablePlaceholder(false)
                 ->required()
                 ->live(),
-            Grid::make(2)
-                ->schema([
-                    DatePicker::make('startDate')
-                        ->id("widget-dates-{$this->dashboardItemId}-start")
-                        ->label(__('filament-dashboards::dashboards.dates.from'))
-                        ->default($state['startDate'])
-                        ->required($custom),
-                    DatePicker::make('endDate')
-                        ->id("widget-dates-{$this->dashboardItemId}-end")
-                        ->label(__('filament-dashboards::dashboards.dates.until'))
-                        ->default($state['endDate'])
-                        ->required($custom)
-                        ->afterOrEqual('startDate'),
-                ])
+            Group::make([
+                DatePicker::make('startDate')
+                    ->id("widget-dates-{$this->dashboardItemId}-start")
+                    ->label(__('filament-dashboards::dashboards.dates.from'))
+                    ->default($state['startDate'])
+                    ->required($custom),
+                DatePicker::make('endDate')
+                    ->id("widget-dates-{$this->dashboardItemId}-end")
+                    ->label(__('filament-dashboards::dashboards.dates.until'))
+                    ->default($state['endDate'])
+                    ->required($custom)
+                    ->afterOrEqual('startDate'),
+            ])
                 ->visible($custom),
         ];
     }
