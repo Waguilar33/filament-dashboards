@@ -34,23 +34,28 @@
     --fi-dashboards-sk-shine: color-mix(in oklab, var(--white, #fff) 6%, transparent);
 }
 
-.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item {
+.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading .fi-dashboards-item {
     pointer-events: none;
 }
 
-.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item > * {
+.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item > *,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading .fi-dashboards-item > * {
     visibility: hidden;
 }
 
 .fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::before,
-.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::after {
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading .fi-dashboards-item::before,
+.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::after,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading .fi-dashboards-item::after {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: 0.75rem;
 }
 
-.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::after {
+.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::after,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading .fi-dashboards-item::after {
     background: linear-gradient(100deg, transparent 30%, var(--fi-dashboards-sk-shine) 50%, transparent 70%) 0 0 / 200% 100% no-repeat;
     animation: fi-dashboards-shimmer 1.4s ease-in-out infinite;
 }
@@ -60,7 +65,8 @@
 }
 
 .fi-dashboards-grid .fi-dashboards-item .fi-loading-section,
-.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::before {
+.fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::before,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading .fi-dashboards-item::before {
     border: 1px solid var(--fi-dashboards-sk-border);
     box-shadow: none;
     background:
@@ -70,7 +76,8 @@
 }
 
 .fi-dashboards-grid [data-skeleton='stats'] .fi-dashboards-item .fi-loading-section,
-.fi-dashboards-reloading [data-follows-dates][data-skeleton='stats'] .fi-dashboards-item::before {
+.fi-dashboards-reloading [data-follows-dates][data-skeleton='stats'] .fi-dashboards-item::before,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading[data-skeleton='stats'] .fi-dashboards-item::before {
     background:
         linear-gradient(var(--fi-dashboards-sk-line), var(--fi-dashboards-sk-line)) left 1.5rem top 1.5rem / 35% 0.75rem no-repeat,
         linear-gradient(var(--fi-dashboards-sk-line), var(--fi-dashboards-sk-line)) left 2.5rem top 4.5rem / 15% 0.5rem no-repeat,
@@ -89,7 +96,8 @@
 }
 
 .fi-dashboards-grid [data-skeleton='chart'] .fi-dashboards-item .fi-loading-section,
-.fi-dashboards-reloading [data-follows-dates][data-skeleton='chart'] .fi-dashboards-item::before {
+.fi-dashboards-reloading [data-follows-dates][data-skeleton='chart'] .fi-dashboards-item::before,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading[data-skeleton='chart'] .fi-dashboards-item::before {
     background:
         linear-gradient(var(--fi-dashboards-sk-line), var(--fi-dashboards-sk-line)) left 1.5rem top 1.5rem / 35% 0.75rem no-repeat,
         linear-gradient(var(--fi-dashboards-sk-line), var(--fi-dashboards-sk-line)) left 10% bottom 1.5rem / 8% calc((100% - 5rem) * 0.45) no-repeat,
@@ -102,7 +110,8 @@
 }
 
 .fi-dashboards-grid [data-skeleton='pie'] .fi-dashboards-item .fi-loading-section,
-.fi-dashboards-reloading [data-follows-dates][data-skeleton='pie'] .fi-dashboards-item::before {
+.fi-dashboards-reloading [data-follows-dates][data-skeleton='pie'] .fi-dashboards-item::before,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading[data-skeleton='pie'] .fi-dashboards-item::before {
     background:
         linear-gradient(var(--fi-dashboards-sk-line), var(--fi-dashboards-sk-line)) left 1.5rem top 1.5rem / 35% 0.75rem no-repeat,
         radial-gradient(closest-side, transparent 55%, var(--fi-dashboards-sk-line) 56% 98%, transparent 100%) center top 3.5rem / 100% calc(100% - 5rem) no-repeat,
@@ -110,7 +119,8 @@
 }
 
 .fi-dashboards-grid [data-skeleton='table'] .fi-dashboards-item .fi-loading-section,
-.fi-dashboards-reloading [data-follows-dates][data-skeleton='table'] .fi-dashboards-item::before {
+.fi-dashboards-reloading [data-follows-dates][data-skeleton='table'] .fi-dashboards-item::before,
+.fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading[data-skeleton='table'] .fi-dashboards-item::before {
     background:
         linear-gradient(var(--fi-dashboards-sk-line), var(--fi-dashboards-sk-line)) left 1.5rem top 1.5rem / 35% 0.75rem no-repeat,
         linear-gradient(var(--fi-dashboards-sk-block), var(--fi-dashboards-sk-block)) left 0 top 3.5rem / 100% 2.5rem no-repeat,
@@ -367,7 +377,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::after {
+    .fi-dashboards-reloading [data-follows-dates] .fi-dashboards-item::after,
+    .fi-dashboards-grid .grid-stack-item.fi-dashboards-item-reloading .fi-dashboards-item::after {
         animation: none;
     }
 }
@@ -390,6 +401,7 @@
     .fi-topbar,
     .fi-header-actions,
     .fi-dashboards-dates,
+    .fi-wi-chart-filter,
     .fi-dashboards-item-actions,
     .fi-dashboards-stat-resize,
     .fi-ta-header-toolbar,

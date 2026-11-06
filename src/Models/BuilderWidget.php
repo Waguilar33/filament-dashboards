@@ -142,6 +142,25 @@ class BuilderWidget extends Model
     }
 
     /**
+     * @return list<string>
+     */
+    public function datedPeriods(): array
+    {
+        $periods = [];
+
+        foreach ($this->parts() as $part) {
+            if (! is_array($part) || (blank($part['dates_field'] ?? null) && blank($part['date_field'] ?? null))) {
+                continue;
+            }
+
+            $period = $part['period'] ?? null;
+            $periods[] = is_string($period) ? $period : (filled($part['dates_field'] ?? null) ? 'dashboard' : '12m');
+        }
+
+        return $periods;
+    }
+
+    /**
      * @return array<mixed>
      */
     protected function parts(): array

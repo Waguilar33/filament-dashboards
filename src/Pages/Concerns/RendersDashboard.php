@@ -83,6 +83,7 @@ trait RendersDashboard
                     'followsDates' => $builderWidget instanceof BuilderWidget
                         ? $builderWidget->followsDashboardDates()
                         : in_array(InteractsWithPageFilters::class, class_uses_recursive($component), true),
+                    'ownDates' => $builderWidget instanceof BuilderWidget && $builderWidget->datedPeriods() !== [],
                     'x' => $item->x,
                     'y' => $item->y,
                     'w' => $item->w,
@@ -113,22 +114,25 @@ trait RendersDashboard
             ];
         }
 
+        $hasDateBar = array_filter(array_column($items, 'followsDates')) !== [];
+
         return [
-            ...(array_filter(array_column($items, 'followsDates')) === [] ? [] : [EmbeddedSchema::make('filtersForm')]),
-            View::make('filament-dashboards::grid')->viewData(function () use ($items, $editing, $printing): array {
+            ...($hasDateBar ? [EmbeddedSchema::make('filtersForm')] : []),
+            View::make('filament-dashboards::grid')->viewData(function () use ($items, $editing, $printing, $hasDateBar): array {
                 $editable = $editing instanceof Closure ? (bool) $editing() : $editing;
                 $cardWidths = $this->cardWidths(array_column(array_filter($items, fn (array $item): bool => $item['widget'] === BuilderStatsWidget::class), 'id'));
 
                 return [
                     'items' => array_map(fn (array $item): array => [...$item, 'props' => [
                         ...$item['props'],
-                        ...($item['followsDates'] ? ['pageFilters' => $this->filters] : []),
+                        ...($item['followsDates'] || $item['ownDates'] ? ['pageFilters' => $this->filters] : []),
+                        ...($item['ownDates'] ? ['dashboardItemId' => $item['id'], 'offersDashboardDates' => $hasDateBar] : []),
                         ...($item['widget'] === BuilderStatsWidget::class ? ['cardWidths' => $cardWidths[$item['id']] ?? [], 'resizableCards' => $editable] : []),
                     ]], $items),
                     'editable' => $editable,
                     'printing' => $printing,
                     'toolbar' => $editable ? $this->itemToolbar() : [],
-                    'printRange' => array_filter(array_column($items, 'followsDates')) === [] ? null : app(ResolveDateRange::class)->handle($this->filters),
+                    'printRange' => $hasDateBar ? app(ResolveDateRange::class)->handle($this->filters) : null,
                     'signature' => md5((string) json_encode([array_map(fn (array $item): array => [$item['id'], $item['widget'], $item['version'], $item['fixedHeight']], $items), $editable])),
                 ];
             }),

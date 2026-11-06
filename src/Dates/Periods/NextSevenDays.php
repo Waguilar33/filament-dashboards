@@ -6,7 +6,7 @@ namespace Waguilar\FilamentDashboards\Dates\Periods;
 
 class NextSevenDays extends NextDays
 {
-    protected function days(): int
+    public function days(): int
     {
         return 7;
     }

@@ -10,7 +10,7 @@ use Waguilar\FilamentDashboards\Dates\DateRange;
 
 abstract class NextDays extends DatePeriod
 {
-    abstract protected function days(): int;
+    abstract public function days(): int;
 
     public function key(): string
     {

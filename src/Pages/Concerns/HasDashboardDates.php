@@ -26,11 +26,7 @@ trait HasDashboardDates
         $presets = [];
 
         foreach ($plugin->getDatePresets() as $preset) {
-            $presets[$preset] = match (true) {
-                is_string($preset) => $plugin->getDatePeriod($preset)?->label() ?? $preset,
-                $preset === 1 => __('filament-dashboards::dashboards.dates.today'),
-                default => trans_choice('filament-dashboards::dashboards.dates.days', $preset, ['count' => $preset]),
-            };
+            $presets[$preset] = $plugin->getDatePresetLabel($preset);
         }
 
         $presets[ResolveDateRange::CUSTOM] = __('filament-dashboards::dashboards.dates.custom');

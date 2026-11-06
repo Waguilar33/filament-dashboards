@@ -23,6 +23,11 @@ class BuilderTableWidget extends TableWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    protected function widgetDatesChanged(): void
+    {
+        $this->table = $this->table($this->makeTable());
+    }
+
     public function table(Table $table): Table
     {
         $config = $this->widgetConfig();
@@ -35,7 +40,7 @@ class BuilderTableWidget extends TableWidget
         return $table
             ->heading($this->builderWidget()?->name)
             ->description($this->ownRangeLabel([$config]))
-            ->headerActions([$this->exportAction()])
+            ->headerActions([$this->widgetDatesAction(), $this->exportAction()])
             ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(function () use ($source, $config, $columns, $limit): array {
                 if ($source === null) {

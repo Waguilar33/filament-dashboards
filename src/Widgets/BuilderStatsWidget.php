@@ -57,6 +57,7 @@ class BuilderStatsWidget extends StatsOverviewWidget implements HasActions
 
         return $section
             ->heading($this->builderWidget()->name ?? $this->previewName)
+            ->afterHeader([$this->widgetDatesAction()])
             ->contained();
     }
 

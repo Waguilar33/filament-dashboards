@@ -37,6 +37,10 @@ return [
         'until' => 'Hasta',
         'apply' => 'Aplicar',
         'custom' => 'Personalizado',
+        'next_days' => 'Próx. :count d',
+        'widget' => 'Fechas',
+        'widget_default' => 'Predeterminado',
+        'dashboard' => 'Fechas del tablero',
     ],
     'navigation_positions' => [
         'start' => 'Al inicio del grupo',
