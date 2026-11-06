@@ -188,6 +188,7 @@ return [
             'grouping' => 'Agrupar por',
             'period' => 'Periodo',
             'group_field' => 'Separar por',
+            'split_field_helper' => 'Una línea o barra por valor; pasadas :count, las menores van a Otros.',
             'limit' => 'Mostrar como máximo',
             'x_field' => 'Eje horizontal',
             'y_field' => 'Eje vertical',

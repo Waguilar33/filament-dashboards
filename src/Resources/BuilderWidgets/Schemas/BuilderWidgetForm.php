@@ -183,6 +183,9 @@ class BuilderWidgetForm
                         ->label(__(self::T.'grouping'))
                         ->options(TimeGrouping::class)
                         ->live(),
+                    self::fieldSelect('split_field', FieldType::Choice, FieldType::Text, FieldType::Boolean)
+                        ->label(__(self::T.'group_field'))
+                        ->helperText(__(self::T.'split_field_helper', ['count' => FilamentDashboardsPlugin::get()->getBuilderLimit('series')])),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                 ]),
                 self::filters(),

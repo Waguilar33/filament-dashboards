@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Arr;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateTrend;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
@@ -20,7 +21,7 @@ use Workbench\App\Models\DemoOrder;
  */
 function trend(TimeGrouping $grouping, string $from, string $to, Metric $metric = Metric::Count, ?string $field = null, array $filters = [], string $dateField = 'ordered_at', ?DataSource $source = null): array
 {
-    return app(CalculateTrend::class)->handle(
+    return Arr::only(app(CalculateTrend::class)->handle(
         $source ?? new OrdersSource,
         user(),
         null,
@@ -31,7 +32,15 @@ function trend(TimeGrouping $grouping, string $from, string $to, Metric $metric 
         $metric,
         $field,
         $filters,
-    );
+    ), ['labels', 'values']);
+}
+
+/**
+ * @return list<array{label: string, values: list<float|int>}>
+ */
+function splitTrend(string $splitField, Metric $metric = Metric::Count, ?string $field = null, int $limit = 10): array
+{
+    return app(CalculateTrend::class)->handle(new OrdersSource, user(), null, 'ordered_at', TimeGrouping::Day, CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-02'), $metric, $field, [], $splitField, $limit)['series'];
 }
 
 function order(string $orderedAt, int|float $total = 10, string $channel = 'web'): void
@@ -153,4 +162,44 @@ it('buckets a date-only field by its own date', function (): void {
     DemoOrder::factory()->create(['ordered_at' => '2026-03-01 12:00:00']);
 
     expect(trend(TimeGrouping::Day, '2026-03-01 00:00:00 Pacific/Kiritimati', '2026-03-02 00:00:00 Pacific/Kiritimati', source: new DateOnlyOrdersSource)['values'])->toBe([1, 0]);
+});
+
+it('draws one series per value of the split field, labelled by its choice, adding up to the total', function (): void {
+    order('2026-03-01 09:00:00', 10, 'web');
+    order('2026-03-01 10:00:00', 5, 'store');
+    order('2026-03-02 10:00:00', 20, 'web');
+
+    expect(splitTrend('channel', Metric::Sum, 'total'))->toBe([
+        ['label' => 'Web', 'values' => [10, 20]],
+        ['label' => 'Store', 'values' => [5, 0]],
+    ]);
+});
+
+it('keeps rows without a split value in their own series', function (): void {
+    order('2026-03-01 09:00:00', 10, 'web');
+    order('2026-03-02 09:00:00', 10, '');
+
+    expect(array_column(splitTrend('channel'), 'label'))->toBe(['Empty', 'Web']);
+});
+
+it('folds the smallest values into Other past the series limit', function (): void {
+    order('2026-03-01 09:00:00', 10, 'web');
+    order('2026-03-01 09:00:00', 10, 'web');
+    order('2026-03-01 09:00:00', 10, 'web');
+    order('2026-03-01 09:00:00', 10, 'store');
+    order('2026-03-01 09:00:00', 10, 'store');
+    order('2026-03-02 09:00:00', 10, 'phone');
+    order('2026-03-02 09:00:00', 10, '');
+
+    expect(splitTrend('channel', limit: 3))->toBe([
+        ['label' => 'Web', 'values' => [3, 0]],
+        ['label' => 'Store', 'values' => [2, 0]],
+        ['label' => 'Other', 'values' => [0, 2]],
+    ]);
+});
+
+it('draws no series without a split field', function (): void {
+    order('2026-03-01 09:00:00');
+
+    expect(app(CalculateTrend::class)->handle(new OrdersSource, user(), null, 'ordered_at', TimeGrouping::Day, CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-01'), Metric::Count, null, [])['series'])->toBe([]);
 });

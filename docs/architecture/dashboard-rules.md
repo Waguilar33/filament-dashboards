@@ -121,6 +121,7 @@
 | FDP50 | The app sets Print's paper size (letter), the breakdown chart colors and any chart option, how many widget versions are kept (20), and which number fields are better lower, whose drops then show green. | Extension audit, 2026-11-06. |
 | FDP51 | Share finds people by typing (50 matches, by name unless the app searches another way) instead of loading every user, offers only the roles the app allows (`shareableRolesUsing`), and on save drops any person or role it would not have offered. | Extension audit, 2026-11-06: loading every user is slow, and apps may keep some roles out of sharing. |
 | FDP52 | The app places the Dashboards and Widgets lists in its menu (group, order; Widgets right after Dashboards), may change or drop each dashboard's menu item, and sets the grid's row height, gap and stacking width. | Extension audit, 2026-11-06. |
+| FDP53 | A line or bar chart may be split by a choice, text or yes/no field: one series per value, labelled by its choice, coloured from the chart colors, over the same time buckets, metric, filters and dates as the unsplit chart. Rows without a value form their own Empty series, so the series add up to the unsplit total. Past the series limit (`builderLimits(['series' => 10])`), the largest values keep their series and the rest fold into Other. A split bar chart stacks its bars. Without a split field the chart is unchanged. | Sortivo, owner-approved 2026-11-06: trees sold per day by size, and sold alone vs in a combo. |
 
 ## Open decisions
 

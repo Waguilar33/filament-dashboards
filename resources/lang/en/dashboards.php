@@ -188,6 +188,7 @@ return [
             'grouping' => 'Group by',
             'period' => 'Period',
             'group_field' => 'Split by',
+            'split_field_helper' => 'One line or bar per value; past :count, the smallest go into Other.',
             'limit' => 'Show at most',
             'x_field' => 'Horizontal axis',
             'y_field' => 'Vertical axis',

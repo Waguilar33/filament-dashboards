@@ -73,8 +73,9 @@ class BuilderChartWidget extends ChartWidget
      */
     protected function getOptions(): ?array
     {
-        $options = match ($this->widgetType()) {
-            'pie', 'doughnut', 'polarArea' => ['scales' => ['x' => ['display' => false], 'y' => ['display' => false]]],
+        $options = match (true) {
+            in_array($this->widgetType(), ['pie', 'doughnut', 'polarArea'], true) => ['scales' => ['x' => ['display' => false], 'y' => ['display' => false]]],
+            $this->widgetType() === 'bar' && filled($this->configString($this->widgetConfig(), 'split_field')) => ['scales' => ['x' => ['stacked' => true], 'y' => ['stacked' => true]]],
             default => [],
         };
         $options = FilamentDashboardsPlugin::get()->modifyChartOptions($options, $this->widgetType());
@@ -123,10 +124,26 @@ class BuilderChartWidget extends ChartWidget
             $metric,
             $this->configString($config, 'field'),
             $this->filters($config),
+            $this->configString($config, 'split_field'),
+            FilamentDashboardsPlugin::get()->getBuilderLimit('series'),
         );
 
+        if ($trend['series'] === []) {
+            return [
+                'datasets' => [['label' => $label, 'data' => $trend['values']]],
+                'labels' => $trend['labels'],
+            ];
+        }
+
+        $colors = FilamentDashboardsPlugin::get()->getChartColors();
+
         return [
-            'datasets' => [['label' => $label, 'data' => $trend['values']]],
+            'datasets' => array_map(fn (array $series, int $index): array => [
+                'label' => $series['label'],
+                'data' => $series['values'],
+                'backgroundColor' => $colors[$index % count($colors)],
+                'borderColor' => $colors[$index % count($colors)],
+            ], $trend['series'], array_keys($trend['series'])),
             'labels' => $trend['labels'],
         ];
     }

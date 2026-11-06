@@ -142,7 +142,7 @@ final class FilamentDashboardsPlugin implements Plugin
     /**
      * @var array<string, int>
      */
-    protected array $builderLimits = ['table' => 100, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100];
+    protected array $builderLimits = ['table' => 100, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100, 'series' => 10];
 
     protected ?int $minRefreshInterval = 5;
 

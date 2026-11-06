@@ -59,3 +59,20 @@ it('keeps as many widget versions as the app chooses', function (): void {
 
     expect($widget->versions()->pluck('name')->all())->toBe(['C', 'D']);
 });
+
+it('draws a split chart as one coloured dataset per value, stacking bars but not lines', function (string $type, bool $stacked): void {
+    FilamentDashboardsPlugin::get()->chartColors(['#000000', '#ffffff']);
+    $this->actingAs(user());
+    DemoOrderFactory::new()->create(['channel' => 'web', 'ordered_at' => now()]);
+    DemoOrderFactory::new()->create(['channel' => 'store', 'ordered_at' => now()]);
+
+    $chart = Livewire::test(BuilderChartWidget::class, ['previewType' => $type, 'previewConfig' => ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '7d', 'split_field' => 'channel']])->instance();
+    $datasets = (fn (): array => $this->getData())->call($chart)['datasets'];
+
+    expect(array_map(fn (array $dataset): array => [$dataset['label'], $dataset['backgroundColor'], $dataset['borderColor'], array_sum($dataset['data'])], $datasets))
+        ->toBe([['Store', '#000000', '#000000', 1], ['Web', '#ffffff', '#ffffff', 1]])
+        ->and(data_get((fn (): ?array => $this->getOptions())->call($chart), 'scales.y.stacked'))->toBe($stacked ?: null);
+})->with([
+    'bar' => ['bar', true],
+    'line' => ['line', false],
+]);

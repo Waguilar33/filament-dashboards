@@ -172,13 +172,13 @@ FilamentDashboardsPlugin::make()
     ->exporters([new CsvExporter(';'), new XlsxExporter]);
 ```
 
-Limit the builder to the widget types you want, change the fields a type shows, cap rows and set the shortest auto-refresh (`null` turns auto-refresh off):
+Limit the builder to the widget types you want, change the fields a type shows, cap rows (`series` caps the lines or bar groups of a split chart; the rest fold into Other) and set the shortest auto-refresh (`null` turns auto-refresh off):
 
 ```php
 FilamentDashboardsPlugin::make()
     ->builderWidgetTypes([BuilderWidgetType::Stats, BuilderWidgetType::Table, BuilderWidgetType::Bar])
     ->modifyBuilderWidgetFieldsUsing(fn (array $fields, BuilderWidgetType $type): array => $fields)
-    ->builderLimits(['table' => 50, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100])
+    ->builderLimits(['table' => 50, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100, 'series' => 10])
     ->minRefreshInterval(60);
 ```
 
