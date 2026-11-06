@@ -238,7 +238,7 @@ FilamentDashboardsPlugin::make()
     ->timezoneUsing(fn (): string => auth()->user()->timezone);
 ```
 
-Named periods (today, this week, this month, last month, this quarter, this year, last 30 days) are offered on stats cards and line and bar charts, and can be date bar presets next to day counts. Add your own, such as a fiscal year, by extending `DatePeriod` (key, label, `range($now)` and, for calendar periods, `previous($range)` used by comparisons). Weeks start on Monday unless you choose another day:
+Named periods (today, this week, this month, last month, this quarter, this year, last 30 days, next 7, 30, 60 and 90 days, rest of this month, rest of this year) are offered on every widget that has a date, next to the dashboard dates and fixed From–To dates; a widget on its own dates ignores the date bar and shows its range under its title. They can also be date bar presets next to day counts. Add your own, such as a fiscal year, by extending `DatePeriod` (key, label, `range($now)` and, for calendar periods, `previous($range)` used by comparisons). Weeks start on Monday unless you choose another day:
 
 ```php
 FilamentDashboardsPlugin::make()

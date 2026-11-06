@@ -24,7 +24,7 @@ class EvaluateStatsCards
     public function __construct(
         protected CalculateMetric $calculateMetric,
         protected BuildFilters $buildFilters,
-        protected ResolveCardRange $resolveCardRange,
+        protected ResolveWidgetRange $resolveWidgetRange,
     ) {}
 
     /**
@@ -51,16 +51,16 @@ class EvaluateStatsCards
             $key = self::text($card, 'key') ?? (string) $index;
             $period = self::text($card, 'period') ?? 'dashboard';
 
-            if (self::text($card, 'dates_field') !== null && $period !== 'dashboard' && FilamentDashboardsPlugin::get()->getDatePeriod($period) === null) {
+            if (self::text($card, 'dates_field') !== null && ! in_array($period, ['dashboard', ResolveWidgetRange::OWN_RANGE], true) && FilamentDashboardsPlugin::get()->getDatePeriod($period) === null) {
                 $results[] = new StatCardResult($key, self::text($card, 'label') ?? $source->label(), $source, null, '—', __('filament-dashboards::builder.needs_attention'), 'warning', needsAttention: true);
 
                 continue;
             }
 
-            $range = $this->range($card, $dashboardRange);
             $calculate = fn (?DateRange $within): int|float => $this->calculateMetric->handle($source, $user, $tenant, $metric, self::text($card, 'field'), $this->buildFilters->handle($card['filters'] ?? []), self::text($card, 'dates_field'), $within);
 
             try {
+                $range = $this->range($card, $dashboardRange);
                 $value = $calculate($range);
             } catch (InvalidArgumentException) {
                 $results[] = new StatCardResult($key, self::text($card, 'label') ?? $source->label(), $source, null, '—', __('filament-dashboards::builder.needs_attention'), 'warning', needsAttention: true);
@@ -93,7 +93,7 @@ class EvaluateStatsCards
             return null;
         }
 
-        return $this->resolveCardRange->handle(self::text($card, 'period') ?? 'dashboard') ?? $dashboardRange;
+        return $this->resolveWidgetRange->handle($card) ?? $dashboardRange;
     }
 
     /**
@@ -111,7 +111,9 @@ class EvaluateStatsCards
         $icon = null;
 
         if ($range !== null && $period !== 'dashboard') {
-            $parts[] = FilamentDashboardsPlugin::get()->getDatePeriod($period)?->label() ?? $period;
+            $parts[] = $period === ResolveWidgetRange::OWN_RANGE
+                ? FilamentDashboardsPlugin::get()->formatDate($range->start, 'range').' – '.FilamentDashboardsPlugin::get()->formatDate($range->end, 'range')
+                : FilamentDashboardsPlugin::get()->getDatePeriod($period)?->label() ?? $period;
         }
 
         if ($goal !== null && $goal > 0 && ($range === null || $period !== 'dashboard')) {

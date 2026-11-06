@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Carbon\CarbonImmutable;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\View;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
@@ -99,8 +100,10 @@ it('shows the dates on a dashboard with a widget that reads page filters, filled
         ->assertSeeHtml('filtersForm.preset')
         ->assertSeeHtml('wire:loading.class="fi-dashboards-loading"')
         ->assertSeeHtml('data-follows-dates')
+        ->assertSeeHtml('data-skeleton="stats"')
         ->assertSet('filters', ['preset' => 30, 'startDate' => '2026-10-06', 'endDate' => '2026-11-04'])
-        ->assertFormFieldVisible('startDate', 'filtersForm');
+        ->assertFormFieldVisible('startDate', 'filtersForm')
+        ->assertSchemaComponentExists('preset', 'filtersForm', fn (ToggleButtons $preset): bool => $preset->isRequired());
 });
 
 it('hides the dates when no widget reads page filters', function (): void {

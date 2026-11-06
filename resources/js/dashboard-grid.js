@@ -4,6 +4,8 @@ const COLUMNS = 12
 
 const MIN_STRETCH = 48
 
+const MIN_RELOAD_MS = 400
+
 const SPAN_VARIABLES = ['--col-span-csm', '--col-span-ncmd', '--col-span-cxl', '--col-span-nclg']
 
 export default function dashboardGrid({ editable, printing, options }) {
@@ -36,6 +38,9 @@ export default function dashboardGrid({ editable, printing, options }) {
             })
 
             this.$refs.grid.querySelectorAll('.fi-dashboards-item').forEach((item) => this.observer.observe(item))
+
+            this.reloadObserver = new MutationObserver(() => this.followReload())
+            this.reloadObserver.observe(this.$root, { attributes: true, attributeFilter: ['class'] })
 
             this.grid.on('resizestart', (event, item) => {
                 this.resizing = true
@@ -78,6 +83,24 @@ export default function dashboardGrid({ editable, printing, options }) {
             if (editable) {
                 this.$refs.grid.addEventListener('pointerdown', (event) => this.resizeCard(event))
                 this.$refs.grid.addEventListener('keydown', (event) => this.resizeCardByKey(event))
+            }
+        },
+
+        // Livewire drops its loading class as soon as the response lands, so a fast reload would only flash the skeleton.
+        followReload() {
+            const loading = this.$root.classList.contains('fi-dashboards-loading')
+
+            if (loading && !this.reloadStartedAt) {
+                this.reloadStartedAt = Date.now()
+                clearTimeout(this.reloadTimer)
+                this.$root.classList.add('fi-dashboards-reloading')
+            }
+
+            if (!loading && this.reloadStartedAt) {
+                const remaining = MIN_RELOAD_MS - (Date.now() - this.reloadStartedAt)
+
+                this.reloadStartedAt = null
+                this.reloadTimer = setTimeout(() => this.$root.classList.remove('fi-dashboards-reloading'), Math.max(0, remaining))
             }
         },
 
@@ -280,6 +303,7 @@ export default function dashboardGrid({ editable, printing, options }) {
         destroy() {
             this.wide?.removeEventListener('change', this.lockWhenNarrow)
             this.observer?.disconnect()
+            this.reloadObserver?.disconnect()
             this.grid?.destroy(false)
         },
     }

@@ -34,6 +34,7 @@ class BuilderTableWidget extends TableWidget
 
         return $table
             ->heading($this->builderWidget()?->name)
+            ->description($this->ownRangeLabel([$config]))
             ->headerActions([$this->exportAction()])
             ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
             ->records(function () use ($source, $config, $columns, $limit): array {
