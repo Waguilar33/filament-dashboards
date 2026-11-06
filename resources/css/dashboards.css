@@ -374,3 +374,38 @@
         overflow: visible !important;
     }
 }
+
+.fi-dashboards-dates .fi-btn {
+    white-space: nowrap;
+}
+
+.fi-dashboards-custom-dates > .fi-grid {
+    display: flex;
+}
+
+.fi-dashboards-custom-dates > .fi-grid > .fi-grid-col {
+    flex: none;
+}
+
+.fi-dashboards-custom-dates .fi-input-wrp {
+    overflow: hidden;
+}
+
+.fi-dashboards-custom-dates input[type='date'] {
+    width: 7.875rem;
+}
+
+.fi-dashboards-custom-dates .fi-input-wrp-suffix {
+    align-self: stretch;
+    padding: 0;
+}
+
+.fi-dashboards-custom-dates .fi-input-wrp-actions,
+.fi-dashboards-custom-dates .fi-input-wrp-actions .fi-btn {
+    height: 100%;
+}
+
+.fi-dashboards-custom-dates .fi-input-wrp-actions .fi-btn {
+    border-radius: 0;
+    box-shadow: none;
+}

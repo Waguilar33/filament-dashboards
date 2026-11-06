@@ -10,14 +10,14 @@ use Workbench\Database\Factories\DemoOrderFactory;
 it('renders a coded schema table widget that follows the dashboard dates', function (): void {
     $this->actingAs(user());
     DemoOrderFactory::new()->create(['channel' => 'web', 'total' => 120, 'ordered_at' => now()->subDays(3)]);
-    DemoOrderFactory::new()->create(['channel' => 'store', 'total' => 80, 'ordered_at' => now()->subDays(40)]);
+    DemoOrderFactory::new()->create(['channel' => 'store', 'total' => 80, 'ordered_at' => now()->subDays(20)]);
 
     Livewire::test(OrdersByChannelTable::class, ['pageFilters' => ['preset' => 15]])
         ->assertSeeInOrder(['Channel', 'Orders', 'Revenue'])
         ->assertSeeInOrder(['web', '1', '120.00'])
         ->assertDontSee('store');
 
-    Livewire::test(OrdersByChannelTable::class, ['pageFilters' => ['preset' => 60]])
+    Livewire::test(OrdersByChannelTable::class, ['pageFilters' => ['preset' => 30]])
         ->assertSee('store');
 });
 

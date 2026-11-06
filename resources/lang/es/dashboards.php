@@ -33,8 +33,9 @@ return [
     'dates' => [
         'today' => 'Hoy',
         'days' => '{1} :count día|[2,*] :count días',
-        'from' => 'Fecha inicial',
-        'until' => 'Fecha final',
+        'from' => 'Desde',
+        'until' => 'Hasta',
+        'apply' => 'Aplicar',
         'custom' => 'Personalizado',
     ],
     'navigation_positions' => [

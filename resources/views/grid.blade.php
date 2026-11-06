@@ -6,7 +6,7 @@
     wire:key="dashboard-grid-{{ $signature }}"
     wire:ignore
     wire:loading.class="fi-dashboards-loading"
-    wire:target="filters"
+    wire:target="filters, applyDashboardDates"
     x-load
     x-load-src="{{ FilamentAsset::getAlpineComponentSrc('dashboard-grid', 'waguilar33/filament-dashboards') }}"
     x-data="dashboardGrid({ editable: @js($editable), printing: @js($printing), options: @js(\Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->getGridOptions()) })"

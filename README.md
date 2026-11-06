@@ -210,7 +210,7 @@ Widgets fit their content. A chart or table (any Filament `ChartWidget` or `Tabl
 
 ## Dashboard dates
 
-A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and Custom, which shows a start and end date. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:
+A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and Custom, which shows a From–To date field beside them; the widgets reload when Apply is pressed. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:
 
 ```php
 use Waguilar\FilamentDashboards\Concerns\InteractsWithDashboardDates;

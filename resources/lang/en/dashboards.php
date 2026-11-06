@@ -33,8 +33,9 @@ return [
     'dates' => [
         'today' => 'Today',
         'days' => '{1} :count day|[2,*] :count days',
-        'from' => 'Start date',
-        'until' => 'End date',
+        'from' => 'From',
+        'until' => 'To',
+        'apply' => 'Apply',
         'custom' => 'Custom',
     ],
     'navigation_positions' => [
