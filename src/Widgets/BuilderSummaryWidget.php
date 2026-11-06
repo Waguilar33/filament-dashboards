@@ -118,7 +118,7 @@ class BuilderSummaryWidget extends TableWidget
                 $this->configString($config, 'group_field') ?? '',
                 array_map(fn (array $metric): array => ['metric' => $metric['metric'], 'field' => $metric['field']], $metrics),
                 $this->filters($config),
-                is_numeric($limit) ? max(1, min(100, (int) $limit)) : 20,
+                is_numeric($limit) ? max(1, min(FilamentDashboardsPlugin::get()->getBuilderLimit('summary'), (int) $limit)) : 20,
                 $this->configString($config, 'dates_field'),
                 $this->dashboardDates($config),
             );

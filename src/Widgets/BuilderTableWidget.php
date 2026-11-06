@@ -10,6 +10,7 @@ use Filament\Widgets\TableWidget;
 use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\Actions\FetchRows;
 use Waguilar\FilamentDashboards\Builder\Field;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
@@ -49,7 +50,7 @@ class BuilderTableWidget extends TableWidget
                         $this->configString($config, 'sort_field'),
                         $this->configString($config, 'sort_direction') ?? 'desc',
                         $this->filters($config),
-                        is_numeric($limit) ? max(1, min(100, (int) $limit)) : 10,
+                        is_numeric($limit) ? max(1, min(FilamentDashboardsPlugin::get()->getBuilderLimit('table'), (int) $limit)) : 10,
                         $this->configString($config, 'dates_field'),
                         $this->dashboardDates($config),
                     );

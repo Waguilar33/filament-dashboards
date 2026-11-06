@@ -156,6 +156,16 @@ A system dashboard can place a system widget by listing its class in `items()`.
 
 A figures table lays figures out like a spreadsheet. Each column is a figure (its own source, metric and filters) or a calculation on the columns before it (+, −, ×, ÷ with another column or a number). The first row shows the figures, and each further row applies one operation to them, such as ÷ 1.12 for amounts without VAT; a column can be left blank in some rows. A column can also show its share of another column above its label. Dividing by zero leaves the cell empty. Table, summary and figures widgets have an Export button that downloads what is shown as a CSV file.
 
+Limit the builder to the widget types you want, change the fields a type shows, cap rows and set the shortest auto-refresh (`null` turns auto-refresh off):
+
+```php
+FilamentDashboardsPlugin::make()
+    ->builderWidgetTypes([BuilderWidgetType::Stats, BuilderWidgetType::Table, BuilderWidgetType::Bar])
+    ->modifyBuilderWidgetFieldsUsing(fn (array $fields, BuilderWidgetType $type): array => $fields)
+    ->builderLimits(['table' => 50, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100])
+    ->minRefreshInterval(60);
+```
+
 ## Dashboard dates
 
 A widget that reads Filament's page filters makes the dashboard show a date bar: presets (today, 15, 30, 60 and 90 days, each counted back from today, today included) and Custom, which shows a start and end date. Every such widget on the dashboard follows it; each viewer's choice is kept in their session. Use the plugin's trait to get the range:

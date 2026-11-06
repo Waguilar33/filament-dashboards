@@ -15,6 +15,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Field;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Filament\Widgets\Widget;
@@ -37,6 +38,7 @@ use Waguilar\FilamentDashboards\Dates\Periods\ThisQuarter;
 use Waguilar\FilamentDashboards\Dates\Periods\ThisWeek;
 use Waguilar\FilamentDashboards\Dates\Periods\ThisYear;
 use Waguilar\FilamentDashboards\Dates\Periods\Today;
+use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterTenantDashboardNavigation;
@@ -106,6 +108,23 @@ final class FilamentDashboardsPlugin implements Plugin
     protected array $datePeriods = [Today::class, ThisWeek::class, ThisMonth::class, LastMonth::class, ThisQuarter::class, ThisYear::class, LastThirtyDays::class];
 
     protected int $weekStart = CarbonInterface::MONDAY;
+
+    /**
+     * @var list<BuilderWidgetType>|null
+     */
+    protected ?array $builderWidgetTypes = null;
+
+    /**
+     * @var (Closure(array<Component>, BuilderWidgetType): array<Component>)|null
+     */
+    protected ?Closure $modifyBuilderWidgetFieldsUsing = null;
+
+    /**
+     * @var array<string, int>
+     */
+    protected array $builderLimits = ['table' => 100, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100];
+
+    protected ?int $minRefreshInterval = 5;
 
     /**
      * @var (Closure(): string)|null
@@ -631,6 +650,70 @@ final class FilamentDashboardsPlugin implements Plugin
     public function getDatePeriod(string $key): ?DatePeriod
     {
         return $this->getDatePeriods()[$key] ?? null;
+    }
+
+    /**
+     * @param  list<BuilderWidgetType>  $types
+     */
+    public function builderWidgetTypes(array $types): static
+    {
+        $this->builderWidgetTypes = $types;
+
+        return $this;
+    }
+
+    /**
+     * @return list<BuilderWidgetType>
+     */
+    public function getBuilderWidgetTypes(): array
+    {
+        return $this->builderWidgetTypes ?? BuilderWidgetType::cases();
+    }
+
+    /**
+     * @param  (Closure(array<Component>, BuilderWidgetType): array<Component>)|null  $callback
+     */
+    public function modifyBuilderWidgetFieldsUsing(?Closure $callback): static
+    {
+        $this->modifyBuilderWidgetFieldsUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<Component>  $fields
+     * @return array<Component>
+     */
+    public function modifyBuilderWidgetFields(array $fields, BuilderWidgetType $type): array
+    {
+        return $this->modifyBuilderWidgetFieldsUsing === null ? $fields : ($this->modifyBuilderWidgetFieldsUsing)($fields, $type);
+    }
+
+    /**
+     * @param  array<string, int>  $limits
+     */
+    public function builderLimits(array $limits): static
+    {
+        $this->builderLimits = [...$this->builderLimits, ...$limits];
+
+        return $this;
+    }
+
+    public function getBuilderLimit(string $key): int
+    {
+        return $this->builderLimits[$key];
+    }
+
+    public function minRefreshInterval(?int $seconds): static
+    {
+        $this->minRefreshInterval = $seconds;
+
+        return $this;
+    }
+
+    public function getMinRefreshInterval(): ?int
+    {
+        return $this->minRefreshInterval;
     }
 
     public function weekStartsOn(int $day): static

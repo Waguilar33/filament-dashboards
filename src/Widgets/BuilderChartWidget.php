@@ -146,7 +146,7 @@ class BuilderChartWidget extends ChartWidget
             $metric,
             $this->configString($config, 'field'),
             $this->filters($config),
-            is_numeric($limit) ? max(1, min(20, (int) $limit)) : 10,
+            is_numeric($limit) ? max(1, min(FilamentDashboardsPlugin::get()->getBuilderLimit('breakdown'), (int) $limit)) : 10,
             $this->configString($config, 'dates_field'),
             $this->dashboardDates($config),
         );
@@ -178,7 +178,7 @@ class BuilderChartWidget extends ChartWidget
                     $this->configString($config, 'x_field') ?? '',
                     $this->configString($config, 'y_field') ?? '',
                     $this->filters($config),
-                    500,
+                    FilamentDashboardsPlugin::get()->getBuilderLimit('scatter'),
                     $this->configString($config, 'dates_field'),
                     $this->dashboardDates($config),
                 ),
