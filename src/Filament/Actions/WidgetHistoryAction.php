@@ -14,6 +14,7 @@ use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\BuilderWidgetVersion;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 
 class WidgetHistoryAction extends Action
@@ -30,7 +31,7 @@ class WidgetHistoryAction extends Action
         $this
             ->label(__('filament-dashboards::dashboards.actions.history'))
             ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::HISTORY))
-            ->visible(fn (?BuilderWidget $record): bool => $record?->canBeEditedBy(DashboardResource::user()) ?? false)
+            ->visible(fn (?BuilderWidget $record): bool => $record instanceof BuilderWidget && BuilderWidgetResource::canEdit($record))
             ->slideOver()
             ->modalWidth(Width::Medium)
             ->modalHeading(__('filament-dashboards::dashboards.modals.history.heading'))

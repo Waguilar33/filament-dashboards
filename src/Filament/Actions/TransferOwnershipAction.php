@@ -14,6 +14,7 @@ use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 
 class TransferOwnershipAction extends Action
@@ -32,7 +33,7 @@ class TransferOwnershipAction extends Action
         $this
             ->label(__('filament-dashboards::dashboards.actions.transfer'))
             ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::TRANSFER))
-            ->visible(fn (Dashboard|BuilderWidget $record): bool => $record->canBeSharedBy(DashboardResource::user()))
+            ->visible(fn (Dashboard|BuilderWidget $record): bool => $record instanceof Dashboard ? DashboardResource::canShare($record) : BuilderWidgetResource::canShare($record))
             ->modalWidth(Width::Medium)
             ->modalDescription(__('filament-dashboards::dashboards.modals.transfer.description'))
             ->schema([
@@ -46,7 +47,7 @@ class TransferOwnershipAction extends Action
             ->action(function (array $data, Dashboard|BuilderWidget $record, Action $action) use ($plugin): void {
                 $owner = $plugin->getShareableUsers(Filament::getTenant())->whereKey($data['owner'] ?? null)->first();
 
-                abort_unless($owner instanceof Model && $record->canBeSharedBy(DashboardResource::user()), 403);
+                abort_unless($owner instanceof Model && ($record instanceof Dashboard ? DashboardResource::canShare($record) : BuilderWidgetResource::canShare($record)), 403);
 
                 app(TransferOwnership::class)->handle($record, $owner);
 

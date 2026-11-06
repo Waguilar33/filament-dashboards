@@ -402,7 +402,9 @@ it('lets a registered widget policy gate the list and creating, keeping record r
 
     WidgetListPolicy::$viewAny = false;
     Livewire::test(ListBuilderWidgets::class)->assertForbidden();
-    expect(BuilderWidgetResource::shouldRegisterNavigation())->toBeFalse();
+    expect(BuilderWidgetResource::shouldRegisterNavigation())->toBeFalse()
+        ->and(BuilderWidgetResource::canEdit($mine))->toBeFalse()
+        ->and(BuilderWidgetResource::canShare($mine))->toBeFalse();
 
     WidgetListPolicy::$viewAny = true;
     WidgetListPolicy::$create = false;

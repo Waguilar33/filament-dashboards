@@ -90,6 +90,11 @@ class ViewDashboard extends Page
         abort_unless(DashboardResource::canView($this->getRecord()), 403);
     }
 
+    public function getBreadcrumbs(): array
+    {
+        return DashboardResource::canViewAny() ? parent::getBreadcrumbs() : [];
+    }
+
     public function getTitle(): string
     {
         return $this->getDashboard()->name;
@@ -528,7 +533,7 @@ class ViewDashboard extends Page
             ->inScope($this->getDashboard()->panel, Filament::getTenant())
             ->find($arguments['widget'] ?? null);
 
-        abort_unless($widget instanceof BuilderWidget && $widget->canBeEditedBy(DashboardResource::user()), 403);
+        abort_unless($widget instanceof BuilderWidget && BuilderWidgetResource::canEdit($widget), 403);
 
         return $widget;
     }
@@ -590,12 +595,12 @@ class ViewDashboard extends Page
         return FilamentDashboardsPlugin::get()->modifyAction(DeleteAction::make()
             ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::DELETE))
             ->record($this->getDashboard())
-            ->visible($this->getDashboard()->canBeDeletedBy(DashboardResource::user()))
+            ->visible(DashboardResource::canDelete($this->getDashboard()))
             ->successRedirectUrl(DashboardResource::getUrl()), 'dashboard.delete');
     }
 
     protected function canEdit(): bool
     {
-        return $this->canEdit ??= $this->getDashboard()->canBeEditedBy(DashboardResource::user());
+        return $this->canEdit ??= DashboardResource::canEdit($this->getDashboard());
     }
 }

@@ -303,12 +303,14 @@ Both `InteractsWithSchemas` and `InteractsWithDashboardDates` (through Filament'
 | | Who |
 |---|---|
 | View | The owner, users and roles it is shared with, everyone for system dashboards |
-| Edit (widgets, layout, settings) | The owner and Edit shares |
-| Share and delete | The owner only |
+| Edit (widgets, layout, settings) | The owner and Edit shares, if they have the Dashboards list |
+| Share, transfer and delete | The owner only, if they have the Dashboards list |
 | Clone | Anyone who can view it and may create dashboards |
-| Set as home | Anyone who can view it |
+| Pin as home | Anyone who can view it |
 
-Anyone who can open a dashboard can see the saved widgets its owner placed on it, and edit them with an Edit share on the dashboard; the access ends when the dashboard is unshared or the widget removed from it. A widget placed by someone other than its owner gives no extra access. Deleting a saved widget removes it from every dashboard.
+The home page shows your pinned dashboard, and a dropdown next to its title lists every other dashboard you can see; picking one shows it right there (`?dashboard=<slug>`), with Pin or Unpin. That is how someone without the Dashboards list reaches what was shared with them.
+
+Anyone who can open a dashboard can see the saved widgets its owner placed on it, and edit them with an Edit share on the dashboard if they also have the Widgets list; the access ends when the dashboard is unshared or the widget removed from it. A widget placed by someone other than its owner gives no extra access. Deleting a saved widget removes it from every dashboard.
 
 Without any other package, every signed-in user can create dashboards and add any widget whose `canView()` passes. Narrow it with:
 
@@ -327,7 +329,7 @@ FilamentDashboardsPlugin::make()
     ->shareableRolesUsing(fn (?Model $tenant): Builder => Role::query()->where('name', '!=', 'super_admin'));
 ```
 
-A policy you register for the dashboard model decides who sees the Dashboards list (`viewAny`) and who creates dashboards (`create`); anyone who owns a dashboard or has one shared with them sees the list and opens it regardless. Register a policy for `BuilderWidget` with `viewAny` and `create` to gate the Widgets list and building widgets from roles the same way; users still need at least one data source. Viewing, editing, sharing and deleting a given dashboard or widget always follow ownership and shares. With no policy, every user with a data source can use the Widgets list and build widgets.
+A share lets someone see a dashboard; managing it belongs to the lists. A policy you register for the dashboard model decides who has the Dashboards list (`viewAny`) and who creates dashboards (`create`), for owners and shares too: without the list nobody edits, shares, transfers or deletes a dashboard, though they still open the ones they can see from the home page or the menu. Add `update` or `delete` methods to narrow those further. Register a policy for `BuilderWidget` with `viewAny` and `create` to gate the Widgets list, editing widgets and building them the same way; users still need at least one data source. With no policy, everyone has the lists and ownership and shares decide. With Guardian, grant `ViewAny:Dashboard` and `ViewAny:BuilderWidget` to the roles that build dashboards.
 
 Name managers who can open, edit, share, delete and transfer anyone's dashboards and widgets in their panel and company (system ones stay read-only). In the lists they turn off *Mine and shared with me* to see everyone's:
 
@@ -351,7 +353,7 @@ FilamentDashboardsPlugin::make()
     ->modifyAddWidgetActionUsing(fn (Action $action): Action => $action);
 ```
 
-Every other action the plugin builds passes through one hook with its name, after the specific hooks above: `dashboard.*` on the dashboard page (`edit`, `share`, `settings`, `emailMe`, `alerts`, `print`, `duplicate`, `setAsHome`, `removeHome`, `delete`, `doneEditing`, `addWidget`, `buildWidget`, `editWidget`, `widgetHistory`, `duplicateItem`, `removeItem`), `dashboards.*` on the Dashboards list (`create` and the row actions), `widgets.*` on the Widgets list (`create`, `buildWidget`, `edit`, `duplicate`, `share`, `history`, `delete`), `home.openHome`, and `widget.export` / `widget.drillDown` inside widgets:
+Every other action the plugin builds passes through one hook with its name, after the specific hooks above: `dashboard.*` on the dashboard page (`edit`, `share`, `settings`, `emailMe`, `alerts`, `print`, `duplicate`, `setAsHome`, `removeHome`, `delete`, `doneEditing`, `addWidget`, `buildWidget`, `editWidget`, `widgetHistory`, `duplicateItem`, `removeItem`), `dashboards.*` on the Dashboards list (`create` and the row actions), `widgets.*` on the Widgets list (`create`, `buildWidget`, `edit`, `duplicate`, `share`, `history`, `delete`), `home.setAsHome` and `home.removeHome` on the home page, and `widget.export` / `widget.drillDown` inside widgets:
 
 ```php
 FilamentDashboardsPlugin::make()
@@ -380,7 +382,7 @@ FilamentIcon::register([
 ]);
 ```
 
-The dashboard page's header shows Edit and Share, and a menu with Settings, Duplicate, Set as home (or Remove as home) and Delete. Rearrange, regroup or drop them; the hook receives the built actions keyed by `edit`, `share`, `settings`, `duplicate`, `setAsHome`, `removeHome` and `delete`, and returns the header:
+The dashboard page's header shows Edit and Share, and a menu with Settings, Duplicate, Pin (or Unpin) and Delete. Rearrange, regroup or drop them; the hook receives the built actions keyed by `edit`, `share`, `settings`, `duplicate`, `setAsHome`, `removeHome` and `delete`, and returns the header:
 
 ```php
 FilamentDashboardsPlugin::make()
@@ -396,7 +398,7 @@ The Dashboards and Widgets lists are yours to shape. The plugin builds each tabl
 
 | Hook | Action keys | Default row actions |
 |---|---|---|
-| `modifyDashboardsTableUsing` | `setAsHome`, `removeHome`, `share`, `settings`, `duplicate`, `delete` | Set as home (or Remove as home), then a menu with Share, Settings, Duplicate and Delete |
+| `modifyDashboardsTableUsing` | `setAsHome`, `removeHome`, `share`, `settings`, `duplicate`, `delete` | Pin (or Unpin), then a menu with Share, Settings, Duplicate and Delete |
 | `modifyWidgetsTableUsing` | `edit`, `duplicate`, `share`, `delete` | Edit, then a menu with Share, Duplicate and Delete |
 
 ```php

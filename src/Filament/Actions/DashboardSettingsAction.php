@@ -26,7 +26,7 @@ class DashboardSettingsAction extends EditAction
         $this
             ->label(__('filament-dashboards::dashboards.actions.settings'))
             ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::SETTINGS))
-            ->visible(fn (Dashboard $record): bool => $record->canBeEditedBy(DashboardResource::user()))
+            ->visible(fn (Dashboard $record): bool => DashboardResource::canEdit($record))
             ->slideOver()
             ->modalWidth(Width::Medium)
             ->schema(fn (Schema $schema): Schema => DashboardForm::configure($schema));

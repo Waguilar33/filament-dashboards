@@ -89,14 +89,25 @@ class BuilderWidgetResource extends Resource
     {
         $user = DashboardResource::user();
         $allowed = match ($action) {
-            'viewAny', 'create' => FilamentDashboardsPlugin::get()->getDataSourcesFor($user, Filament::getTenant()) !== []
-                && (Gate::getPolicyFor(BuilderWidget::class) === null || parent::getAuthorizationResponse($action)->allowed()),
-            'update' => $record instanceof BuilderWidget && $record->canBeEditedBy($user),
-            'delete' => $record instanceof BuilderWidget && $record->canBeDeletedBy($user),
+            'viewAny', 'create' => FilamentDashboardsPlugin::get()->getDataSourcesFor($user, Filament::getTenant()) !== [] && self::policyAllows($action),
+            'update' => $record instanceof BuilderWidget && $record->canBeEditedBy($user) && static::canViewAny() && self::policyAllows($action, $record),
+            'delete' => $record instanceof BuilderWidget && $record->canBeDeletedBy($user) && static::canViewAny() && self::policyAllows($action, $record),
             default => false,
         };
 
         return $allowed ? Response::allow() : Response::deny();
+    }
+
+    public static function canShare(BuilderWidget $record): bool
+    {
+        return $record->canBeSharedBy(DashboardResource::user()) && static::canViewAny();
+    }
+
+    protected static function policyAllows(string $action, ?BuilderWidget $record = null): bool
+    {
+        $policy = Gate::getPolicyFor(BuilderWidget::class);
+
+        return ! (is_object($policy) || is_string($policy)) || ! method_exists($policy, $action) || parent::getAuthorizationResponse($action, $record)->allowed();
     }
 
     public static function table(Table $table): Table
@@ -145,7 +156,7 @@ class BuilderWidgetResource extends Resource
             'edit' => Action::make('edit')
                 ->label(__('filament-dashboards::dashboards.actions.edit'))
                 ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::EDIT))
-                ->visible(fn (BuilderWidget $record): bool => $record->canBeEditedBy(DashboardResource::user()))
+                ->visible(fn (BuilderWidget $record): bool => static::canEdit($record))
                 ->slideOver()
                 ->modalWidth(Width::FourExtraLarge)
                 ->modalDescription(fn (BuilderWidget $record): string => trans_choice('filament-dashboards::dashboards.modals.edit_widget.used_on', $count = $record->placements()->distinct()->count('dashboard_id'), ['count' => $count]))
