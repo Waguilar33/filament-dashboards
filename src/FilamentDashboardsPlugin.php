@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards;
 
+use Carbon\CarbonInterface;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -97,6 +98,16 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?Closure $timezoneUsing = null;
 
     protected bool $hasScheduledNotifications = false;
+
+    /**
+     * @var (Closure(int|float, int): string)|null
+     */
+    protected ?Closure $formatNumbersUsing = null;
+
+    /**
+     * @var (Closure(CarbonInterface, string): string)|null
+     */
+    protected ?Closure $formatDatesUsing = null;
 
     /**
      * @var (Closure(Model, ?Model, Closure(): mixed): mixed)|null
@@ -585,6 +596,47 @@ final class FilamentDashboardsPlugin implements Plugin
         $this->timezoneUsing = $callback;
 
         return $this;
+    }
+
+    /**
+     * @param  (Closure(int|float, int): string)|null  $callback
+     */
+    public function formatNumbersUsing(?Closure $callback): static
+    {
+        $this->formatNumbersUsing = $callback;
+
+        return $this;
+    }
+
+    public function formatNumber(int|float $value, ?int $decimals = null): string
+    {
+        $decimals ??= is_int($value) || floor($value) === $value ? 0 : 2;
+
+        return $this->formatNumbersUsing === null ? number_format($value, $decimals) : ($this->formatNumbersUsing)($value, $decimals);
+    }
+
+    /**
+     * @param  (Closure(CarbonInterface, string): string)|null  $callback
+     */
+    public function formatDatesUsing(?Closure $callback): static
+    {
+        $this->formatDatesUsing = $callback;
+
+        return $this;
+    }
+
+    public function formatDate(CarbonInterface $date, string $context): string
+    {
+        if ($this->formatDatesUsing !== null) {
+            return ($this->formatDatesUsing)($date, $context);
+        }
+
+        return $date->translatedFormat(match ($context) {
+            'day', 'week' => 'M j',
+            'month' => 'M Y',
+            'year' => 'Y',
+            default => 'j M Y',
+        });
     }
 
     public function scheduledNotifications(bool $condition = true): static

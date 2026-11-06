@@ -137,6 +137,6 @@ trait InteractsWithBuilderWidget
 
     protected function formatNumber(int|float $value): string
     {
-        return is_int($value) || floor($value) === $value ? number_format($value) : number_format($value, 2);
+        return FilamentDashboardsPlugin::get()->formatNumber($value);
     }
 }

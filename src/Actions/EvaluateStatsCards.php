@@ -108,7 +108,7 @@ class EvaluateStatsCards
 
         if ($goal !== null && $goal > 0 && ($range === null || $period !== 'dashboard')) {
             $reached = $value / $goal * 100;
-            $parts[] = __('filament-dashboards::builder.goal_progress', ['percent' => number_format($reached), 'goal' => $format($goal)]);
+            $parts[] = __('filament-dashboards::builder.goal_progress', ['percent' => FilamentDashboardsPlugin::get()->formatNumber($reached, 0), 'goal' => $format($goal)]);
             $color = $reached >= 100 ? 'success' : null;
         }
 
@@ -121,7 +121,7 @@ class EvaluateStatsCards
                 $parts[] = __('filament-dashboards::builder.compare_new');
             } elseif ($previous != 0) {
                 $change = ($currentValue - $previous) / abs($previous) * 100;
-                $parts[] = __('filament-dashboards::builder.compare_change', ['change' => ($change > 0 ? '+' : '').number_format($change, 1).'%']);
+                $parts[] = __('filament-dashboards::builder.compare_change', ['change' => ($change > 0 ? '+' : '').FilamentDashboardsPlugin::get()->formatNumber($change, 1).'%']);
                 $color = $change >= 0 ? 'success' : 'danger';
                 $resolved = FilamentDashboardsIcon::get($change >= 0 ? FilamentDashboardsIcon::INCREASE : FilamentDashboardsIcon::DECREASE);
                 $icon = $resolved instanceof Htmlable ? null : $resolved;
@@ -154,6 +154,6 @@ class EvaluateStatsCards
 
     protected static function number(int|float $value): string
     {
-        return is_int($value) || floor($value) === $value ? number_format($value) : number_format($value, 2);
+        return FilamentDashboardsPlugin::get()->formatNumber($value);
     }
 }

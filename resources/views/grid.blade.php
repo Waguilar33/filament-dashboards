@@ -15,7 +15,7 @@
 >
     @if ($printRange)
         <p class="fi-dashboards-print-range">
-            {{ $printRange->start->translatedFormat('j M Y') }} – {{ $printRange->end->translatedFormat('j M Y') }}
+            {{ \Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->formatDate($printRange->start, 'range') }} – {{ \Waguilar\FilamentDashboards\FilamentDashboardsPlugin::get()->formatDate($printRange->end, 'range') }}
         </p>
     @endif
 

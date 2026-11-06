@@ -80,8 +80,8 @@ class SendDashboardNotificationsCommand extends Command
             $dashboard->name,
             DashboardResource::getUrl('view', ['record' => $dashboard], tenant: $subscription->tenant),
             $range->start->isSameDay($range->end)
-                ? $range->start->translatedFormat('j M Y')
-                : $range->start->translatedFormat('j M').' – '.$range->end->translatedFormat('j M Y'),
+                ? FilamentDashboardsPlugin::get()->formatDate($range->start, 'range')
+                : FilamentDashboardsPlugin::get()->formatDate($range->start, 'range').' – '.FilamentDashboardsPlugin::get()->formatDate($range->end, 'range'),
             $digest['sections'],
             $digest['others'],
         ));

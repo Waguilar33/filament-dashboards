@@ -278,6 +278,16 @@ FilamentDashboardsPlugin::make()
     });
 ```
 
+Numbers and dates the plugin writes (cards, percentages, chart labels, printed ranges) go through two hooks, for local separators and date styles. A data source field's own `formatUsing` still wins for its values:
+
+```php
+FilamentDashboardsPlugin::make()
+    ->formatNumbersUsing(fn (int|float $value, int $decimals): string => number_format($value, $decimals, '.', ','))
+    ->formatDatesUsing(fn (CarbonInterface $date, string $context): string => $date->translatedFormat($context === 'range' ? 'd/m/Y' : 'M j'));
+```
+
+`$context` is `day`, `week`, `month` or `year` for chart labels and `range` for date ranges.
+
 Every icon the plugin draws has a Filament icon alias, so an app using another icon set swaps them the Filament way; the aliases are the constants on `FilamentDashboardsIcon`:
 
 ```php

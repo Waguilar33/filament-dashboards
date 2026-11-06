@@ -14,6 +14,7 @@ use InvalidArgumentException;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateSummary;
 use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\DrillsDownToRecords;
 use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
@@ -61,7 +62,7 @@ class BuilderSummaryWidget extends TableWidget
                     ->translateLabel(false)
                     ->alignment(Alignment::End)
                     ->weight(fn (array $record): ?FontWeight => $record['total'] ? FontWeight::Bold : null)
-                    ->formatStateUsing(fn (int|float $state): string => number_format($state, 2).'%');
+                    ->formatStateUsing(fn (int|float $state): string => FilamentDashboardsPlugin::get()->formatNumber($state, 2).'%');
             }
         }
 

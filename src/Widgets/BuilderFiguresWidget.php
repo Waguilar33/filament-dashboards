@@ -16,6 +16,7 @@ use Waguilar\FilamentDashboards\Builder\Actions\CalculateFigureTable;
 use Waguilar\FilamentDashboards\Builder\Actions\CalculateMetric;
 use Waguilar\FilamentDashboards\Builder\Enums\Arithmetic;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsCsv;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
 
@@ -49,7 +50,7 @@ class BuilderFiguresWidget extends TableWidget
             $format = $formats[$definition['key']];
 
             $columns[] = TextColumn::make("value_{$index}")
-                ->label($share === null ? $definition['label'] : new HtmlString('<span class="fi-dashboards-figures-share">'.e(number_format($share, 1).'%').'</span><br>'.e($definition['label'])))
+                ->label($share === null ? $definition['label'] : new HtmlString('<span class="fi-dashboards-figures-share">'.e(FilamentDashboardsPlugin::get()->formatNumber($share, 1).'%').'</span><br>'.e($definition['label'])))
                 ->translateLabel(false)
                 ->alignment(Alignment::End)
                 ->formatStateUsing(fn (int|float $state): string => $format($state));
