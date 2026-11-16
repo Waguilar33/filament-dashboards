@@ -47,6 +47,8 @@ final class FilamentDashboardsIcon
 
     public const WIDGET_DATES = 'filament-dashboards::actions.widget-dates';
 
+    public const CONFIGURE = 'filament-dashboards::actions.configure';
+
     public const EMPTY = 'filament-dashboards::empty';
 
     public const INCREASE = 'filament-dashboards::stats.increase';
@@ -78,6 +80,7 @@ final class FilamentDashboardsIcon
         self::TRANSFER => Heroicon::OutlinedArrowsRightLeft,
         self::FIT_HEIGHT => Heroicon::OutlinedArrowsUpDown,
         self::WIDGET_DATES => Heroicon::OutlinedCalendarDays,
+        self::CONFIGURE => Heroicon::OutlinedAdjustmentsHorizontal,
         self::EMPTY => Heroicon::OutlinedSquares2x2,
         self::INCREASE => Heroicon::ArrowTrendingUp,
         self::DECREASE => Heroicon::ArrowTrendingDown,

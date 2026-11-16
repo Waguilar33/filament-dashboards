@@ -24,6 +24,15 @@ What each action does: what starts it, what it checks, what it writes, and which
 | Writes | x, y, w, h of every item when a drag or resize ends (FDP12); Remove deletes the item; Duplicate adds an item below the others, with a copy of a builder widget owned by the user. |
 | Shows | The dashboard grid, for everyone who can see it. |
 
+## DF12 Configure a widget
+
+| Step | What |
+|---|---|
+| Starts | Configure under a code widget that declares settings (`HasDashboardSettings`), while editing the dashboard. |
+| Checks | Owner or Edit share, checked again on the server (FD6). Only items of this dashboard whose widget the user can see and that declares settings (FD20); otherwise 403. The widget's own form rules. |
+| Writes | The item's `options.settings`; other options (card widths) stay. |
+| Shows | The dashboard grid reloads and the widget remounts with the new settings, for everyone who can see the dashboard; clones and duplicates keep them. |
+
 ## DF9 Build a widget
 
 | Step | What |

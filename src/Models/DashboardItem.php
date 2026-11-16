@@ -69,6 +69,16 @@ class DashboardItem extends Model
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function settings(): array
+    {
+        $settings = data_get($this->options, 'settings');
+
+        return is_array($settings) ? array_filter($settings, is_string(...), ARRAY_FILTER_USE_KEY) : [];
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
