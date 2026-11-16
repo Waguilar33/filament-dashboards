@@ -18,6 +18,7 @@ use Filament\Widgets\TableWidget;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Waguilar\FilamentDashboards\Actions\ResolveDateRange;
+use Waguilar\FilamentDashboards\Contracts\HasDashboardSettings;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
@@ -71,12 +72,18 @@ trait RendersDashboard
                 }
 
                 $adjustableHeight = is_a($component, ChartWidget::class, true) || is_a($component, TableWidget::class, true);
+                $configurable = ! $builderWidget instanceof BuilderWidget && is_a($component, HasDashboardSettings::class, true);
 
                 return [
                     'id' => $item->id,
                     'widget' => $component,
-                    'props' => [...($printing ? [] : $component::getDefaultProperties()), ...($builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : [])],
-                    'version' => $builderWidget?->updated_at?->timestamp,
+                    'props' => [
+                        ...($printing ? [] : $component::getDefaultProperties()),
+                        ...($builderWidget instanceof BuilderWidget ? ['builderWidgetId' => $builderWidget->id] : []),
+                        ...($configurable ? ['dashboardSettings' => $item->settings()] : []),
+                    ],
+                    'version' => $configurable ? md5((string) json_encode($item->settings())) : $builderWidget?->updated_at?->timestamp,
+                    'configurable' => $configurable,
                     'builderWidgetId' => $builderWidget instanceof BuilderWidget && BuilderWidgetResource::canEdit($builderWidget) ? $builderWidget->id : null,
                     'duplicable' => ! $builderWidget instanceof BuilderWidget || $canCreateWidgets,
                     'label' => $builderWidget instanceof BuilderWidget ? $builderWidget->name : $component::dashboardLabel(),
@@ -163,7 +170,7 @@ trait RendersDashboard
     {
         $toolbar = [];
 
-        foreach (['editWidget', 'widgetHistory', 'fitItemHeight', 'duplicateItem', 'removeItem'] as $name) {
+        foreach (['configureItem', 'editWidget', 'widgetHistory', 'fitItemHeight', 'duplicateItem', 'removeItem'] as $name) {
             $action = method_exists($this, $name.'Action') ? $this->getAction($name, isMounting: false) : null;
             $toolbar[$name] = $action === null || ($name !== 'widgetHistory' && $action->isHidden())
                 ? null

@@ -55,6 +55,43 @@ class OrdersOverview extends StatsOverviewWidget implements DashboardWidget
 
 A widget is offered to a user when its `canView()` passes. Dashboard widgets stay off the `Home` page's default widgets.
 
+### Widget settings
+
+A code widget can let the people who edit a dashboard choose how it shows there. Implement `HasDashboardSettings` and return the form fields; the values are saved on that placement, so the same widget can show different settings on two dashboards, and cloning a dashboard or duplicating the widget keeps them. In edit mode the widget gets a Configure button; everyone who opens the dashboard sees the widget with the saved settings. Builder widgets are not affected.
+
+```php
+use Filament\Forms\Components\Select;
+use Filament\Widgets\ChartWidget;
+use Waguilar\FilamentDashboards\Concerns\InteractsWithDashboard;
+use Waguilar\FilamentDashboards\Concerns\InteractsWithDashboardSettings;
+use Waguilar\FilamentDashboards\Contracts\HasDashboardSettings;
+
+class StockChart extends ChartWidget implements HasDashboardSettings
+{
+    use InteractsWithDashboard;
+    use InteractsWithDashboardSettings;
+
+    public static function dashboardSettingsSchema(): array
+    {
+        return [
+            Select::make('products')
+                ->options(fn (): array => Product::query()->pluck('name', 'id')->all())
+                ->multiple()
+                ->required(),
+        ];
+    }
+
+    protected function getData(): array
+    {
+        $products = $this->dashboardSetting('products', []);
+
+        // ...
+    }
+}
+```
+
+The settings arrive as the `dashboardSettings` property when the widget mounts; `dashboardSetting($key, $default)` reads one. Saving reloads the dashboard, so the widget mounts again with the new values.
+
 ## System dashboards
 
 Define them in code and register them on the plugin:
@@ -353,7 +390,7 @@ FilamentDashboardsPlugin::make()
     ->modifyAddWidgetActionUsing(fn (Action $action): Action => $action);
 ```
 
-Every other action the plugin builds passes through one hook with its name, after the specific hooks above: `dashboard.*` on the dashboard page (`edit`, `share`, `settings`, `emailMe`, `alerts`, `print`, `duplicate`, `setAsHome`, `removeHome`, `delete`, `doneEditing`, `addWidget`, `buildWidget`, `editWidget`, `widgetHistory`, `duplicateItem`, `removeItem`), `dashboards.*` on the Dashboards list (`create` and the row actions), `widgets.*` on the Widgets list (`create`, `buildWidget`, `edit`, `duplicate`, `share`, `history`, `delete`), `home.setAsHome` and `home.removeHome` on the home page, and `widget.export` / `widget.drillDown` inside widgets:
+Every other action the plugin builds passes through one hook with its name, after the specific hooks above: `dashboard.*` on the dashboard page (`edit`, `share`, `settings`, `emailMe`, `alerts`, `print`, `duplicate`, `setAsHome`, `removeHome`, `delete`, `doneEditing`, `addWidget`, `buildWidget`, `editWidget`, `widgetHistory`, `configureItem`, `fitItemHeight`, `duplicateItem`, `removeItem`), `dashboards.*` on the Dashboards list (`create` and the row actions), `widgets.*` on the Widgets list (`create`, `buildWidget`, `edit`, `duplicate`, `share`, `history`, `delete`), `home.setAsHome` and `home.removeHome` on the home page, and `widget.export` / `widget.drillDown` inside widgets:
 
 ```php
 FilamentDashboardsPlugin::make()

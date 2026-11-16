@@ -62,6 +62,7 @@
                             <x-slot name="footer">
                                 <div class="fi-dashboards-item-actions">
                                     @foreach ([
+                                        'configureItem' => $item['configurable'] ? "{ item: {$item['id']} }" : null,
                                         'editWidget' => filled($item['builderWidgetId']) ? "{ widget: {$item['builderWidgetId']}, item: {$item['id']} }" : null,
                                         'widgetHistory' => filled($item['builderWidgetId']) ? "{ widget: {$item['builderWidgetId']} }" : null,
                                         'fitItemHeight' => $item['adjustableHeight'] ? "{ item: {$item['id']} }" : null,

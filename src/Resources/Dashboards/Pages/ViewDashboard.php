@@ -30,7 +30,9 @@ use Waguilar\FilamentDashboards\Actions\DuplicateDashboardItem;
 use Waguilar\FilamentDashboards\Actions\SaveBuilderWidget;
 use Waguilar\FilamentDashboards\Actions\SaveCardWidths;
 use Waguilar\FilamentDashboards\Actions\SaveDashboardLayout;
+use Waguilar\FilamentDashboards\Actions\SaveWidgetSettings;
 use Waguilar\FilamentDashboards\Commands\SendDashboardNotificationsCommand;
+use Waguilar\FilamentDashboards\Contracts\HasDashboardSettings;
 use Waguilar\FilamentDashboards\Enums\AlertOperator;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Enums\DigestFrequency;
@@ -144,6 +146,28 @@ class ViewDashboard extends Page
         app(SaveCardWidths::class)->handle($this->editableItem(['item' => $item]), $widths);
     }
 
+    public function configureItemAction(): Action
+    {
+        return FilamentDashboardsPlugin::get()->modifyAction(Action::make('configureItem')
+            ->label(__('filament-dashboards::dashboards.actions.configure'))
+            ->icon(FilamentDashboardsIcon::get(FilamentDashboardsIcon::CONFIGURE))
+            ->visible($this->canEdit())
+            ->slideOver()
+            ->modalWidth(Width::Medium)
+            ->modalHeading(fn (array $arguments): string => $this->configurableWidget($this->editableItem($arguments))::dashboardLabel())
+            ->modalSubmitActionLabel(__('filament-dashboards::dashboards.actions.save'))
+            ->fillForm(fn (array $arguments): array => $this->editableItem($arguments)->settings())
+            ->schema(fn (array $arguments): array => $this->configurableWidget($this->editableItem($arguments))::dashboardSettingsSchema())
+            ->action(function (array $data, array $arguments): void {
+                $item = $this->editableItem($arguments);
+                $this->configurableWidget($item);
+
+                app(SaveWidgetSettings::class)->handle($item, $data);
+
+                $this->reloadDashboard();
+            }), 'dashboard.configureItem');
+    }
+
     public function duplicateItemAction(): Action
     {
         return FilamentDashboardsPlugin::get()->modifyAction(Action::make('duplicateItem')
@@ -211,6 +235,22 @@ class ViewDashboard extends Page
         abort_unless($this->canEdit(), 403);
 
         return $this->getDashboard()->items()->whereKey($arguments['item'] ?? null)->firstOrFail();
+    }
+
+    /**
+     * @return class-string<HasDashboardSettings>
+     */
+    protected function configurableWidget(DashboardItem $item): string
+    {
+        $widgets = FilamentDashboardsPlugin::get()->getAvailableWidgets(FilamentDashboardsPlugin::currentPanel(), DashboardResource::user());
+
+        abort_unless(array_key_exists($item->widget, $widgets), 403);
+
+        $widget = $widgets[$item->widget];
+
+        abort_unless(is_a($widget, HasDashboardSettings::class, true), 403);
+
+        return $widget;
     }
 
     protected function reloadDashboard(): void

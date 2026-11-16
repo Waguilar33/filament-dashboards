@@ -90,6 +90,7 @@ return [
         'remove_home_tooltip' => 'Go back to the default home page',
         'delete' => 'Delete',
         'fit_height' => 'Fit height',
+        'configure' => 'Configure',
         'remove' => 'Remove',
         'edit' => 'Edit',
         'previous' => 'Previous',

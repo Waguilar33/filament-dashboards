@@ -1,13 +1,13 @@
 # Dashboard Rules
 
 **Status:** Stages 1–3 built and tagged v1.0.0-beta.1, beta.2 and beta.3 (2026-11-04, on branch `feat/stage-1-core`), waiting for the owner's review.
-**Last updated:** 2026-11-06
+**Last updated:** 2026-11-16
 
 ## Agreed rules
 
 | # | Rule | Reason |
 |---|---|---|
-| FD1 | Widgets are already-built functionality written by developers; stage 1 offers no widget configuration. | Owner, 2026-11-03: "the widgets, for now, are going to be like already developed functionality." |
+| FD1 | Widgets are already-built functionality written by developers; a code widget may offer settings (FD20). | Owner, 2026-11-03: "the widgets, for now, are going to be like already developed functionality." Reworded 2026-11-16 when FD20 replaced "stage 1 offers no widget configuration". |
 | FD2 | A widget is a dashboard widget when it is registered on the panel (discovered or listed) and implements the `DashboardWidget` contract. The plugin keeps no widget list of its own. | Owner, 2026-11-04: Guardian already picks up the panel's widgets, so registering in one place gives Guardian its `View:<Widget>` permissions with no change to Guardian. |
 | FD3 | The plugin never keeps its own widget-to-user or widget-to-role table. A widget is offered when its `canView()` passes and, if set, the plugin's `authorizeWidgetsUsing()` closure passes. | Owner chose Guardian permissions over a plugin table (2026-11-03): one source of truth for who sees what. |
 | FD4 | Guardian is optional. Without it, every widget and dashboard creation is open to every signed-in user, narrowed only by `canView()` and the plugin's closures. With it, access is managed from the role screen, and dashboards can be shared with roles. | Owner, 2026-11-04: "we can build both ways." The plugin must work in projects without Guardian. |
@@ -26,11 +26,13 @@
 | FD17 | Pin shows only on dashboards that are not the user's home; the home dashboard offers Unpin instead, which brings back the panel's normal dashboard. Both carry a tooltip saying what they do (Use as your home page, Go back to the default home page). | Owner, 2026-11-04: "Shouldn't 'Set Home' disappear once you have set it as home?"; on Remove as home: "go ahead". Owner, 2026-11-06: shorter labels, Fijar and Desfijar in Spanish. |
 | FD18 | A share (or a system dashboard) lets someone see a dashboard and what its owner placed on it, wherever it is shown. Managing belongs to the Dashboards and Widgets lists, and the app's policy decides who has them (`viewAny`; Guardian's `ViewAny:Dashboard`, `ViewAny:BuilderWidget`): without a list, nobody edits the layout or the widgets, changes settings, shares, transfers or deletes, whatever their share or ownership; a policy `update` or `delete` method narrows those further. On the dashboard page someone without the list sees no breadcrumb back to it. Without a policy everyone has the lists and shares decide, as before. | Owner, 2026-11-06: a dashboard must be a dashboard, not a gate to managing it; a share lets someone see a dashboard, role permissions decide who manages them. |
 | FD19 | The panel's home page (Escritorio, extending Filament's `Dashboard`) shows the user's home dashboard, else the panel's widgets without dashboard widgets. A dropdown named after the dashboards list offers every other dashboard the user can see in this panel and company (own, shared, system), by name; picking one shows it in place at `?dashboard=<slug>`, and an unknown or hidden slug is ignored. The shown dashboard offers Pin or Unpin (FD17), gray and without icon: Pin makes it home and reloads the home page; Unpin keeps showing it. The home page has no Open button. | Owner, 2026-11-06: someone without the dashboards list must still reach every dashboard shared with them and choose their home from the dashboard itself. |
+| FD20 | A code widget may declare a settings form (`HasDashboardSettings`). Its values are saved on that placement (the dashboard item's `options` under `settings`), so cloning the dashboard or duplicating the item carries them, and every viewer of the dashboard sees the widget with them. Only someone who can edit the dashboard changes them, from Configure in the widget's toolbar in edit mode, in a medium slide-over. Builder widgets are not affected. | Owner, 2026-11-16: a stock chart whose chosen products must stay on the dashboard for everyone who opens it. |
 
 ## Superseded
 
 | Rule | Old wording | Replaced | Why |
 |---|---|---|---|
+| FD1 | Widgets are already-built functionality written by developers; stage 1 offers no widget configuration. | 2026-11-16 | Owner: code widgets may keep settings per placement (FD20). |
 | FDP36 | An app policy for the builder widget model decides who sees the Widgets list (`viewAny`) and who builds or duplicates widgets (`create`), from the list or a dashboard's New widget; either also needs at least one data source (FDP19). With no policy, a data source is enough. View, edit, share and delete of a given widget always follow FD12, as FDP9 does for dashboards. | 2026-11-06 | Owner: role permissions decide who manages (FD18). |
 | FD17 | Set as home shows only on dashboards that are not the user's home; the home dashboard offers Remove as home instead, which brings back the panel's normal dashboard. | 2026-11-06 | Owner: shorter labels, Pin and Unpin with a tooltip. |
 | FDP2 | The plugin's home page extends Filament's `Dashboard`: it shows the user's home dashboard, else the panel's widgets minus dashboard widgets. | 2026-11-06 | Replaced by FD19: the home page also shows any dashboard picked from its dropdown. |
