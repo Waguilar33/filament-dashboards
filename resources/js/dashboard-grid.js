@@ -129,7 +129,7 @@ export default function dashboardGrid({ editable, printing, options }) {
             }
 
             gridItem.setAttribute('data-fixed-height', '')
-            gridItem.stretchedCard?.style.removeProperty('min-height')
+            gridItem.stretchedCard?.style.removeProperty('padding-bottom')
             this.fill(gridItem)
         },
 
@@ -169,7 +169,7 @@ export default function dashboardGrid({ editable, printing, options }) {
             const card = this.card(item)
 
             if (card) {
-                card.style.minHeight = ''
+                card.style.paddingBottom = ''
                 gridItem.stretchedCard = card
             }
 
@@ -185,11 +185,11 @@ export default function dashboardGrid({ editable, printing, options }) {
             const extra = gridItem.gridstackNode.h * this.grid.getCellHeight(true) - marginTop - marginBottom - item.offsetHeight
 
             if (extra > 0) {
-                card.style.minHeight = `${card.offsetHeight + extra}px`
+                card.style.paddingBottom = `${parseFloat(getComputedStyle(card).paddingBottom) + extra}px`
             }
         },
 
-        // Gridstack sizes a cell from its content, so the widget's card, or its innermost layout without one, is stretched to fill the cell's last partial row.
+        // Gridstack sizes a cell from its content, so the widget's card, or its innermost layout without one, is padded to fill the cell's last partial row; min-height would stretch the observed children and hide a later shrink.
         card(item) {
             const box = item.getBoundingClientRect()
             const walker = document.createTreeWalker(item, NodeFilter.SHOW_ELEMENT)
