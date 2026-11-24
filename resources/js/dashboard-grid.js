@@ -173,7 +173,11 @@ export default function dashboardGrid({ editable, printing, options }) {
                 gridItem.stretchedCard = card
             }
 
+            // Content that grows (a row detail opening) takes its new height at once; the slide is only for dragging and resizing.
+            const animate = this.grid.opts.animate
+            this.grid.setAnimation(false)
             this.grid.resizeToContent(gridItem)
+            this.grid.setAnimation(animate)
 
             if (!card) {
                 return
