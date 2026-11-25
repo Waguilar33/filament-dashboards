@@ -13,7 +13,7 @@ const EDGED_RAMP_CONTRAST = 1.5
 
 const ANCHOR_LIGHTNESS = { light: 0.58, dark: 0.72 }
 
-const ROUND_SHIFTS = { light: [0, 0.16, -0.12], dark: [0, 0.14, -0.14] }
+const ROUND_SHIFTS = { light: [0, 0.16, -0.12], dark: [0, -0.16, 0.14] }
 
 const LANE_OFFSETS = { light: [0, -0.12], dark: [0.06, -0.08] }
 
@@ -92,10 +92,12 @@ export function anchorColor(family, surface, mode, offset = 0) {
     return shades.length === 0 ? null : nearest(strong.length > 0 ? strong : shades, ANCHOR_LIGHTNESS[mode] + offset)
 }
 
-export function variedColors(families, names, surface, mode, count) {
+export const defaultLanes = (names) => [...new Set(['primary', ...names.filter((name) => !RESERVED_COLORS.includes(name))])]
+
+export function variedColors(families, names, surface, mode, count, chosen = null) {
     const lane = (name, index) => ({ shades: readable(families[name], surface), anchor: anchorColor(families[name], surface, mode, LANE_OFFSETS[mode][index % 2]) })
-    const lanes = [...new Set(['primary', ...names.filter((name) => !RESERVED_COLORS.includes(name))])].map(lane).filter((entry) => entry.anchor)
-    const gray = lane('gray', lanes.length)
+    const lanes = (chosen ? [...new Set(chosen)] : defaultLanes(names)).map(lane).filter((entry) => entry.anchor)
+    const gray = chosen ? {} : lane('gray', lanes.length)
     const shifts = ROUND_SHIFTS[mode]
     const sequence = [
         ...shifts.flatMap((shift) => lanes.map((entry) => ({ ...entry, shift }))),
@@ -152,9 +154,9 @@ export function otherColor(families, surface) {
     return readable(families.gray, surface)[0] ?? null
 }
 
-export function seriesColors({ kind = 'varied', count, other = false, named = [], edged = false, fixed = null }, families, names, surface, mode) {
+export function seriesColors({ kind = 'varied', count, other = false, named = [], edged = false, fixed = null, chosen = null }, families, names, surface, mode) {
     const plain = Array.from({ length: count }, (_, index) => !named[index] && !(other && index === count - 1)).filter(Boolean).length
-    const base = fixed?.length ? Array.from({ length: plain }, (_, index) => fixed[index % fixed.length]) : kind === 'single' ? singleColors(families.primary, surface, mode, plain, edged) : variedColors(families, names, surface, mode, plain)
+    const base = fixed?.length ? Array.from({ length: plain }, (_, index) => fixed[index % fixed.length]) : kind === 'single' ? singleColors(families[chosen?.[0] ?? 'primary'], surface, mode, plain, edged) : variedColors(families, names, surface, mode, plain, chosen)
     const colors = []
     let next = 0
 

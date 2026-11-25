@@ -78,7 +78,7 @@ export function paint(chart) {
     const named = perPoint ? [] : all.map((dataset) => (typeof dataset.color === 'string' && dataset.color !== '' ? dataset.color : null))
     const mode = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
     const colors = seriesColors(
-        { kind: palette?.kind ?? palette ?? 'varied', count, other: palette?.other === true, named, edged: all.every((dataset) => type(dataset) === 'bar'), fixed: config.fixed?.map(toRgb) },
+        { kind: palette?.kind ?? palette ?? 'varied', count, other: palette?.other === true, named, edged: all.every((dataset) => type(dataset) === 'bar'), fixed: config.fixed?.map(toRgb), chosen: config.palette },
         themeFamilies([...new Set([...config.names, 'gray', ...named.filter(Boolean)])]),
         config.names,
         surfaceColor(chart.canvas),

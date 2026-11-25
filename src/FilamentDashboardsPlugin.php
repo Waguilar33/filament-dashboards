@@ -177,6 +177,11 @@ final class FilamentDashboardsPlugin implements Plugin
     protected ?array $chartColors = null;
 
     /**
+     * @var list<string>|null
+     */
+    protected ?array $chartPalette = null;
+
+    /**
      * @var (Closure(array<string, mixed>, string): array<string, mixed>)|null
      */
     protected ?Closure $modifyChartOptionsUsing = null;
@@ -307,12 +312,16 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @return array{names: list<string>, fixed: list<string>|null}
+     * @return array{names: list<string>, palette: list<string>|null, fixed: list<string>|null}
      */
     public function chartColorSettings(Panel $panel): array
     {
+        $names = array_values(array_unique(array_map(strval(...), [...array_keys($panel->getColors()), ...array_keys(FilamentColor::getColors())])));
+        $palette = $this->chartPalette === null ? null : array_values(array_intersect(array_unique($this->chartPalette), $names));
+
         return [
-            'names' => array_values(array_unique(array_map(strval(...), [...array_keys($panel->getColors()), ...array_keys(FilamentColor::getColors())]))),
+            'names' => $names,
+            'palette' => $palette === [] ? null : $palette,
             'fixed' => $this->chartColors,
         ];
     }
@@ -921,6 +930,24 @@ final class FilamentDashboardsPlugin implements Plugin
         $this->chartColors = $colors === [] ? null : $colors;
 
         return $this;
+    }
+
+    /**
+     * @param  list<string>|null  $colors
+     */
+    public function chartPalette(?array $colors): static
+    {
+        $this->chartPalette = $colors === [] ? null : $colors;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function getChartPalette(): ?array
+    {
+        return $this->chartPalette;
     }
 
     /**

@@ -60,12 +60,12 @@ it('lists the series of a split chart in the order of the field when asked, with
 it('hands the page the panel colours in registration order and any fixed list', function (): void {
     $panel = Filament::getPanel('demo');
 
-    expect(FilamentDashboardsPlugin::get()->chartColorSettings($panel))->toBe(['names' => ['danger', 'gray', 'info', 'primary', 'success', 'warning'], 'fixed' => null]);
+    expect(FilamentDashboardsPlugin::get()->chartColorSettings($panel))->toBe(['names' => ['danger', 'gray', 'info', 'primary', 'success', 'warning'], 'palette' => null, 'fixed' => null]);
 
     $panel->colors(['earth' => '#a0522d', 'primary' => '#0f766e', 'pink' => '#db2777']);
-    FilamentDashboardsPlugin::get()->chartColors(['#111111', '#222222']);
+    FilamentDashboardsPlugin::get()->chartColors(['#111111', '#222222'])->chartPalette(['info', 'missing', 'earth', 'info']);
 
-    expect(FilamentDashboardsPlugin::get()->chartColorSettings($panel))->toBe(['names' => ['earth', 'primary', 'pink', 'danger', 'gray', 'info', 'success', 'warning'], 'fixed' => ['#111111', '#222222']]);
+    expect(FilamentDashboardsPlugin::get()->chartColorSettings($panel))->toBe(['names' => ['earth', 'primary', 'pink', 'danger', 'gray', 'info', 'success', 'warning'], 'palette' => ['info', 'earth'], 'fixed' => ['#111111', '#222222']]);
 });
 
 it('saves the colors and order chosen in the builder', function (string $type, array $data): void {

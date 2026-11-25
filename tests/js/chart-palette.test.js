@@ -33,16 +33,18 @@ const familyOf = (families, rgb) => Object.keys(families).find((name) => Object.
 const distance = (first, second) => Math.hypot(...oklab(first).map((value, channel) => value - oklab(second)[channel]))
 
 for (const mode of ['light', 'dark']) {
-    test(`series take the panel's colours, primary first, the rest in registration order, then lighter and darker repeats, gray last, on the ${mode} card`, () => {
+    test(`series take the panel's colours, primary first, the rest in registration order, then repeats that stand out more first, gray last, on the ${mode} card`, () => {
         const sortivo = seriesColors({ count: 16 }, SORTIVO, SORTIVO_NAMES, SURFACES[mode], mode)
         const filament = seriesColors({ count: 7 }, FILAMENT, FILAMENT_NAMES, SURFACES[mode], mode)
         const lane = ['primary', 'earth', 'info', 'pink', 'violet']
 
         assert.deepEqual(sortivo.map((rgb) => familyOf(SORTIVO, rgb)), [...lane, ...lane, ...lane, 'gray'])
         assert.deepEqual(filament.map((rgb) => familyOf(FILAMENT, rgb)), ['primary', 'info', 'primary', 'info', 'primary', 'info', 'gray'])
+        const [first, second] = mode === 'light' ? [1, -1] : [-1, 1]
+
         lane.forEach((name, index) => {
-            assert.ok(lightness(sortivo[index + 5]) > lightness(sortivo[index]), `${name} repeats lighter`)
-            assert.ok(lightness(sortivo[index + 10]) < lightness(sortivo[index]), `${name} repeats darker`)
+            assert.ok(Math.sign(lightness(sortivo[index + 5]) - lightness(sortivo[index])) === first, `${name} first repeat`)
+            assert.ok(Math.sign(lightness(sortivo[index + 10]) - lightness(sortivo[index])) === second, `${name} second repeat`)
         })
     })
 
@@ -82,6 +84,17 @@ test('a light-mode bar ramp may start paler, since Filament outlines bars', () =
     plain.forEach((color) => assert.ok(contrast(color, SURFACES.light) >= 2))
     edged.forEach((color) => assert.ok(contrast(color, SURFACES.light) >= 1.5))
     assert.ok(lightness(edged[0]) > lightness(plain[0]))
+})
+
+test('a palette chosen by the panel is used as given, in its order, without gray', () => {
+    const chosen = ['primary', 'earth', 'info', 'violet']
+
+    for (const mode of ['light', 'dark']) {
+        const colors = seriesColors({ count: 9, chosen }, SORTIVO, SORTIVO_NAMES, SURFACES[mode], mode)
+
+        assert.deepEqual(colors.map((rgb) => familyOf(SORTIVO, rgb)), [...chosen, ...chosen, 'primary'])
+        assert.equal(familyOf(SORTIVO, seriesColors({ kind: 'single', count: 2, chosen: ['earth'] }, SORTIVO, SORTIVO_NAMES, SURFACES[mode], mode)[0]), 'earth')
+    }
 })
 
 test('Other closes the series in gray', () => {
