@@ -33,20 +33,23 @@ const familyOf = (families, rgb) => Object.keys(families).find((name) => Object.
 const distance = (first, second) => Math.hypot(...oklab(first).map((value, channel) => value - oklab(second)[channel]))
 
 for (const mode of ['light', 'dark']) {
-    test(`series take the panel's colours, primary first, the rest in registration order, gray last, on the ${mode} card`, () => {
-        const sortivo = seriesColors({ count: 6 }, SORTIVO, SORTIVO_NAMES, SURFACES[mode], mode)
-        const filament = seriesColors({ count: 3 }, FILAMENT, FILAMENT_NAMES, SURFACES[mode], mode)
+    test(`series take the panel's colours, primary first, the rest in registration order, then lighter and darker repeats, gray last, on the ${mode} card`, () => {
+        const sortivo = seriesColors({ count: 16 }, SORTIVO, SORTIVO_NAMES, SURFACES[mode], mode)
+        const filament = seriesColors({ count: 7 }, FILAMENT, FILAMENT_NAMES, SURFACES[mode], mode)
+        const lane = ['primary', 'earth', 'info', 'pink', 'violet']
 
-        assert.deepEqual(sortivo.map((rgb) => familyOf(SORTIVO, rgb)), ['primary', 'earth', 'info', 'pink', 'violet', 'gray'])
-        assert.deepEqual(filament.map((rgb) => familyOf(FILAMENT, rgb)), ['primary', 'info', 'gray'])
+        assert.deepEqual(sortivo.map((rgb) => familyOf(SORTIVO, rgb)), [...lane, ...lane, ...lane, 'gray'])
+        assert.deepEqual(filament.map((rgb) => familyOf(FILAMENT, rgb)), ['primary', 'info', 'primary', 'info', 'primary', 'info', 'gray'])
+        lane.forEach((name, index) => {
+            assert.ok(lightness(sortivo[index + 5]) > lightness(sortivo[index]), `${name} repeats lighter`)
+            assert.ok(lightness(sortivo[index + 10]) < lightness(sortivo[index]), `${name} repeats darker`)
+        })
     })
 
-    test(`past the last colour the list comes round again in other shades, still distinct and readable, on the ${mode} card`, () => {
+    test(`repeats stay distinct from their neighbours and readable, on the ${mode} card`, () => {
         const colors = seriesColors({ count: 9 }, SORTIVO, SORTIVO_NAMES, SURFACES[mode], mode)
 
         assert.equal(new Set(colors.map(String)).size, 9)
-        assert.equal(familyOf(SORTIVO, colors[6]), 'primary')
-        assert.notDeepEqual(colors[6], colors[0])
         colors.forEach((color) => assert.ok(contrast(color, SURFACES[mode]) >= 2))
         colors.slice(1).forEach((color, index) => assert.ok(distance(color, colors[index]) >= 0.12, `series ${index} and ${index + 1} are too alike`))
     })

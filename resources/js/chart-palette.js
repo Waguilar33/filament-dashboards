@@ -93,19 +93,21 @@ export function anchorColor(family, surface, mode, offset = 0) {
 }
 
 export function variedColors(families, names, surface, mode, count) {
-    const lanes = [...new Set(['primary', ...names.filter((name) => !RESERVED_COLORS.includes(name)), 'gray'])]
-        .map((name, lane) => ({ shades: readable(families[name], surface), anchor: anchorColor(families[name], surface, mode, LANE_OFFSETS[mode][lane % 2]) }))
-        .filter((lane) => lane.anchor)
+    const lane = (name, index) => ({ shades: readable(families[name], surface), anchor: anchorColor(families[name], surface, mode, LANE_OFFSETS[mode][index % 2]) })
+    const lanes = [...new Set(['primary', ...names.filter((name) => !RESERVED_COLORS.includes(name))])].map(lane).filter((entry) => entry.anchor)
+    const gray = lane('gray', lanes.length)
+    const shifts = ROUND_SHIFTS[mode]
+    const sequence = [
+        ...shifts.flatMap((shift) => lanes.map((entry) => ({ ...entry, shift }))),
+        ...(gray.anchor ? shifts.map((shift) => ({ ...gray, shift })) : []),
+    ]
 
-    if (lanes.length === 0) {
+    if (sequence.length === 0) {
         return []
     }
 
-    const shifts = ROUND_SHIFTS[mode]
-
     return Array.from({ length: count }, (_, index) => {
-        const { shades, anchor } = lanes[index % lanes.length]
-        const shift = shifts[Math.floor(index / lanes.length) % shifts.length] * (index % lanes.length % 2 === 1 ? -1 : 1)
+        const { shades, anchor, shift } = sequence[index % sequence.length]
         const others = shades.filter((rgb) => rgb !== anchor)
 
         return shift === 0 || others.length === 0 ? anchor : nearest(others, lightness(anchor) + shift)
