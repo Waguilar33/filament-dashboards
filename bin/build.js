@@ -5,6 +5,7 @@ const isWatching = process.argv.includes('--watch')
 const context = await esbuild.context({
     entryPoints: [
         { in: 'resources/js/dashboard-grid.js', out: 'dashboard-grid' },
+        { in: 'resources/js/chart-colors.js', out: 'chart-colors' },
         { in: 'resources/css/dashboards.css', out: 'dashboards' },
     ],
     outdir: 'resources/dist',

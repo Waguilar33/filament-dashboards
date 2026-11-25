@@ -42,4 +42,12 @@ return [
         'month' => 'Month',
         'year' => 'Year',
     ],
+    'palettes' => [
+        'varied' => 'Varied',
+        'single' => 'Single color',
+    ],
+    'series_orders' => [
+        'size' => 'Largest first',
+        'field' => 'Field order',
+    ],
 ];

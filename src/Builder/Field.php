@@ -95,6 +95,22 @@ final readonly class Field
         return $this->divisor == 1 ? $value : round($value * $this->divisor, 10);
     }
 
+    public function compareValues(mixed $first, mixed $second): int
+    {
+        $first = is_scalar($first) ? (string) $first : '';
+        $second = is_scalar($second) ? (string) $second : '';
+
+        if ($this->type === FieldType::Choice) {
+            $positions = array_flip(array_map(strval(...), array_keys($this->options)));
+
+            return ($positions[$first] ?? PHP_INT_MAX) <=> ($positions[$second] ?? PHP_INT_MAX) ?: strnatcasecmp($first, $second);
+        }
+
+        return $this->type === FieldType::Number && is_numeric($first) && is_numeric($second)
+            ? (float) $first <=> (float) $second
+            : strnatcasecmp($first, $second);
+    }
+
     public function valueLabel(mixed $value): string
     {
         if ($this->type === FieldType::Boolean) {

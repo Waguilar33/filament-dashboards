@@ -18,7 +18,9 @@ use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
+use Filament\Support\Facades\FilamentColor;
 use Filament\Tables\Table;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\Widget;
 use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Auth\EloquentUserProvider;
@@ -28,6 +30,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Js;
 use Illuminate\Support\Str;
 use LogicException;
 use UnitEnum;
@@ -168,9 +172,14 @@ final class FilamentDashboardsPlugin implements Plugin
     protected string $printPageSize = 'letter';
 
     /**
-     * @var list<string>
+     * @var list<string>|null
      */
-    protected array $chartColors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
+    protected ?array $chartColors = null;
+
+    /**
+     * @var list<string>|null
+     */
+    protected ?array $chartPalette = null;
 
     /**
      * @var (Closure(array<string, mixed>, string): array<string, mixed>)|null
@@ -298,7 +307,23 @@ final class FilamentDashboardsPlugin implements Plugin
         $panel
             ->resources([DashboardResource::class, BuilderWidgetResource::class])
             ->authMiddleware([RegisterDashboardNavigation::class], isPersistent: true)
-            ->tenantMiddleware([RegisterTenantDashboardNavigation::class], isPersistent: true);
+            ->tenantMiddleware([RegisterTenantDashboardNavigation::class], isPersistent: true)
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): Htmlable => new HtmlString('<script>window.filamentDashboardsChartColors = '.Js::encode($this->chartColorSettings($panel)).'</script>'));
+    }
+
+    /**
+     * @return array{names: list<string>, palette: list<string>|null, fixed: list<string>|null}
+     */
+    public function chartColorSettings(Panel $panel): array
+    {
+        $names = array_values(array_unique(array_map(strval(...), [...array_keys($panel->getColors()), ...array_keys(FilamentColor::getColors())])));
+        $palette = $this->chartPalette === null ? null : array_values(array_intersect(array_unique($this->chartPalette), $names));
+
+        return [
+            'names' => $names,
+            'palette' => $palette === [] ? null : $palette,
+            'fixed' => $this->chartColors,
+        ];
     }
 
     public function boot(Panel $panel): void {}
@@ -898,19 +923,37 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @param  list<string>  $colors
+     * @param  list<string>|null  $colors
      */
-    public function chartColors(array $colors): static
+    public function chartColors(?array $colors): static
     {
-        $this->chartColors = $colors;
+        $this->chartColors = $colors === [] ? null : $colors;
 
         return $this;
     }
 
     /**
-     * @return list<string>
+     * @param  list<string>|null  $colors
      */
-    public function getChartColors(): array
+    public function chartPalette(?array $colors): static
+    {
+        $this->chartPalette = $colors === [] ? null : $colors;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function getChartPalette(): ?array
+    {
+        return $this->chartPalette;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function getChartColors(): ?array
     {
         return $this->chartColors;
     }
