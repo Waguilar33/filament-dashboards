@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Js;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use LogicException;
 use UnitEnum;
 use Waguilar\FilamentDashboards\Builder\DataSource;
@@ -59,6 +60,8 @@ use Waguilar\FilamentDashboards\Filament\Actions\ShareAction;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterDashboardNavigation;
 use Waguilar\FilamentDashboards\Http\Middleware\RegisterTenantDashboardNavigation;
 use Waguilar\FilamentDashboards\Models\Dashboard;
+use Waguilar\FilamentDashboards\Renderers\BuilderWidgetRenderer;
+use Waguilar\FilamentDashboards\Renderers\FilamentTableRenderer;
 use Waguilar\FilamentDashboards\Resources\BuilderWidgets\BuilderWidgetResource;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\SystemDashboards\SystemDashboard;
@@ -66,6 +69,8 @@ use Waguilar\FilamentDashboards\SystemDashboards\SystemWidget;
 
 final class FilamentDashboardsPlugin implements Plugin
 {
+    public const RENDERABLE_TYPES = [BuilderWidgetType::Table, BuilderWidgetType::Summary];
+
     /**
      * @var (Closure(Model, class-string<DashboardWidget>): bool)|null
      */
@@ -161,6 +166,11 @@ final class FilamentDashboardsPlugin implements Plugin
     protected array $builderLimits = ['table' => 100, 'summary' => 100, 'breakdown' => 20, 'scatter' => 500, 'drill_down' => 100, 'series' => 10];
 
     protected ?int $minRefreshInterval = 5;
+
+    /**
+     * @var array<string, class-string<BuilderWidgetRenderer>|BuilderWidgetRenderer>
+     */
+    protected array $renderers = [];
 
     /**
      * @var list<WidgetExporter>|null
@@ -908,6 +918,36 @@ final class FilamentDashboardsPlugin implements Plugin
     public function getExporters(): array
     {
         return $this->exporters ?? [new CsvExporter($this->csvDelimiter)];
+    }
+
+    /**
+     * @param  class-string<BuilderWidgetRenderer>|BuilderWidgetRenderer  $renderer
+     */
+    public function renderer(BuilderWidgetType $type, string|BuilderWidgetRenderer $renderer): static
+    {
+        if (! in_array($type, self::RENDERABLE_TYPES, true)) {
+            throw new InvalidArgumentException("Builder widgets of type [{$type->value}] cannot use a custom renderer yet.");
+        }
+
+        $this->renderers[$type->value] = $renderer;
+
+        return $this;
+    }
+
+    public function getRenderer(BuilderWidgetType $type): ?BuilderWidgetRenderer
+    {
+        if (! in_array($type, self::RENDERABLE_TYPES, true)) {
+            return null;
+        }
+
+        $renderer = $this->renderers[$type->value] ?? FilamentTableRenderer::class;
+        $renderer = is_string($renderer) ? app($renderer) : $renderer;
+
+        if (! $renderer instanceof BuilderWidgetRenderer) {
+            throw new InvalidArgumentException('Builder widget renderers must implement '.BuilderWidgetRenderer::class.'.');
+        }
+
+        return $this->renderers[$type->value] = $renderer;
     }
 
     public function printPageSize(string $size): static

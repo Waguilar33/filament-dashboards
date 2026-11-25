@@ -11,7 +11,9 @@ use ReflectionClass;
 use ReflectionMethod;
 use Throwable;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
+use Waguilar\FilamentDashboards\Renderers\BuilderWidgetRenderer;
 
 class ResolveWidgetSkeleton
 {
@@ -28,6 +30,12 @@ class ResolveWidgetSkeleton
     {
         if ($builderWidget instanceof BuilderWidget && $builderWidget->type->isChart()) {
             return $this->builderChart($builderWidget);
+        }
+
+        $renderer = $builderWidget instanceof BuilderWidget ? FilamentDashboardsPlugin::get()->getRenderer($builderWidget->type) : null;
+
+        if ($renderer instanceof BuilderWidgetRenderer) {
+            return ['shape' => $renderer->skeleton($builderWidget->type), 'heading' => false, 'description' => false, 'action' => false];
         }
 
         return static::$codeWidgets[$component] ??= $this->codeWidget($component);

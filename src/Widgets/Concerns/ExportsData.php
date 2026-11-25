@@ -46,19 +46,28 @@ trait ExportsData
     {
         abort_unless(collect($this->exportSourceKeys())->every(fn (string $key): bool => ($source = $this->source($key)) !== null && $source->canExport($this->viewer(), $this->tenant())), 403);
 
+        [$headings, $rows] = $this->exportTable();
+
+        return $exporter->export(FilamentDashboardsPlugin::get()->exportFileName($this->builderWidget()->name ?? 'widget'), $headings, $rows);
+    }
+
+    /**
+     * @return array{0: list<string>, 1: list<list<bool|float|int|string|null>>}
+     */
+    protected function exportTable(): array
+    {
         $columns = array_values($this->getTable()->getColumns());
         $records = $this->getTableRecords();
         $records = $records instanceof Collection ? $records->all() : $records->items();
 
-        return $exporter->export(
-            FilamentDashboardsPlugin::get()->exportFileName($this->builderWidget()->name ?? 'widget'),
+        return [
             array_map(fn (Column $column): string => $this->plainLabel($column->getLabel()), $columns),
             array_values(array_map(fn (mixed $record): array => array_map(function (Column $column) use ($record): bool|float|int|string|null {
                 $value = is_array($record) ? ($record[$column->getName()] ?? null) : data_get($record, $column->getName());
 
                 return is_scalar($value) ? $value : null;
             }, $columns), $records)),
-        );
+        ];
     }
 
     protected function plainLabel(string|Htmlable|null $label): string

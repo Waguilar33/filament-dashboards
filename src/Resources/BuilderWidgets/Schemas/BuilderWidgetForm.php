@@ -19,6 +19,7 @@ use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Widgets\Widget;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Waguilar\FilamentDashboards\Actions\ResolveWidgetRange;
@@ -33,12 +34,11 @@ use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Enums\ChartPalette;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
+use Waguilar\FilamentDashboards\Renderers\BuilderWidgetRenderer;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderFiguresWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderStatsWidget;
-use Waguilar\FilamentDashboards\Widgets\BuilderSummaryWidget;
-use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
 
 class BuilderWidgetForm
 {
@@ -90,15 +90,16 @@ class BuilderWidgetForm
     }
 
     /**
-     * @return class-string<BuilderStatsWidget|BuilderChartWidget|BuilderTableWidget|BuilderSummaryWidget|BuilderFiguresWidget>
+     * @return class-string<Widget>
      */
     public static function component(BuilderWidgetType $type): string
     {
-        return match ($type) {
-            BuilderWidgetType::Stats => BuilderStatsWidget::class,
-            BuilderWidgetType::Table => BuilderTableWidget::class,
-            BuilderWidgetType::Summary => BuilderSummaryWidget::class,
-            BuilderWidgetType::Figures => BuilderFiguresWidget::class,
+        $renderer = FilamentDashboardsPlugin::get()->getRenderer($type);
+
+        return match (true) {
+            $renderer instanceof BuilderWidgetRenderer => $renderer->widget($type),
+            $type === BuilderWidgetType::Stats => BuilderStatsWidget::class,
+            $type === BuilderWidgetType::Figures => BuilderFiguresWidget::class,
             default => BuilderChartWidget::class,
         };
     }
