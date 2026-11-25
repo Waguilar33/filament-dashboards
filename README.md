@@ -277,7 +277,84 @@ FilamentDashboardsPlugin::make()
 
 ### Widget heights
 
-Widgets fit their content: each card ends where its content ends, and follows it when it grows or shrinks (rows added, a page changed, the window resized). A chart or table (any Filament `ChartWidget` or `TableWidget`, built or your own) can also be given a height in Edit layout by dragging its bottom edge; the plot or rows stretch to it, rows scroll inside, and Fit height returns it to its content. A new builder chart starts at its type's default height. Printing always shows full content.
+Widgets fit their content: each card ends where its content ends, and follows it when it grows or shrinks (rows added, a page changed, the window resized). A chart or table (any Filament `ChartWidget` or `TableWidget`, built or your own, and builder tables drawn by a [custom renderer](#custom-renderers)) can also be given a height in Edit layout by dragging its bottom edge; the plot or rows stretch to it, rows scroll inside, and Fit height returns it to its content. A new builder chart starts at its type's default height. Printing always shows full content.
+
+### Custom renderers
+
+Builder table and summary widgets are drawn with a Filament table. Register your own renderer to draw them another way, such as a client-side grid. The plugin keeps computing the data and keeps the card around it: the header with the widget name, its date range, Dates and Export, the empty and Needs attention states, polling, drill-down, export and card fit. Your renderer only draws the rows.
+
+A renderer names the Livewire widget to mount for a type and the loading skeleton to show while it loads:
+
+```php
+use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\Renderers\BuilderWidgetRenderer;
+
+class GridRenderer implements BuilderWidgetRenderer
+{
+    public function widget(BuilderWidgetType $type): string
+    {
+        return GridTableWidget::class;
+    }
+
+    public function skeleton(BuilderWidgetType $type): string
+    {
+        return 'table';
+    }
+}
+
+FilamentDashboardsPlugin::make()
+    ->renderer(BuilderWidgetType::Summary, GridRenderer::class)
+    ->renderer(BuilderWidgetType::Table, GridRenderer::class);
+```
+
+The widget extends `TableRendererWidget` and draws a `TableResult` in `body()`, which may return a view, a Filament schema or any HTML. This one lists the rows and opens the drill-down when a row is clicked:
+
+```php
+use Illuminate\Contracts\View\View;
+use Waguilar\FilamentDashboards\Renderers\TableRendererWidget;
+use Waguilar\FilamentDashboards\Renderers\TableResult;
+
+class GridTableWidget extends TableRendererWidget
+{
+    public function body(TableResult $result): View
+    {
+        return view('widgets.grid-table', ['result' => $result]);
+    }
+}
+```
+
+```blade
+{{-- resources/views/widgets/grid-table.blade.php --}}
+<table>
+    <tr>
+        @foreach ($result->columns as $column)
+            <th @class(['text-end' => $column->alignment->value === 'end'])>{{ $column->label }}</th>
+        @endforeach
+    </tr>
+
+    @foreach ([...$result->rows, ...array_filter([$result->totals])] as $row)
+        <tr
+            @class(['font-bold' => $row === $result->totals])
+            @if ($row->drillsDown()) wire:click="mountAction('drillDown', @js($row->drillDown))" @endif
+        >
+            @foreach ($result->columns as $column)
+                <td>{{ $row->display($column->key) }}</td>
+            @endforeach
+        </tr>
+    @endforeach
+</table>
+```
+
+What a `TableResult` holds:
+
+- `columns`: `TableColumn`s, each with a `key`, a `label`, a `type` (`ColumnType::Text`, `Number`, `Percent` or `Date`) and an `alignment` (`Alignment::Start` or `End`).
+- `rows`: `TableRow`s. `value($key)` is the raw value (for sorting and sums), `display($key)` the text the plugin formatted with the field's `formatUsing()` and your `formatNumbersUsing()`, and `drillDown` the arguments for `mountAction('drillDown', ...)`, or `null` when the row has no records to open.
+- `totals`: the total row, or `null`.
+- `needsAttention`: the widget's saved fields or filters no longer match its source. The card then shows the Needs attention state instead of your content, as it does when there are no rows.
+
+A renderer that draws in the browser passes `$result->toArray()` to its script: plain arrays of strings, numbers and booleans. Show `display`, sort on `values`, and call `$wire.mountAction('drillDown', row.drillDown)` for a click. The text is formatted on the server because number and field formats are PHP closures, so the browser never has to copy them.
+
+The skeleton is one of `table`, `stats`, `line`, `bar`, `pie`, `chart` or `card`. The widget's `tableResult()`, `builderHeading()`, `builderDescription()`, `builderHeaderActions()` and `builderPollingInterval()` are public, so a widget that needs its own view can rebuild the card from them. Only table and summary widgets take a renderer so far, and one renderer serves the whole panel; other types keep their built-in drawing.
 
 ## Dashboard dates
 
@@ -327,7 +404,7 @@ FilamentDashboardsPlugin::make()
 
 ## Coded table widgets
 
-For a table in your own widget, [waguilar33/filament-data-grid](https://github.com/Waguilar33/filament-data-grid) adds search, pagination, totals and child rows in the browser. The plugin does not need it; the builder's tables keep using Filament tables. Render a `DataGridEntry` from a plain `Widget`:
+For a table in your own widget, [waguilar33/filament-data-grid](https://github.com/Waguilar33/filament-data-grid) adds search, pagination, totals and child rows in the browser. The plugin does not need it; the builder's tables keep using Filament tables unless you register a [custom renderer](#custom-renderers). Render a `DataGridEntry` from a plain `Widget`:
 
 ```php
 use Filament\Actions\Concerns\InteractsWithActions;

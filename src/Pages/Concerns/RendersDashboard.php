@@ -70,7 +70,9 @@ trait RendersDashboard
                     return null;
                 }
 
-                $adjustableHeight = is_a($component, ChartWidget::class, true) || is_a($component, TableWidget::class, true);
+                $adjustableHeight = is_a($component, ChartWidget::class, true)
+                    || is_a($component, TableWidget::class, true)
+                    || ($builderWidget instanceof BuilderWidget && in_array($builderWidget->type, FilamentDashboardsPlugin::RENDERABLE_TYPES, true));
                 $configurable = ! $builderWidget instanceof BuilderWidget && is_a($component, HasDashboardSettings::class, true);
                 $skeleton = app(ResolveWidgetSkeleton::class)->handle($component, $builderWidget instanceof BuilderWidget ? $builderWidget : null);
 
@@ -86,7 +88,7 @@ trait RendersDashboard
                     'configurable' => $configurable,
                     'builderWidgetId' => $builderWidget instanceof BuilderWidget && BuilderWidgetResource::canEdit($builderWidget) ? $builderWidget->id : null,
                     'duplicable' => ! $builderWidget instanceof BuilderWidget || $canCreateWidgets,
-                    'label' => $builderWidget instanceof BuilderWidget ? $builderWidget->name : $component::dashboardLabel(),
+                    'label' => $builderWidget instanceof BuilderWidget ? $builderWidget->name : $widgets[$item->widget]::dashboardLabel(),
                     'followsDates' => $builderWidget instanceof BuilderWidget
                         ? $builderWidget->followsDashboardDates()
                         : in_array(InteractsWithPageFilters::class, class_uses_recursive($component), true),

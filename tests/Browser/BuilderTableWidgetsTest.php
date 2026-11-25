@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Tests\Fixtures\Renderers\ListRenderer;
 use Workbench\Database\Factories\DemoOrderFactory;
 
 it('draws builder tables on a dashboard with their header, export, bold total row and a drill-down click', function (): void {
@@ -63,4 +65,42 @@ it('draws builder tables on a dashboard with their header, export, bold total ro
             return []
         }
         JS))->toBe([['name' => 'drillDown', 'args' => ['key' => 'web', 'label' => 'Web']]]);
+});
+
+it('draws a registered renderer inside the plugin card, which fits its content', function (): void {
+    FilamentDashboardsPlugin::get()->renderer(BuilderWidgetType::Table, ListRenderer::class);
+    DemoOrderFactory::new()->count(8)->create();
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $table = builderWidget($owner, ['type' => BuilderWidgetType::Table, 'name' => 'Latest orders', 'config' => ['source' => 'orders', 'columns' => ['customer', 'total'], 'limit' => 8]]);
+    $dashboard->items()->create(['widget' => $table->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 1]);
+    $this->actingAs($owner);
+
+    $state = visit("/demo/custom-dashboards/{$dashboard->slug}")->resize(1440, 900)->waitForEvent('networkidle')->script(<<<'JS'
+        async () => {
+            const layout = () => document.querySelector('.grid-stack-item').getBoundingClientRect().height
+
+            for (let tries = 0; tries < 100; tries++) {
+                const before = layout()
+                await new Promise((resolve) => setTimeout(resolve, 100))
+
+                if (document.querySelectorAll('.list-row').length === 8 && layout() === before) {
+                    const card = document.querySelector('.fi-ta-ctn')
+                    const item = document.querySelector('.grid-stack-item')
+
+                    return {
+                        heading: card.querySelector('.fi-ta-header-heading').textContent.trim(),
+                        actions: card.querySelector('.fi-ta-header .fi-ta-actions').textContent.trim(),
+                        skeleton: item.dataset.skeleton,
+                        gap: item.getBoundingClientRect().bottom - card.getBoundingClientRect().bottom,
+                    }
+                }
+            }
+
+            throw new Error('The renderer never drew')
+        }
+        JS);
+
+    expect($state)->toMatchArray(['heading' => 'Latest orders', 'actions' => 'Export', 'skeleton' => 'card'])
+        ->and($state['gap'])->toBeGreaterThanOrEqual(8)->toBeLessThan(10);
 });

@@ -4,85 +4,73 @@ declare(strict_types=1);
 
 namespace Waguilar\FilamentDashboards\Widgets;
 
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
-use InvalidArgumentException;
-use Waguilar\FilamentDashboards\Builder\Actions\FetchRows;
-use Waguilar\FilamentDashboards\Builder\Field;
-use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
-use Waguilar\FilamentDashboards\Widgets\Concerns\ExportsData;
-use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
+use Illuminate\Support\Js;
+use Waguilar\FilamentDashboards\Renderers\Concerns\InteractsWithBuilderTable;
+use Waguilar\FilamentDashboards\Renderers\TableColumn;
+use Waguilar\FilamentDashboards\Renderers\TableRow;
 
 class BuilderTableWidget extends TableWidget
 {
-    use ExportsData;
-    use InteractsWithBuilderWidget;
+    use InteractsWithBuilderTable;
+
+    protected const TOTAL = '__total';
+
+    protected const DRILL_DOWN = '__drill_down';
 
     protected static bool $isDiscovered = false;
 
     protected int|string|array $columnSpan = 'full';
 
-    protected function widgetDatesChanged(): void
+    protected function tableResultChanged(): void
     {
         $this->table = $this->table($this->makeTable());
     }
 
     public function table(Table $table): Table
     {
-        $config = $this->widgetConfig();
-        $source = $this->source($config['source'] ?? null);
-        $columns = array_values(array_filter(is_array($config['columns'] ?? null) ? $config['columns'] : [], is_string(...)));
-        $fields = collect($source?->fields() ?? [])->keyBy(fn (Field $field): string => $field->name);
-        $limit = $config['limit'] ?? 10;
-        $interval = $this->getPollingInterval();
+        $result = $this->tableResult();
+        $drills = array_filter($result->rows, fn (TableRow $row): bool => $row->drillsDown()) !== [];
 
         return $table
-            ->heading($this->builderWidget()?->name)
-            ->description($this->ownRangeLabel([$config]))
-            ->headerActions([$this->widgetDatesAction(), $this->exportAction()])
-            ->emptyStateDescription(fn (): ?string => $this->needsAttention ? $this->needsAttentionText() : null)
-            ->records(function () use ($source, $config, $columns, $limit): array {
-                if ($source === null) {
-                    return [];
-                }
-
-                try {
-                    return app(FetchRows::class)->handle(
-                        $source,
-                        $this->viewer(),
-                        $this->tenant(),
-                        $columns,
-                        $this->configString($config, 'sort_field'),
-                        $this->configString($config, 'sort_direction') ?? 'desc',
-                        $this->filters($config),
-                        is_numeric($limit) ? max(1, min(FilamentDashboardsPlugin::get()->getBuilderLimit('table'), (int) $limit)) : 10,
-                        $this->configString($config, 'dates_field'),
-                        $this->dashboardDates($config),
-                    );
-                } catch (InvalidArgumentException) {
-                    $this->needsAttention = true;
-
-                    return [];
-                }
-            })
-            ->columns(array_values(array_filter(array_map(
-                fn (string $column): ?TextColumn => ($field = $fields->get($column)) instanceof Field
-                    ? TextColumn::make($field->alias())
-                        ->label($field->label)
-                        ->translateLabel(false)
-                        ->formatStateUsing(fn (mixed $state): mixed => is_int($state) || is_float($state) ? ($field->format($state) ?? $this->formatNumber($state)) : $state)
-                    : null,
-                $columns,
-            ))))
+            ->heading($this->builderHeading())
+            ->description($this->builderDescription())
+            ->headerActions($this->builderHeaderActions())
+            ->emptyStateDescription(fn (): ?string => $this->builderEmptyStateDescription())
+            ->records(fn (): array => $this->tableRecords())
+            ->columns(array_map(fn (TableColumn $column, int $index): TextColumn => TextColumn::make($column->key)
+                ->label($column->label)
+                ->translateLabel(false)
+                ->when($column->alignment === Alignment::End, fn (TextColumn $text): TextColumn => $text->alignment(Alignment::End))
+                ->when($this->boldsTotals() || $result->totals instanceof TableRow, fn (TextColumn $text): TextColumn => $text->weight(fn (array $record): ?FontWeight => $record[self::TOTAL] ? FontWeight::Bold : null))
+                ->when($drills && $index === 0, fn (TextColumn $text): TextColumn => $text->extraCellAttributes(fn (array $record): array => $record[self::DRILL_DOWN] === null ? [] : [
+                    'wire:click' => 'mountAction(\'drillDown\', '.Js::from($record[self::DRILL_DOWN]).')',
+                    'class' => 'fi-dashboards-drill-down',
+                ])), $result->columns, array_keys($result->columns)))
             ->paginated(false)
-            ->poll($interval);
+            ->poll($this->builderPollingInterval());
     }
 
-    protected function exportSourceKeys(): array
+    protected function boldsTotals(): bool
     {
-        $source = $this->configString($this->widgetConfig(), 'source');
+        return false;
+    }
 
-        return $source === null ? [] : [$source];
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function tableRecords(): array
+    {
+        $result = $this->tableResult();
+        $record = fn (TableRow $row, bool $total): array => [...$row->display, self::TOTAL => $total, self::DRILL_DOWN => $row->drillDown];
+
+        return [
+            ...array_map(fn (TableRow $row): array => $record($row, false), $result->rows),
+            ...($result->totals instanceof TableRow ? [$record($result->totals, true)] : []),
+        ];
     }
 }
