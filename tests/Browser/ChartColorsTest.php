@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+
 const SIZES_COLORS = <<<'JS'
     async () => {
         for (let tries = 0; tries < 100; tries++) {
@@ -19,14 +21,7 @@ const SIZES_COLORS = <<<'JS'
     }
     JS;
 
-function lightness(string $rgb): float
-{
-    [$red, $green, $blue] = array_map(intval(...), explode(',', trim($rgb, 'rgb() ')));
-
-    return 0.2126 * $red + 0.7152 * $green + 0.0722 * $blue;
-}
-
-it('paints a coded chart from the panel theme, in order, with a named color, and repaints for dark mode', function (): void {
+it('paints a coded chart on a dashboard from the panel theme, with a named color, and repaints for dark mode', function (): void {
     $owner = user();
     $dashboard = dashboard($owner);
     $dashboard->items()->create(['widget' => 'sizes-chart', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 8, 'fits_content' => false]);
@@ -35,14 +30,25 @@ it('paints a coded chart from the panel theme, in order, with a named color, and
     $page = visit("/demo/custom-dashboards/{$dashboard->slug}")->resize(1440, 900)->waitForEvent('networkidle');
     $page->script("() => Alpine.store('theme', 'light')");
 
-    [$smallest, $middle, $largest, $returned] = $light = $page->script(SIZES_COLORS);
+    $light = $page->script(SIZES_COLORS);
 
     $page->script("() => Alpine.store('theme', 'dark')");
     $page->wait(0.3);
 
     expect($light)->each->toStartWith('rgb(')
-        ->and(lightness($smallest))->toBeGreaterThan(lightness($middle))
-        ->and(lightness($middle))->toBeGreaterThan(lightness($largest))
-        ->and($returned)->not->toBeIn([$smallest, $middle, $largest])
+        ->and(array_unique(array_slice($light, 0, 3)))->toHaveCount(3)
+        ->and(array_slice($light, 0, 3))->not->toContain($light[3])
         ->and($page->script(SIZES_COLORS))->not->toBe($light);
+});
+
+it('uses the colors the panel sets on coded charts too', function (): void {
+    FilamentDashboardsPlugin::get()->chartColors(['#111111', '#222222']);
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $dashboard->items()->create(['widget' => 'sizes-chart', 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 8, 'fits_content' => false]);
+    $this->actingAs($owner);
+
+    $colors = visit("/demo/custom-dashboards/{$dashboard->slug}")->resize(1440, 900)->waitForEvent('networkidle')->script(SIZES_COLORS);
+
+    expect(array_slice($colors, 0, 3))->toBe(['rgb(17, 17, 17)', 'rgb(34, 34, 34)', 'rgb(17, 17, 17)']);
 });

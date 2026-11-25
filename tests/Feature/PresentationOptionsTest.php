@@ -26,9 +26,8 @@ it('prints on the paper size the app chooses', function (): void {
     Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])->assertSeeHtml('size: A4;');
 });
 
-it('colors and configures charts the app way', function (): void {
+it('configures charts the app way', function (): void {
     FilamentDashboardsPlugin::get()
-        ->chartColors(['#000000', '#ffffff'])
         ->modifyChartOptionsUsing(fn (array $options, string $type): array => [...$options, 'plugins' => ['legend' => ['display' => $type !== 'pie']]]);
     $this->actingAs(user());
     DemoOrderFactory::new()->create(['channel' => 'web']);
@@ -37,8 +36,7 @@ it('colors and configures charts the app way', function (): void {
 
     $chart = Livewire::test(BuilderChartWidget::class, ['previewType' => 'pie', 'previewConfig' => ['source' => 'orders', 'metric' => 'count', 'group_field' => 'channel']])->instance();
 
-    expect((fn (): array => $this->getData())->call($chart)['datasets'][0]['backgroundColor'])->toBe(['#000000', '#ffffff', '#000000'])
-        ->and((fn (): ?array => $this->getOptions())->call($chart)['plugins']['legend']['display'])->toBeFalse();
+    expect((fn (): ?array => $this->getOptions())->call($chart)['plugins']['legend']['display'])->toBeFalse();
 });
 
 it('shows a drop in green on fields where lower is better', function (): void {
@@ -60,8 +58,7 @@ it('keeps as many widget versions as the app chooses', function (): void {
     expect($widget->versions()->pluck('name')->all())->toBe(['C', 'D']);
 });
 
-it('draws a split chart as one coloured dataset per value, stacking bars but not lines', function (string $type, bool $stacked): void {
-    FilamentDashboardsPlugin::get()->chartColors(['#000000', '#ffffff']);
+it('draws a split chart as one dataset per value, stacking bars but not lines', function (string $type, bool $stacked): void {
     $this->actingAs(user());
     DemoOrderFactory::new()->create(['channel' => 'web', 'ordered_at' => now()]);
     DemoOrderFactory::new()->create(['channel' => 'store', 'ordered_at' => now()]);
@@ -69,8 +66,8 @@ it('draws a split chart as one coloured dataset per value, stacking bars but not
     $chart = Livewire::test(BuilderChartWidget::class, ['previewType' => $type, 'previewConfig' => ['source' => 'orders', 'date_field' => 'ordered_at', 'metric' => 'count', 'period' => '7d', 'split_field' => 'channel']])->instance();
     $datasets = (fn (): array => $this->getData())->call($chart)['datasets'];
 
-    expect(array_map(fn (array $dataset): array => [$dataset['label'], $dataset['backgroundColor'], $dataset['borderColor'], array_sum($dataset['data'])], $datasets))
-        ->toBe([['Store', '#000000', '#000000', 1], ['Web', '#ffffff', '#ffffff', 1]])
+    expect(array_map(fn (array $dataset): array => [$dataset['label'], array_sum($dataset['data'])], $datasets))
+        ->toBe([['Store', 1], ['Web', 1]])
         ->and(data_get((fn (): ?array => $this->getOptions())->call($chart), 'scales.y.stacked'))->toBe($stacked ?: null);
 })->with([
     'bar' => ['bar', true],

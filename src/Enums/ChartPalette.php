@@ -9,7 +9,7 @@ use Filament\Support\Contracts\HasLabel;
 enum ChartPalette: string implements HasLabel
 {
     case Varied = 'varied';
-    case Ordered = 'ordered';
+    case Single = 'single';
 
     public function getLabel(): string
     {

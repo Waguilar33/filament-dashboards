@@ -1,23 +1,25 @@
 export const SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]
 
-export const VARIED_FAMILIES = ['primary', 'info', 'gray']
+export const RESERVED_COLORS = ['gray', 'success', 'warning', 'danger']
 
 const RAMP_SHADES = SHADES.slice(2, 10)
 
 const MIN_CONTRAST = 2
 
+const ANCHOR_CONTRAST = 3
+
 // Below the 2:1 floor only for light-mode bars, which Filament outlines in a darker edge.
 const EDGED_RAMP_CONTRAST = 1.5
+
+const ANCHOR_LIGHTNESS = { light: 0.58, dark: 0.72 }
+
+const ROUND_SHIFTS = { light: [0, 0.16, -0.12], dark: [0, 0.14, -0.14] }
+
+const LANE_OFFSETS = { light: [0, -0.12], dark: [0.06, -0.08] }
 
 const SNAP_LIGHTNESS = 0.02
 
 const SNAP_SHARE_OF_STEP = 0.2
-
-const ANCHOR_CONTRAST = 3
-
-const ANCHOR_LIGHTNESS = { light: 0.6, dark: 0.72 }
-
-const VARIED_BAND = { light: [0.4, 0.8], dark: [0.45, 0.9] }
 
 const toLinear = (channel) => {
     const value = channel / 255
@@ -48,6 +50,8 @@ function fromOklab([L, a, b]) {
     return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s].map(toChannel)
 }
 
+const lightness = (rgb) => oklab(rgb)[0]
+
 const luminance = ([r, g, b]) => 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
 
 export function contrast(first, second) {
@@ -61,33 +65,51 @@ export const rgbString = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`
 export function darken([r, g, b], amount) {
     const max = Math.max(r, g, b) / 255
     const min = Math.min(r, g, b) / 255
-    const lightness = (max + min) / 2
-    const target = lightness * (1 - amount)
+    const level = (max + min) / 2
+    const target = level * (1 - amount)
 
     if (max === min) {
         return [r, g, b].map(() => Math.round(target * 255))
     }
 
-    const scale = (target < 0.5 ? target : 1 - target) / (lightness < 0.5 ? lightness : 1 - lightness)
+    const scale = (target < 0.5 ? target : 1 - target) / (level < 0.5 ? level : 1 - level)
 
-    return [r, g, b].map((channel) => Math.round((target + (channel / 255 - lightness) * scale) * 255))
+    return [r, g, b].map((channel) => Math.round((target + (channel / 255 - level) * scale) * 255))
 }
 
 function readable(family, surface, shades = SHADES, minimum = MIN_CONTRAST) {
     return shades.filter((shade) => family?.[shade] && contrast(family[shade], surface) >= minimum).map((shade) => family[shade])
 }
 
-function anchorIndex(shades, surface, target) {
-    const scored = shades.map((rgb, index) => ({ index, distance: Math.abs(oklab(rgb)[0] - target), strong: contrast(rgb, surface) >= ANCHOR_CONTRAST }))
-    const pool = scored.some((entry) => entry.strong) ? scored.filter((entry) => entry.strong) : scored
-
-    return pool.reduce((best, entry) => (entry.distance < best.distance ? entry : best)).index
+function nearest(shades, target) {
+    return shades.reduce((best, rgb) => (Math.abs(lightness(rgb) - target) < Math.abs(lightness(best) - target) ? rgb : best))
 }
 
-export function anchorColor(family, surface, mode) {
+export function anchorColor(family, surface, mode, offset = 0) {
     const shades = readable(family, surface)
+    const strong = shades.filter((rgb) => contrast(rgb, surface) >= ANCHOR_CONTRAST)
 
-    return shades.length === 0 ? null : shades[anchorIndex(shades, surface, ANCHOR_LIGHTNESS[mode])]
+    return shades.length === 0 ? null : nearest(strong.length > 0 ? strong : shades, ANCHOR_LIGHTNESS[mode] + offset)
+}
+
+export function variedColors(families, names, surface, mode, count) {
+    const lanes = [...new Set(['primary', ...names.filter((name) => !RESERVED_COLORS.includes(name)), 'gray'])]
+        .map((name, lane) => ({ shades: readable(families[name], surface), anchor: anchorColor(families[name], surface, mode, LANE_OFFSETS[mode][lane % 2]) }))
+        .filter((lane) => lane.anchor)
+
+    if (lanes.length === 0) {
+        return []
+    }
+
+    const shifts = ROUND_SHIFTS[mode]
+
+    return Array.from({ length: count }, (_, index) => {
+        const { shades, anchor } = lanes[index % lanes.length]
+        const shift = shifts[Math.floor(index / lanes.length) % shifts.length] * (index % lanes.length % 2 === 1 ? -1 : 1)
+        const others = shades.filter((rgb) => rgb !== anchor)
+
+        return shift === 0 || others.length === 0 ? anchor : nearest(others, lightness(anchor) + shift)
+    })
 }
 
 function sample(shades, count) {
@@ -112,47 +134,25 @@ function sample(shades, count) {
     })
 }
 
-export function orderedColors(family, surface, count, minimum = MIN_CONTRAST) {
-    const shades = readable(family, surface, RAMP_SHADES, minimum)
+export function singleColors(family, surface, mode, count, edged = false) {
+    const shades = readable(family, surface, RAMP_SHADES, edged && mode === 'light' ? EDGED_RAMP_CONTRAST : MIN_CONTRAST)
 
-    return shades.length === 0 || count === 0 ? [] : sample(shades, count)
-}
-
-const distance = (first, second) => Math.hypot(...oklab(first).map((value, channel) => value - oklab(second)[channel]))
-
-export function variedColors(families, surface, mode, count) {
-    const lanes = VARIED_FAMILIES.map((name) => readable(families[name], surface).filter((rgb) => {
-        const lightness = oklab(rgb)[0]
-
-        return lightness >= VARIED_BAND[mode][0] && lightness <= VARIED_BAND[mode][1]
-    })).filter((shades) => shades.length > 0)
-
-    if (lanes.length === 0) {
+    if (shades.length === 0 || count === 0) {
         return []
     }
 
-    const colors = [lanes[0][anchorIndex(lanes[0], surface, ANCHOR_LIGHTNESS[mode])]]
+    const ramp = sample(shades, count)
 
-    for (let index = 1; index < count; index++) {
-        const unused = lanes[index % lanes.length].filter((rgb) => !colors.includes(rgb))
-        const candidates = unused.length > 0 ? unused : lanes[index % lanes.length]
-        const score = (rgb) => Math.min(distance(rgb, colors.at(-1)), 2 * Math.min(...colors.map((placed) => distance(rgb, placed))))
-
-        colors.push(candidates.reduce((best, rgb) => (score(rgb) > score(best) ? rgb : best)))
-    }
-
-    return colors
+    return mode === 'dark' ? ramp.reverse() : ramp
 }
 
 export function otherColor(families, surface) {
-    const shades = readable(families.gray, surface)
-
-    return shades[0] ?? null
+    return readable(families.gray, surface)[0] ?? null
 }
 
-export function seriesColors({ kind, count, other = false, named = [], edged = false }, families, surface, mode) {
-    const unnamed = Array.from({ length: count }, (_, index) => !named[index] && !(other && index === count - 1)).filter(Boolean).length
-    const base = kind === 'ordered' ? orderedColors(families.primary, surface, unnamed, edged && mode === 'light' ? EDGED_RAMP_CONTRAST : MIN_CONTRAST) : variedColors(families, surface, mode, unnamed)
+export function seriesColors({ kind = 'varied', count, other = false, named = [], edged = false, fixed = null }, families, names, surface, mode) {
+    const plain = Array.from({ length: count }, (_, index) => !named[index] && !(other && index === count - 1)).filter(Boolean).length
+    const base = fixed?.length ? Array.from({ length: plain }, (_, index) => fixed[index % fixed.length]) : kind === 'single' ? singleColors(families.primary, surface, mode, plain, edged) : variedColors(families, names, surface, mode, plain)
     const colors = []
     let next = 0
 

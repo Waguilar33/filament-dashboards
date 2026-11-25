@@ -194,6 +194,7 @@ class BuilderWidgetForm
                         ->label(__(self::T.'group_field'))
                         ->helperText(__(self::T.'split_field_helper', ['count' => FilamentDashboardsPlugin::get()->getBuilderLimit('series')]))
                         ->live(),
+                    self::seriesOrderSelect()->visible(fn (Get $get): bool => filled($get('split_field'))),
                     self::paletteSelect()->visible(fn (Get $get): bool => filled($get('split_field'))),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                 ]),
@@ -327,6 +328,7 @@ class BuilderWidgetForm
                     ...self::metricFields(),
                     TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(FilamentDashboardsPlugin::get()->getBuilderLimit('breakdown'))->default(10)->live(onBlur: true),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
+                    self::seriesOrderSelect(),
                     self::paletteSelect(),
                     ...self::datesFields(),
                 ]),
@@ -342,6 +344,17 @@ class BuilderWidgetForm
             ->helperText(__(self::T.'palette_helper'))
             ->options(ChartPalette::class)
             ->default(ChartPalette::Varied->value)
+            ->selectablePlaceholder(false)
+            ->live();
+    }
+
+    protected static function seriesOrderSelect(): Select
+    {
+        return Select::make('series_order')
+            ->label(__(self::T.'series_order'))
+            ->helperText(__(self::T.'series_order_helper'))
+            ->options(fn (): array => __('filament-dashboards::builder.series_orders'))
+            ->default('size')
             ->selectablePlaceholder(false)
             ->live();
     }

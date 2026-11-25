@@ -44,6 +44,10 @@ return [
     ],
     'palettes' => [
         'varied' => 'Variados',
-        'ordered' => 'Tonos, en orden',
+        'single' => 'Un solo color',
+    ],
+    'series_orders' => [
+        'size' => 'Mayor primero',
+        'field' => 'Orden del campo',
     ],
 ];

@@ -7,7 +7,6 @@ namespace Workbench\App\Filament\Widgets;
 use Filament\Widgets\ChartWidget;
 use Waguilar\FilamentDashboards\Concerns\InteractsWithDashboard;
 use Waguilar\FilamentDashboards\Contracts\DashboardWidget;
-use Waguilar\FilamentDashboards\Enums\ChartPalette;
 
 final class SizesChart extends ChartWidget implements DashboardWidget
 {
@@ -17,7 +16,7 @@ final class SizesChart extends ChartWidget implements DashboardWidget
 
     public static function dashboardDescription(): string
     {
-        return 'Sales by tree size, stacked in size order, with returns in the danger color.';
+        return 'Sales by tree size, stacked, with returns in the danger color.';
     }
 
     /**
@@ -33,7 +32,6 @@ final class SizesChart extends ChartWidget implements DashboardWidget
                 ['label' => 'Returned', 'data' => [1, 0, 1], 'color' => 'danger'],
             ],
             'labels' => ['Mon', 'Tue', 'Wed'],
-            'palette' => ChartPalette::Ordered,
         ];
     }
 

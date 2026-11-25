@@ -44,6 +44,10 @@ return [
     ],
     'palettes' => [
         'varied' => 'Varied',
-        'ordered' => 'Shades, in order',
+        'single' => 'Single color',
+    ],
+    'series_orders' => [
+        'size' => 'Largest first',
+        'field' => 'Field order',
     ],
 ];

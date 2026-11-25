@@ -243,9 +243,11 @@ FilamentDashboardsPlugin::make()
 
 ### Chart colors
 
-Builder charts with more than one series (a split line or bar chart, a pie, doughnut or polar area chart) take their colors from the panel's theme in the browser, so custom panel colors and light and dark mode follow on their own. Series take turns through shades of `primary`, `info` and `gray`, picked to stand apart from their neighbours and to read on the card. When the values run in order (sizes, ranges, buckets), set the chart's *Colors* to *Shades, in order*: the series are listed in the field's order (a choice field's option order) and get `primary` from light to dark, with Other last in gray. Past about seven series the steps get hard to tell apart. `success`, `warning` and `danger` are never used unless a series asks for them.
+Charts with more than one series on a dashboard (builder charts and your own `ChartWidget`s) take their colors from the panel's theme in the browser, so custom panel colors and light and dark mode follow on their own. Series take turns through every color the panel registers, `primary` first, the rest in the order the panel lists them, and `gray` last; `success`, `warning` and `danger` are left out because they carry meaning. Past the last color the list comes round again in lighter or darker shades that still read on the card. A panel with only Filament's colors gets `primary`, `info`, then `gray`. Datasets that set their own `backgroundColor` or `borderColor` are left alone, and a chart with one series keeps Filament's look.
 
-Your own `ChartWidget` opts in with a `palette` key in its data, and a dataset can name a panel color instead. Datasets that set their own `backgroundColor` or `borderColor` are left alone:
+For values that run in order (sizes, ranges, buckets), set a builder chart's *Order* to *Field order*: series are listed in the field's order (a choice field's option order), with Other last. *Colors: Single color* shades `primary` instead, from faint to strong in the order the series are listed: light to dark on a light card, dark to light on a dark one.
+
+Your own chart opts into a single color with a `palette` key in its data, and a dataset can name a panel color, such as one that carries meaning:
 
 ```php
 use Waguilar\FilamentDashboards\Enums\ChartPalette;
@@ -259,12 +261,12 @@ protected function getData(): array
             ['label' => 'Returned', 'data' => [1, 0], 'color' => 'danger'],
         ],
         'labels' => ['Mon', 'Tue'],
-        'palette' => ChartPalette::Ordered,
+        'palette' => ChartPalette::Single,
     ];
 }
 ```
 
-`chartColors([...])` replaces the theme colors with a fixed list for every builder chart.
+`chartColors([...])` replaces the theme colors with a fixed list on every chart, builder and your own; series that name a color keep it.
 
 ### Widget heights
 

@@ -176,7 +176,7 @@ class BuilderChartWidget extends ChartWidget
             $this->filters($config),
             $this->configString($config, 'split_field'),
             FilamentDashboardsPlugin::get()->getBuilderLimit('series'),
-            $this->palette($config) === ChartPalette::Ordered,
+            $this->configString($config, 'series_order') === 'field',
         );
 
         if ($trend['series'] === []) {
@@ -186,19 +186,10 @@ class BuilderChartWidget extends ChartWidget
             ];
         }
 
-        $colors = FilamentDashboardsPlugin::get()->getChartColors();
-
         return [
-            'datasets' => array_map(fn (array $series, int $index): array => [
-                'label' => $series['label'],
-                'data' => $series['values'],
-                ...($colors === null ? [] : [
-                    'backgroundColor' => $colors[$index % count($colors)],
-                    'borderColor' => $colors[$index % count($colors)],
-                ]),
-            ], $trend['series'], array_keys($trend['series'])),
+            'datasets' => array_map(fn (array $series): array => ['label' => $series['label'], 'data' => $series['values']], $trend['series']),
             'labels' => $trend['labels'],
-            ...($colors === null ? ['palette' => ['kind' => $this->palette($config)->value, 'other' => $trend['other']]] : []),
+            'palette' => ['kind' => $this->palette($config)->value, 'other' => $trend['other']],
         ];
     }
 
@@ -254,20 +245,17 @@ class BuilderChartWidget extends ChartWidget
             is_numeric($limit) ? max(1, min(FilamentDashboardsPlugin::get()->getBuilderLimit('breakdown'), (int) $limit)) : 10,
             $this->configString($config, 'dates_field'),
             $this->dashboardDates($config),
-            $this->palette($config) === ChartPalette::Ordered,
+            $this->configString($config, 'series_order') === 'field',
         );
-
-        $colors = FilamentDashboardsPlugin::get()->getChartColors();
 
         return [
             'datasets' => [[
                 'label' => $label,
                 'data' => $breakdown['values'],
-                ...($colors === null ? [] : ['backgroundColor' => array_map(fn (int $index): string => $colors[$index % count($colors)], array_keys($breakdown['values']))]),
                 'borderWidth' => 0,
             ]],
             'labels' => $breakdown['labels'],
-            ...($colors === null ? ['palette' => ['kind' => $this->palette($config)->value, 'other' => false]] : []),
+            'palette' => ['kind' => $this->palette($config)->value, 'other' => false],
         ];
     }
 
