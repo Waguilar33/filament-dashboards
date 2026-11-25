@@ -76,7 +76,7 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Publish workbench assets
-        run: vendor/bin/testbench workbench:build --ansi
+        run: vendor/bin/testbench filament:assets --ansi
 
       - name: Run tests
         run: vendor/bin/pest --ci tests/Browser
