@@ -18,7 +18,7 @@ final class SchemaWidget extends TableRendererWidget
         ]);
     }
 
-    public function body(TableResult $result): Schema
+    protected function body(TableResult $result): Schema
     {
         return $this->rows;
     }

@@ -18,7 +18,7 @@ trait HasBuilderHeaderActions
     /**
      * @return array<Action|ActionGroup>
      */
-    abstract public function builderHeaderActions(): array;
+    abstract protected function builderHeaderActions(): array;
 
     #[Unexposed]
     public function cacheHasBuilderHeaderActions(): void
@@ -42,7 +42,7 @@ trait HasBuilderHeaderActions
     /**
      * @return array<Action|ActionGroup>
      */
-    public function getVisibleBuilderHeaderActions(): array
+    protected function getVisibleBuilderHeaderActions(): array
     {
         return array_values(array_filter($this->cachedBuilderHeaderActions, fn (Action|ActionGroup $action): bool => $action->isVisible()));
     }

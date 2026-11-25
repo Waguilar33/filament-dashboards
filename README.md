@@ -307,7 +307,7 @@ FilamentDashboardsPlugin::make()
     ->renderer(BuilderWidgetType::Table, GridRenderer::class);
 ```
 
-The widget extends `TableRendererWidget` and draws a `TableResult` in `body()`, which may return a view, a Filament schema or any HTML. This one lists the rows and opens the drill-down when a row is clicked:
+The widget extends `TableRendererWidget` and draws a `TableResult` in `body()`, which returns a view, a Filament schema or another `Htmlable`. This one lists the rows and opens the drill-down when a row is clicked:
 
 ```php
 use Illuminate\Contracts\View\View;
@@ -316,7 +316,7 @@ use Waguilar\FilamentDashboards\Renderers\TableResult;
 
 class GridTableWidget extends TableRendererWidget
 {
-    public function body(TableResult $result): View
+    protected function body(TableResult $result): View
     {
         return view('widgets.grid-table', ['result' => $result]);
     }
@@ -354,7 +354,7 @@ What a `TableResult` holds:
 
 A renderer that draws in the browser passes `$result->toArray()` to its script: plain arrays of strings, numbers and booleans. Show `display`, sort on `values`, and call `$wire.mountAction('drillDown', row.drillDown)` for a click. The text is formatted on the server because number and field formats are PHP closures, so the browser never has to copy them.
 
-The skeleton is one of `table`, `stats`, `line`, `bar`, `pie`, `chart` or `card`. The widget's `tableResult()`, `builderHeading()`, `builderDescription()`, `builderHeaderActions()` and `builderPollingInterval()` are public, so a widget that needs its own view can rebuild the card from them. Only table and summary widgets take a renderer so far, and one renderer serves the whole panel; other types keep their built-in drawing.
+The skeleton is one of `table`, `stats`, `line`, `bar`, `pie`, `chart` or `card`. A widget that needs its own view can rebuild the card from its protected `tableResult()`, `builderHeading()`, `builderDescription()`, `getVisibleBuilderHeaderActions()`, `builderEmptyStateDescription()` and `builderPollingInterval()`. Only table and summary widgets take a renderer so far, and one renderer serves the whole panel; other types keep their built-in drawing.
 
 ## Dashboard dates
 

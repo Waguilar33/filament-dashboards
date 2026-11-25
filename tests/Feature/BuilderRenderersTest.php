@@ -6,6 +6,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Livewire\Exceptions\MethodNotFoundException;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\Actions\ResolveWidgetSkeleton;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
@@ -48,6 +49,11 @@ function listed(array $config = [], array $props = [], array $widget = []): mixe
     return Livewire::test(ListWidget::class, ['builderWidgetId' => $saved->id, ...$props]);
 }
 
+function resultOf(object $component): TableResult
+{
+    return (fn (): TableResult => $this->tableResult())->call($component->instance());
+}
+
 it('mounts the registered renderer for its types on the dashboard and in the builder preview, with its skeleton', function (): void {
     $dashboard = dashboard($this->owner);
     $summary = builderWidget($this->owner, ['type' => BuilderWidgetType::Summary, 'config' => ['source' => 'orders', 'group_field' => 'channel', 'metrics' => [['metric' => 'count']]]]);
@@ -84,7 +90,7 @@ it('draws the result inside the plugin card with its heading, range, actions and
 });
 
 it('hands the renderer a result with raw values, display text and drill-down arguments', function (): void {
-    $result = listed()->instance()->tableResult();
+    $result = resultOf(listed());
 
     expect($result->toArray())->toBe([
         'columns' => [
@@ -147,14 +153,11 @@ it('shows the empty state, and why when a saved filter no longer matches', funct
         ->assertSeeHtml('fi-ta-empty-state-heading')
         ->assertSee(__('filament-dashboards::builder.needs_attention'));
 
-    expect($stale->instance()->tableResult())->toBeInstanceOf(TableResult::class)
-        ->and($stale->instance()->tableResult()->needsAttention)->toBeTrue();
+    expect(resultOf($stale)->needsAttention)->toBeTrue();
 });
 
 it('hands a table widget its rows with raw and display values and no drill-down', function (): void {
-    $result = Livewire::test(ListWidget::class, ['previewType' => 'table', 'previewConfig' => ['source' => 'orders', 'columns' => ['customer', 'total', 'ordered_at'], 'sort_field' => 'total', 'sort_direction' => 'desc', 'limit' => 1]])
-        ->instance()
-        ->tableResult();
+    $result = resultOf(Livewire::test(ListWidget::class, ['previewType' => 'table', 'previewConfig' => ['source' => 'orders', 'columns' => ['customer', 'total', 'ordered_at'], 'sort_field' => 'total', 'sort_direction' => 'desc', 'limit' => 1]]));
 
     expect($result->toArray())->toBe([
         'columns' => [
@@ -175,6 +178,10 @@ it('only lets table and summary widgets take a renderer, and only a renderer cla
         ->and(fn () => FilamentDashboardsPlugin::get()->renderer(BuilderWidgetType::Table, ListWidget::class)->getRenderer(BuilderWidgetType::Table))->toThrow(InvalidArgumentException::class)
         ->and(FilamentDashboardsPlugin::get()->getRenderer(BuilderWidgetType::Stats))->toBeNull();
 });
+
+it('keeps the renderer helpers off the browser', function (string $method): void {
+    listed()->call($method);
+})->with(['tableResult', 'builderHeaderActions', 'body'])->throws(MethodNotFoundException::class);
 
 it('lets a renderer draw its body with a Filament schema', function (): void {
     Livewire::test(SchemaWidget::class, ['previewType' => 'summary', 'previewConfig' => ['source' => 'orders', 'group_field' => 'channel', 'metrics' => [['metric' => 'count']]]])

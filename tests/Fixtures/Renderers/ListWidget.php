@@ -13,7 +13,7 @@ use Waguilar\FilamentDashboards\Renderers\TableRow;
 
 final class ListWidget extends TableRendererWidget
 {
-    public function body(TableResult $result): HtmlString
+    protected function body(TableResult $result): HtmlString
     {
         $item = fn (TableRow $row, string $class): string => sprintf(
             '<li class="%s"%s>%s</li>',

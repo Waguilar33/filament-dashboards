@@ -104,3 +104,44 @@ it('draws a registered renderer inside the plugin card, which fits its content',
     expect($state)->toMatchArray(['heading' => 'Latest orders', 'actions' => 'Export', 'skeleton' => 'card'])
         ->and($state['gap'])->toBeGreaterThanOrEqual(8)->toBeLessThan(10);
 });
+
+it('gives a registered renderer the same card header as the built-in table', function (): void {
+    FilamentDashboardsPlugin::get()->renderer(BuilderWidgetType::Table, ListRenderer::class);
+    DemoOrderFactory::new()->count(3)->create();
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $summary = builderWidget($owner, ['type' => BuilderWidgetType::Summary, 'name' => 'Built in', 'config' => ['source' => 'orders', 'group_field' => 'channel', 'metrics' => [['metric' => 'count']]]]);
+    $table = builderWidget($owner, ['type' => BuilderWidgetType::Table, 'name' => 'Renderer', 'config' => ['source' => 'orders', 'columns' => ['customer']]]);
+    $dashboard->items()->create(['widget' => $summary->dashboardKey(), 'x' => 0, 'y' => 0, 'w' => 6, 'h' => 6]);
+    $dashboard->items()->create(['widget' => $table->dashboardKey(), 'x' => 6, 'y' => 0, 'w' => 6, 'h' => 6]);
+    $this->actingAs($owner);
+
+    $headers = visit("/demo/custom-dashboards/{$dashboard->slug}")->resize(1440, 900)->waitForEvent('networkidle')->script(<<<'JS'
+        async () => {
+            for (let tries = 0; tries < 100; tries++) {
+                if (document.querySelector('.fi-ta-row') && document.querySelector('.list-row')) {
+                    return [...document.querySelectorAll('.fi-ta-ctn')].map((card) => {
+                        const box = card.getBoundingClientRect()
+                        const header = card.querySelector('.fi-ta-header').getBoundingClientRect()
+                        const heading = card.querySelector('.fi-ta-header-heading')
+                        const actions = card.querySelector('.fi-ta-header .fi-ta-actions').getBoundingClientRect()
+                        const { fontSize, fontWeight } = getComputedStyle(heading)
+
+                        return {
+                            header: [header.top - box.top, header.height, header.width],
+                            heading: [heading.getBoundingClientRect().top - box.top, fontSize, fontWeight],
+                            actions: [actions.top - box.top, Math.round(box.right - actions.right), actions.height],
+                        }
+                    })
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, 100))
+            }
+
+            throw new Error('The widgets never drew')
+        }
+        JS);
+
+    expect($headers)->toHaveCount(2)
+        ->and($headers[1])->toBe($headers[0]);
+});

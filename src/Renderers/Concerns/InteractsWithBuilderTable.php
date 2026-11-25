@@ -35,7 +35,7 @@ trait InteractsWithBuilderTable
 
     protected ?TableResult $tableResult = null;
 
-    public function tableResult(): TableResult
+    protected function tableResult(): TableResult
     {
         if ($this->tableResult instanceof TableResult) {
             return $this->tableResult;
@@ -48,12 +48,12 @@ trait InteractsWithBuilderTable
         return $this->tableResult = $result;
     }
 
-    public function builderHeading(): ?string
+    protected function builderHeading(): ?string
     {
         return $this->builderWidget()?->name;
     }
 
-    public function builderDescription(): ?string
+    protected function builderDescription(): ?string
     {
         return $this->ownRangeLabel([$this->widgetConfig()]);
     }
@@ -61,24 +61,24 @@ trait InteractsWithBuilderTable
     /**
      * @return array<Action|ActionGroup>
      */
-    public function builderHeaderActions(): array
+    protected function builderHeaderActions(): array
     {
         return [$this->widgetDatesAction(), $this->exportAction()];
     }
 
-    public function builderEmptyStateHeading(): string
+    protected function builderEmptyStateHeading(): string
     {
         $label = __('filament-tables::table.default_model_label');
 
         return __('filament-tables::table.empty.heading', ['model' => locale_has_pluralization() ? Str::plural($label) : $label]);
     }
 
-    public function builderEmptyStateDescription(): ?string
+    protected function builderEmptyStateDescription(): ?string
     {
         return $this->tableResult()->needsAttention ? $this->needsAttentionText() : null;
     }
 
-    public function builderPollingInterval(): ?string
+    protected function builderPollingInterval(): ?string
     {
         return $this->getPollingInterval();
     }

@@ -20,5 +20,5 @@ abstract class TableRendererWidget extends RendererWidget
 
     protected string $view = 'filament-dashboards::table-renderer';
 
-    abstract public function body(TableResult $result): View|Htmlable|string;
+    abstract protected function body(TableResult $result): View|Htmlable;
 }
