@@ -16,6 +16,16 @@
 
 .fi-dashboards-item {
     position: relative;
+    scrollbar-color: var(--gray-300) transparent;
+}
+
+.dark .fi-dashboards-item {
+    scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+}
+
+/* The platform's classic scrollbar paints a square track over a card's rounded bottom when a widget scrolls sideways. */
+.fi-dashboards-item * {
+    scrollbar-width: thin;
 }
 
 .fi-dashboards-grid {
