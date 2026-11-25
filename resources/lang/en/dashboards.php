@@ -198,6 +198,8 @@ return [
             'period' => 'Period',
             'group_field' => 'Split by',
             'split_field_helper' => 'One line or bar per value; past :count, the smallest go into Other.',
+            'palette' => 'Colors',
+            'palette_helper' => 'Shades, in order, for values that run in order, such as sizes or ranges: one color from light to dark, in the order the values are listed.',
             'limit' => 'Show at most',
             'x_field' => 'Horizontal axis',
             'y_field' => 'Vertical axis',

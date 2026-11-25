@@ -219,7 +219,7 @@ FilamentDashboardsPlugin::make()
     ->minRefreshInterval(60);
 ```
 
-Pick the paper size for Print, the chart colors and options, how many versions History keeps, and mark fields where a drop is good news:
+Pick the paper size for Print, fixed chart colors instead of the theme's (see [Chart colors](#chart-colors)) and chart options, how many versions History keeps, and mark fields where a drop is good news:
 
 ```php
 FilamentDashboardsPlugin::make()
@@ -240,6 +240,31 @@ FilamentDashboardsPlugin::make()
     ->modifyDashboardNavigationItemUsing(fn (NavigationItem $item, Dashboard $dashboard): ?NavigationItem => $item)
     ->gridOptions(['cellHeight' => 40, 'margin' => 8, 'stackBelow' => 1024]);
 ```
+
+### Chart colors
+
+Builder charts with more than one series (a split line or bar chart, a pie, doughnut or polar area chart) take their colors from the panel's theme in the browser, so custom panel colors and light and dark mode follow on their own. Series take turns through shades of `primary`, `info` and `gray`, picked to stand apart from their neighbours and to read on the card. When the values run in order (sizes, ranges, buckets), set the chart's *Colors* to *Shades, in order*: the series are listed in the field's order (a choice field's option order) and get `primary` from light to dark, with Other last in gray. Past about seven series the steps get hard to tell apart. `success`, `warning` and `danger` are never used unless a series asks for them.
+
+Your own `ChartWidget` opts in with a `palette` key in its data, and a dataset can name a panel color instead. Datasets that set their own `backgroundColor` or `borderColor` are left alone:
+
+```php
+use Waguilar\FilamentDashboards\Enums\ChartPalette;
+
+protected function getData(): array
+{
+    return [
+        'datasets' => [
+            ['label' => '4 to 5 ft', 'data' => [3, 5]],
+            ['label' => '5 to 6 ft', 'data' => [4, 2]],
+            ['label' => 'Returned', 'data' => [1, 0], 'color' => 'danger'],
+        ],
+        'labels' => ['Mon', 'Tue'],
+        'palette' => ChartPalette::Ordered,
+    ];
+}
+```
+
+`chartColors([...])` replaces the theme colors with a fixed list for every builder chart.
 
 ### Widget heights
 

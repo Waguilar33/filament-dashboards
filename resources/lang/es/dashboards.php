@@ -198,6 +198,8 @@ return [
             'period' => 'Periodo',
             'group_field' => 'Separar por',
             'split_field_helper' => 'Una línea o barra por valor; pasadas :count, las menores van a Otros.',
+            'palette' => 'Colores',
+            'palette_helper' => 'Tonos, en orden, para valores que siguen un orden, como tamaños o rangos: un color de claro a oscuro, en el orden en que están los valores.',
             'limit' => 'Mostrar como máximo',
             'x_field' => 'Eje horizontal',
             'y_field' => 'Eje vertical',

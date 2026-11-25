@@ -30,6 +30,7 @@ use Waguilar\FilamentDashboards\Builder\Enums\Operator;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
 use Waguilar\FilamentDashboards\Builder\Field;
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
+use Waguilar\FilamentDashboards\Enums\ChartPalette;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Models\BuilderWidget;
 use Waguilar\FilamentDashboards\Resources\Dashboards\DashboardResource;
@@ -191,7 +192,9 @@ class BuilderWidgetForm
                         ->live(),
                     self::fieldSelect('split_field', FieldType::Choice, FieldType::Text, FieldType::Boolean)
                         ->label(__(self::T.'group_field'))
-                        ->helperText(__(self::T.'split_field_helper', ['count' => FilamentDashboardsPlugin::get()->getBuilderLimit('series')])),
+                        ->helperText(__(self::T.'split_field_helper', ['count' => FilamentDashboardsPlugin::get()->getBuilderLimit('series')]))
+                        ->live(),
+                    self::paletteSelect()->visible(fn (Get $get): bool => filled($get('split_field'))),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
                 ]),
                 self::filters(),
@@ -324,11 +327,23 @@ class BuilderWidgetForm
                     ...self::metricFields(),
                     TextInput::make('limit')->label(__(self::T.'limit'))->integer()->minValue(1)->maxValue(FilamentDashboardsPlugin::get()->getBuilderLimit('breakdown'))->default(10)->live(onBlur: true),
                     TextInput::make('label')->label(__(self::T.'label'))->live(onBlur: true)->maxLength(255),
+                    self::paletteSelect(),
                     ...self::datesFields(),
                 ]),
                 self::filters(),
             ],
         };
+    }
+
+    protected static function paletteSelect(): Select
+    {
+        return Select::make('palette')
+            ->label(__(self::T.'palette'))
+            ->helperText(__(self::T.'palette_helper'))
+            ->options(ChartPalette::class)
+            ->default(ChartPalette::Varied->value)
+            ->selectablePlaceholder(false)
+            ->live();
     }
 
     protected static function sourceSelect(): Select

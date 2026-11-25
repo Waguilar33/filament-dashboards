@@ -6,6 +6,7 @@ namespace Waguilar\FilamentDashboards;
 
 use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Css;
+use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
@@ -46,6 +47,7 @@ final class FilamentDashboardsServiceProvider extends PackageServiceProvider
         FilamentAsset::register([
             AlpineComponent::make('dashboard-grid', __DIR__.'/../resources/dist/dashboard-grid.js'),
             Css::make('dashboards', __DIR__.'/../resources/dist/dashboards.css'),
+            Js::make('chart-colors', __DIR__.'/../resources/dist/chart-colors.js')->module(),
         ], self::PACKAGE);
     }
 }

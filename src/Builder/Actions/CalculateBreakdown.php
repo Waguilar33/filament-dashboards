@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Waguilar\FilamentDashboards\Builder\Actions;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Waguilar\FilamentDashboards\Builder\AggregateExpression;
 use Waguilar\FilamentDashboards\Builder\AggregateIsNull;
 use Waguilar\FilamentDashboards\Builder\DataSource;
@@ -36,6 +37,7 @@ class CalculateBreakdown
         int $limit = 10,
         ?string $dateField = null,
         ?DateRange $dates = null,
+        bool $inFieldOrder = false,
     ): array {
         $group = $this->resolveField->handle($source, $groupField);
         $numberField = $this->resolveMetricField->handle($source, $metric, $field);
@@ -54,7 +56,8 @@ class CalculateBreakdown
             ->limit($limit)
             ->toBase()
             ->get()
-            ->map(fn (object $row): array => (array) $row);
+            ->map(fn (object $row): array => (array) $row)
+            ->when($inFieldOrder, fn (Collection $rows): Collection => $rows->sort(fn (array $first, array $second): int => $group->compareValues($first[$group->alias()], $second[$group->alias()])));
 
         return [
             'labels' => array_values($rows

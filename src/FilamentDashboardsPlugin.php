@@ -168,9 +168,9 @@ final class FilamentDashboardsPlugin implements Plugin
     protected string $printPageSize = 'letter';
 
     /**
-     * @var list<string>
+     * @var list<string>|null
      */
-    protected array $chartColors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
+    protected ?array $chartColors = null;
 
     /**
      * @var (Closure(array<string, mixed>, string): array<string, mixed>)|null
@@ -898,19 +898,19 @@ final class FilamentDashboardsPlugin implements Plugin
     }
 
     /**
-     * @param  list<string>  $colors
+     * @param  list<string>|null  $colors
      */
-    public function chartColors(array $colors): static
+    public function chartColors(?array $colors): static
     {
-        $this->chartColors = $colors;
+        $this->chartColors = $colors === [] ? null : $colors;
 
         return $this;
     }
 
     /**
-     * @return list<string>
+     * @return list<string>|null
      */
-    public function getChartColors(): array
+    public function getChartColors(): ?array
     {
         return $this->chartColors;
     }

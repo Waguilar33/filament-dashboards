@@ -235,7 +235,7 @@ it('charts a breakdown with one colour per slice', function (): void {
     $data = chartData(Livewire::test(BuilderChartWidget::class, ['previewType' => 'doughnut', 'previewConfig' => ['source' => 'orders', 'group_field' => 'channel', 'metric' => 'count']])->instance());
 
     expect($data['labels'])->toBe(['Web', 'Store'])
-        ->and($data['datasets'][0]['backgroundColor'])->toHaveCount(2);
+        ->and($data['palette'])->toBe(['kind' => 'varied', 'other' => false]);
 });
 
 it('charts a trend and a scatter', function (string $type, array $config, string $key): void {

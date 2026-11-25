@@ -20,6 +20,7 @@ use Waguilar\FilamentDashboards\Builder\DataSource;
 use Waguilar\FilamentDashboards\Builder\Enums\Metric;
 use Waguilar\FilamentDashboards\Builder\Enums\TimeGrouping;
 use Waguilar\FilamentDashboards\Dates\DateRange;
+use Waguilar\FilamentDashboards\Enums\ChartPalette;
 use Waguilar\FilamentDashboards\FilamentDashboardsIcon;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
 use Waguilar\FilamentDashboards\Widgets\Concerns\InteractsWithBuilderWidget;
@@ -175,6 +176,7 @@ class BuilderChartWidget extends ChartWidget
             $this->filters($config),
             $this->configString($config, 'split_field'),
             FilamentDashboardsPlugin::get()->getBuilderLimit('series'),
+            $this->palette($config) === ChartPalette::Ordered,
         );
 
         if ($trend['series'] === []) {
@@ -190,10 +192,13 @@ class BuilderChartWidget extends ChartWidget
             'datasets' => array_map(fn (array $series, int $index): array => [
                 'label' => $series['label'],
                 'data' => $series['values'],
-                'backgroundColor' => $colors[$index % count($colors)],
-                'borderColor' => $colors[$index % count($colors)],
+                ...($colors === null ? [] : [
+                    'backgroundColor' => $colors[$index % count($colors)],
+                    'borderColor' => $colors[$index % count($colors)],
+                ]),
             ], $trend['series'], array_keys($trend['series'])),
             'labels' => $trend['labels'],
+            ...($colors === null ? ['palette' => ['kind' => $this->palette($config)->value, 'other' => $trend['other']]] : []),
         ];
     }
 
@@ -249,6 +254,7 @@ class BuilderChartWidget extends ChartWidget
             is_numeric($limit) ? max(1, min(FilamentDashboardsPlugin::get()->getBuilderLimit('breakdown'), (int) $limit)) : 10,
             $this->configString($config, 'dates_field'),
             $this->dashboardDates($config),
+            $this->palette($config) === ChartPalette::Ordered,
         );
 
         $colors = FilamentDashboardsPlugin::get()->getChartColors();
@@ -257,11 +263,20 @@ class BuilderChartWidget extends ChartWidget
             'datasets' => [[
                 'label' => $label,
                 'data' => $breakdown['values'],
-                'backgroundColor' => array_map(fn (int $index): string => $colors[$index % count($colors)], array_keys($breakdown['values'])),
+                ...($colors === null ? [] : ['backgroundColor' => array_map(fn (int $index): string => $colors[$index % count($colors)], array_keys($breakdown['values']))]),
                 'borderWidth' => 0,
             ]],
             'labels' => $breakdown['labels'],
+            ...($colors === null ? ['palette' => ['kind' => $this->palette($config)->value, 'other' => false]] : []),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    protected function palette(array $config): ChartPalette
+    {
+        return ChartPalette::tryFrom($this->configString($config, 'palette') ?? '') ?? ChartPalette::Varied;
     }
 
     /**

@@ -42,4 +42,8 @@ return [
         'month' => 'Month',
         'year' => 'Year',
     ],
+    'palettes' => [
+        'varied' => 'Varied',
+        'ordered' => 'Shades, in order',
+    ],
 ];

@@ -26,7 +26,7 @@ class CalculateTrend
 
     /**
      * @param  list<list<array{field: string, operator: string, value?: mixed}>>  $filters
-     * @return array{labels: list<string>, values: list<float|int>, series: list<array{label: string, values: list<float|int>}>}
+     * @return array{labels: list<string>, values: list<float|int>, series: list<array{label: string, values: list<float|int>}>, other: bool}
      */
     public function handle(
         DataSource $source,
@@ -41,6 +41,7 @@ class CalculateTrend
         array $filters,
         ?string $splitField = null,
         int $seriesLimit = 10,
+        bool $inFieldOrder = false,
     ): array {
         $date = $this->resolveField->handle($source, $dateField, FieldType::Date);
         $numberField = $this->resolveMetricField->handle($source, $metric, $field);
@@ -95,19 +96,22 @@ class CalculateTrend
             $buckets[] = $cursor;
         }
 
+        $series = $split === null ? [] : $this->series($rows, $split, $metric, $buckets, $seriesLimit, $inFieldOrder);
+
         return [
             'labels' => array_map(fn (CarbonImmutable $bucket): string => $grouping->label($bucket), $buckets),
             'values' => $this->bucketValues($rows, $buckets, $metric),
-            'series' => $split === null ? [] : $this->series($rows, $split, $metric, $buckets, $seriesLimit),
+            'series' => array_map(fn (array $entry): array => ['label' => $entry['label'], 'values' => $entry['values']], $series),
+            'other' => in_array(true, array_column($series, 'other'), true),
         ];
     }
 
     /**
      * @param  list<array{bucket: string, value: int|float, split: string}>  $rows
      * @param  list<CarbonImmutable>  $buckets
-     * @return list<array{label: string, values: list<int|float>}>
+     * @return list<array{label: string, values: list<int|float>, other: bool}>
      */
-    protected function series(array $rows, Field $split, Metric $metric, array $buckets, int $limit): array
+    protected function series(array $rows, Field $split, Metric $metric, array $buckets, int $limit, bool $inFieldOrder): array
     {
         $groups = [];
 
@@ -119,16 +123,20 @@ class CalculateTrend
         uasort($groups, fn (array $a, array $b): int => $metric->aggregate(array_column($b, 'value')) <=> $metric->aggregate(array_column($a, 'value')));
 
         $shown = count($groups) > $limit ? array_slice($groups, 0, $limit - 1, preserve_keys: true) : $groups;
+        $rest = array_diff_key($groups, $shown);
+
+        if ($inFieldOrder) {
+            uksort($shown, $split->compareValues(...));
+        }
+
         $series = [];
 
         foreach ($shown as $value => $group) {
-            $series[] = ['label' => (string) $value === '' ? (string) trans('filament-dashboards::builder.empty') : $split->valueLabel($value), 'values' => $this->bucketValues($group, $buckets, $metric)];
+            $series[] = ['label' => (string) $value === '' ? (string) trans('filament-dashboards::builder.empty') : $split->valueLabel($value), 'values' => $this->bucketValues($group, $buckets, $metric), 'other' => false];
         }
 
-        $rest = array_diff_key($groups, $shown);
-
         if ($rest !== []) {
-            $series[] = ['label' => (string) trans('filament-dashboards::builder.other'), 'values' => $this->bucketValues(array_merge(...array_values($rest)), $buckets, $metric)];
+            $series[] = ['label' => (string) trans('filament-dashboards::builder.other'), 'values' => $this->bucketValues(array_merge(...array_values($rest)), $buckets, $metric), 'other' => true];
         }
 
         return $series;
