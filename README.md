@@ -231,7 +231,7 @@ FilamentDashboardsPlugin::make()
 Field::number('refunds', 'Refunds')->lowerIsBetter();
 ```
 
-Put the Dashboards and Widgets lists in your own menu group and order, change or hide the menu items of dashboards, and size the grid (row height, gap, and the width below which widgets stack in one column):
+Put the Dashboards and Widgets lists in your own menu group and order, change or hide the menu items of dashboards, and size the grid (row height, gap, and the width below which widgets stack in one column). `cellHeight` is the unit layouts are saved in and the step a chosen height moves by; cards that fit their content are sized to the pixel regardless:
 
 ```php
 FilamentDashboardsPlugin::make()
@@ -243,7 +243,7 @@ FilamentDashboardsPlugin::make()
 
 ### Widget heights
 
-Widgets fit their content. A chart or table (any Filament `ChartWidget` or `TableWidget`, built or your own) can also be given a height in Edit layout by dragging its bottom edge; the plot or rows stretch to it, rows scroll inside, and Fit height returns it to its content. A new builder chart starts at its type's default height. Printing always shows full content.
+Widgets fit their content: each card ends where its content ends, and follows it when it grows or shrinks (rows added, a page changed, the window resized). A chart or table (any Filament `ChartWidget` or `TableWidget`, built or your own) can also be given a height in Edit layout by dragging its bottom edge; the plot or rows stretch to it, rows scroll inside, and Fit height returns it to its content. A new builder chart starts at its type's default height. Printing always shows full content.
 
 ## Dashboard dates
 

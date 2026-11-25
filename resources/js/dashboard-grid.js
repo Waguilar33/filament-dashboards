@@ -1,4 +1,5 @@
 import { GridStack } from 'gridstack'
+import { finestRow, snapHeight, storedLayout } from './layout-units.js'
 
 const COLUMNS = 12
 
@@ -9,8 +10,6 @@ const MIN_RELOAD_MS = 400
 const SPAN_VARIABLES = ['--col-span-csm', '--col-span-ncmd', '--col-span-cxl', '--col-span-nclg']
 
 const ROW_ATTRIBUTES = ['gs-y', 'gs-h', 'gs-min-h', 'gs-max-h']
-
-const finestRow = (cellHeight) => (cellHeight % 2 === 0 ? 2 : 1)
 
 export default function dashboardGrid({ editable, printing, options }) {
     return {
@@ -52,7 +51,7 @@ export default function dashboardGrid({ editable, printing, options }) {
 
             // Gridstack has no resize step, so a chosen height still snaps to whole cells on the finer rows.
             const moveNodeCheck = this.grid.engine.moveNodeCheck.bind(this.grid.engine)
-            this.grid.engine.moveNodeCheck = (node, change) => moveNodeCheck(node, change.resizing ? { ...change, h: this.snapHeight(change.h) } : change)
+            this.grid.engine.moveNodeCheck = (node, change) => moveNodeCheck(node, change.resizing ? { ...change, h: snapHeight(change.h, this.startHeight, this.rowsPerCell) } : change)
 
             this.reloadObserver = new MutationObserver(() => this.followReload())
             this.reloadObserver.observe(this.$root, { attributes: true, attributeFilter: ['class'] })
@@ -145,14 +144,6 @@ export default function dashboardGrid({ editable, printing, options }) {
 
             gridItem.setAttribute('data-fixed-height', '')
             this.fill(gridItem)
-        },
-
-        snapHeight(h) {
-            if (Math.abs(h - this.startHeight) < this.rowsPerCell / 2) {
-                return this.startHeight
-            }
-
-            return Math.max(this.rowsPerCell, Math.round(h / this.rowsPerCell) * this.rowsPerCell)
         },
 
         // A chart or table with a chosen height stretches its plot or rows to the cell, which may shrink below its natural size.
@@ -283,27 +274,7 @@ export default function dashboardGrid({ editable, printing, options }) {
                 return
             }
 
-            this.$wire.saveDashboardLayout(this.storedLayout(this.grid.save(false)))
-        },
-
-        // Layouts are stored in whole cells; packing again in cells keeps every card's order where rounding y could not.
-        storedLayout(nodes) {
-            const placed = []
-
-            return [...nodes]
-                .sort((a, b) => a.y - b.y || a.x - b.x)
-                .map((node) => {
-                    const fitsContent = !this.$refs.grid.querySelector(`[gs-id="${node.id}"]`).hasAttribute('data-fixed-height')
-                    const h = fitsContent ? Math.ceil(node.h / this.rowsPerCell) : Math.round(node.h / this.rowsPerCell)
-                    const y = placed
-                        .filter((other) => other.x < node.x + node.w && node.x < other.x + other.w)
-                        .reduce((top, other) => Math.max(top, other.y + other.h), 0)
-                    const stored = { id: Number(node.id), x: node.x, y, w: node.w, h, fitsContent }
-
-                    placed.push(stored)
-
-                    return stored
-                })
+            this.$wire.saveDashboardLayout(storedLayout(this.grid.save(false), this.rowsPerCell, (node) => !this.$refs.grid.querySelector(`[gs-id="${node.id}"]`).hasAttribute('data-fixed-height')))
         },
 
         destroy() {

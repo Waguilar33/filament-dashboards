@@ -41,3 +41,6 @@ jobs:
 
       - name: Tests
         run: vendor/bin/pest --ci
+
+      - name: Script tests
+        run: npm test

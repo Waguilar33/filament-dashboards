@@ -3,7 +3,8 @@
     "type": "module",
     "scripts": {
         "build": "node bin/build.js",
-        "dev": "node bin/build.js --watch"
+        "dev": "node bin/build.js --watch",
+        "test": "node --test tests/js/*.test.js"
     },
     "devDependencies": {
         "esbuild": "^0.28.2",
