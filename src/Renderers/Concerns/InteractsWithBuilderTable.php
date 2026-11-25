@@ -256,11 +256,12 @@ trait InteractsWithBuilderTable
 
             if ($field instanceof Field) {
                 $shown[] = $field;
-                $columns[] = new TableColumn($field->alias(), $field->label, match ($field->type) {
+                $type = match ($field->type) {
                     FieldType::Number => ColumnType::Number,
                     FieldType::Date => ColumnType::Date,
                     default => ColumnType::Text,
-                });
+                };
+                $columns[] = new TableColumn($field->alias(), $field->label, $type, $type === ColumnType::Text ? Alignment::Start : Alignment::End);
             }
         }
 

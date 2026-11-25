@@ -283,22 +283,17 @@ Widgets fit their content: each card ends where its content ends, and follows it
 
 Builder table and summary widgets are drawn with a Filament table. Register your own renderer to draw them another way, such as a client-side grid. The plugin keeps computing the data and keeps the card around it: the header with the widget name, its date range, Dates and Export, the empty and Needs attention states, polling, drill-down, export and card fit. Your renderer only draws the rows.
 
-A renderer names the Livewire widget to mount for a type and the loading skeleton to show while it loads:
+A renderer names the Livewire widget to mount for a type. Extend `TableRenderer`, which shows the `table` loading skeleton unless you override `skeleton()`:
 
 ```php
 use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
-use Waguilar\FilamentDashboards\Renderers\BuilderWidgetRenderer;
+use Waguilar\FilamentDashboards\Renderers\TableRenderer;
 
-class GridRenderer implements BuilderWidgetRenderer
+class GridRenderer extends TableRenderer
 {
     public function widget(BuilderWidgetType $type): string
     {
         return GridTableWidget::class;
-    }
-
-    public function skeleton(BuilderWidgetType $type): string
-    {
-        return 'table';
     }
 }
 
@@ -306,6 +301,8 @@ FilamentDashboardsPlugin::make()
     ->renderer(BuilderWidgetType::Summary, GridRenderer::class)
     ->renderer(BuilderWidgetType::Table, GridRenderer::class);
 ```
+
+`TableRenderer` implements the `BuilderWidgetRenderer` interface. New renderer capabilities arrive as `TableRenderer` methods with defaults, so a renderer that extends it keeps working; one that implements the interface directly must add them itself.
 
 The widget extends `TableRendererWidget` and draws a `TableResult` in `body()`, which returns a view, a Filament schema or another `Htmlable`. This one lists the rows and opens the drill-down when a row is clicked:
 
@@ -347,7 +344,7 @@ class GridTableWidget extends TableRendererWidget
 
 What a `TableResult` holds:
 
-- `columns`: `TableColumn`s, each with a `key`, a `label`, a `type` (`ColumnType::Text`, `Number`, `Percent` or `Date`) and an `alignment` (`Alignment::Start` or `End`).
+- `columns`: `TableColumn`s, each with a `key`, a `label`, a `type` (`ColumnType::Text`, `Number`, `Percent` or `Date`) and an `alignment` (`Alignment::End` for numbers, percents and dates, `Start` for text).
 - `rows`: `TableRow`s. `value($key)` is the raw value (for sorting and sums), `display($key)` the text the plugin formatted with the field's `formatUsing()` and your `formatNumbersUsing()`, and `drillDown` the arguments for `mountAction('drillDown', ...)`, or `null` when the row has no records to open.
 - `totals`: the total row, or `null`.
 - `needsAttention`: the widget's saved fields or filters no longer match its source. The card then shows the Needs attention state instead of your content, as it does when there are no rows.

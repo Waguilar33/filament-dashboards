@@ -162,8 +162,8 @@ it('hands a table widget its rows with raw and display values and no drill-down'
     expect($result->toArray())->toBe([
         'columns' => [
             ['key' => 'customer', 'label' => 'Customer', 'type' => 'text', 'alignment' => 'start'],
-            ['key' => 'total', 'label' => 'Total', 'type' => 'number', 'alignment' => 'start'],
-            ['key' => 'ordered_at', 'label' => 'Ordered at', 'type' => 'date', 'alignment' => 'start'],
+            ['key' => 'total', 'label' => 'Total', 'type' => 'number', 'alignment' => 'end'],
+            ['key' => 'ordered_at', 'label' => 'Ordered at', 'type' => 'date', 'alignment' => 'end'],
         ],
         'rows' => [
             ['values' => ['customer' => 'Eva', 'total' => 450, 'ordered_at' => '2026-11-10 12:00:00'], 'display' => ['customer' => 'Eva', 'total' => '450', 'ordered_at' => '2026-11-10 12:00:00'], 'drillDown' => null],

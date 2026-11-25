@@ -147,16 +147,19 @@ it('shows the empty state, and the needs-attention text when a saved filter no l
         ->toContain(__('filament-dashboards::builder.needs_attention'));
 });
 
-it('draws a table widget with its columns, raw text and formatted numbers', function (): void {
+it('draws a table widget with its columns, raw text, formatted numbers, and numbers and dates on the right', function (): void {
     $widget = builderWidget($this->owner, ['type' => BuilderWidgetType::Table, 'name' => 'Latest orders', 'config' => ['source' => 'cents-orders', 'columns' => ['customer', 'channel', 'total', 'ordered_at'], 'sort_field' => 'total', 'sort_direction' => 'desc']]);
     $component = Livewire::test(BuilderTableWidget::class, ['builderWidgetId' => $widget->id])
         ->assertSeeInOrder(['Latest orders', 'Customer', 'Channel', 'Total', 'Ordered']);
 
-    expect(array_map(fn (array $row): array => array_column($row, 'text'), tableCells($component->html())))->toBe([
+    $rows = tableCells($component->html());
+
+    expect(array_map(fn (array $row): array => array_column($row, 'text'), $rows))->toBe([
         ['Eva', 'Web', 'Q45.00', '2026-11-18 12:00:00'],
         ['Ana', 'Web', 'Q30.00', '2026-11-20 12:00:00'],
         ['Luis', 'Store', 'Q25.05', '2026-11-19 12:00:00'],
-    ]);
+    ])
+        ->and(array_map(fn (array $cell): bool => str_contains($cell['class'], 'fi-align-end'), $rows[0]))->toBe([false, false, true, true]);
 });
 
 it('exports a summary with its raw values, shares and total row', function (): void {

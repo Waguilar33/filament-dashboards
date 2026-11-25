@@ -8,15 +8,10 @@ use Waguilar\FilamentDashboards\Enums\BuilderWidgetType;
 use Waguilar\FilamentDashboards\Widgets\BuilderSummaryWidget;
 use Waguilar\FilamentDashboards\Widgets\BuilderTableWidget;
 
-final class FilamentTableRenderer implements BuilderWidgetRenderer
+final class FilamentTableRenderer extends TableRenderer
 {
     public function widget(BuilderWidgetType $type): string
     {
         return $type === BuilderWidgetType::Summary ? BuilderSummaryWidget::class : BuilderTableWidget::class;
-    }
-
-    public function skeleton(BuilderWidgetType $type): string
-    {
-        return 'table';
     }
 }
