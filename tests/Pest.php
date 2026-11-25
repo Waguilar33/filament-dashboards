@@ -11,7 +11,7 @@ use Waguilar\FilamentDashboards\Tests\TestCase;
 use Workbench\App\Models\User;
 use Workbench\Database\Factories\UserFactory;
 
-pest()->extend(TestCase::class)->in('Feature');
+pest()->extend(TestCase::class)->in('Feature', 'Browser');
 
 function user(): User
 {

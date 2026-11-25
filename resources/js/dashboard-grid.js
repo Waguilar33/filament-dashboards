@@ -1,4 +1,5 @@
 import { GridStack } from 'gridstack'
+import { finestRow, snapHeight, storedLayout } from './layout-units.js'
 
 const COLUMNS = 12
 
@@ -7,6 +8,8 @@ const MIN_STRETCH = 48
 const MIN_RELOAD_MS = 400
 
 const SPAN_VARIABLES = ['--col-span-csm', '--col-span-ncmd', '--col-span-cxl', '--col-span-nclg']
+
+const ROW_ATTRIBUTES = ['gs-y', 'gs-h', 'gs-min-h', 'gs-max-h']
 
 export default function dashboardGrid({ editable, printing, options }) {
     return {
@@ -17,10 +20,17 @@ export default function dashboardGrid({ editable, printing, options }) {
         observer: null,
 
         init() {
+            this.rowsPerCell = options.cellHeight / finestRow(options.cellHeight)
+
+            this.$refs.grid.querySelectorAll('.grid-stack-item').forEach((item) => {
+                ROW_ATTRIBUTES.filter((name) => item.hasAttribute(name))
+                    .forEach((name) => item.setAttribute(name, Number(item.getAttribute(name)) * this.rowsPerCell))
+            })
+
             this.grid = GridStack.init(
                 {
                     column: COLUMNS,
-                    cellHeight: options.cellHeight,
+                    cellHeight: options.cellHeight / this.rowsPerCell,
                     margin: options.margin,
                     float: false,
                     animate: true,
@@ -38,6 +48,10 @@ export default function dashboardGrid({ editable, printing, options }) {
             })
 
             this.$refs.grid.querySelectorAll('.fi-dashboards-item').forEach((item) => this.observer.observe(item))
+
+            // Gridstack has no resize step, so a chosen height still snaps to whole cells on the finer rows.
+            const moveNodeCheck = this.grid.engine.moveNodeCheck.bind(this.grid.engine)
+            this.grid.engine.moveNodeCheck = (node, change) => moveNodeCheck(node, change.resizing ? { ...change, h: snapHeight(change.h, this.startHeight, this.rowsPerCell) } : change)
 
             this.reloadObserver = new MutationObserver(() => this.followReload())
             this.reloadObserver.observe(this.$root, { attributes: true, attributeFilter: ['class'] })
@@ -129,7 +143,6 @@ export default function dashboardGrid({ editable, printing, options }) {
             }
 
             gridItem.setAttribute('data-fixed-height', '')
-            gridItem.stretchedCard?.style.removeProperty('padding-bottom')
             this.fill(gridItem)
         },
 
@@ -148,7 +161,7 @@ export default function dashboardGrid({ editable, printing, options }) {
             const height = gridItem.gridstackNode.h * cell - marginTop - marginBottom - chrome
 
             if (height < MIN_STRETCH && !this.resizing) {
-                this.grid.update(gridItem, { h: Math.ceil((chrome + MIN_STRETCH + marginTop + marginBottom) / cell) })
+                this.grid.update(gridItem, { h: Math.ceil((chrome + MIN_STRETCH + marginTop + marginBottom) / (cell * this.rowsPerCell)) * this.rowsPerCell })
             }
 
             const stretched = Math.max(MIN_STRETCH, height)
@@ -165,61 +178,11 @@ export default function dashboardGrid({ editable, printing, options }) {
                 return
             }
 
-            const item = gridItem.querySelector('.fi-dashboards-item')
-            const card = this.card(item)
-
-            if (card) {
-                card.style.paddingBottom = ''
-                gridItem.stretchedCard = card
-            }
-
             // Content that grows (a row detail opening) takes its new height at once; the slide is only for dragging and resizing.
             const animate = this.grid.opts.animate
             this.grid.setAnimation(false)
             this.grid.resizeToContent(gridItem)
             this.grid.setAnimation(animate)
-
-            if (!card) {
-                return
-            }
-
-            Array.from(card.children).forEach((child) => this.observer.observe(child))
-
-            const { marginTop, marginBottom } = this.grid.opts
-            const extra = gridItem.gridstackNode.h * this.grid.getCellHeight(true) - marginTop - marginBottom - item.offsetHeight
-
-            if (extra > 0) {
-                card.style.paddingBottom = `${parseFloat(getComputedStyle(card).paddingBottom) + extra}px`
-            }
-        },
-
-        // Gridstack sizes a cell from its content, so the widget's card, or its innermost layout without one, is padded to fill the cell's last partial row; min-height would stretch the observed children and hide a later shrink.
-        card(item) {
-            const box = item.getBoundingClientRect()
-            const walker = document.createTreeWalker(item, NodeFilter.SHOW_ELEMENT)
-
-            while (walker.nextNode()) {
-                const element = walker.currentNode
-                const { width, height } = element.getBoundingClientRect()
-
-                if (width >= box.width - 1 && height >= box.height * 0.8 && getComputedStyle(element).backgroundColor !== 'rgba(0, 0, 0, 0)') {
-                    return element
-                }
-            }
-
-            let element = item
-
-            while (element) {
-                const shown = Array.from(element.children).filter((child) => child.offsetHeight > 0)
-
-                if (shown.length !== 1) {
-                    return element === item ? null : element
-                }
-
-                element = shown[0]
-            }
-
-            return null
         },
 
         resizeCard(event) {
@@ -311,16 +274,7 @@ export default function dashboardGrid({ editable, printing, options }) {
                 return
             }
 
-            this.$wire.saveDashboardLayout(
-                this.grid.save(false).map((node) => ({
-                    id: Number(node.id),
-                    x: node.x,
-                    y: node.y,
-                    w: node.w,
-                    h: node.h,
-                    fitsContent: !this.$refs.grid.querySelector(`[gs-id="${node.id}"]`).hasAttribute('data-fixed-height'),
-                })),
-            )
+            this.$wire.saveDashboardLayout(storedLayout(this.grid.save(false), this.rowsPerCell, (node) => !this.$refs.grid.querySelector(`[gs-id="${node.id}"]`).hasAttribute('data-fixed-height')))
         },
 
         destroy() {

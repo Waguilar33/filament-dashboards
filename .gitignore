@@ -8,3 +8,4 @@ composer.lock
 /workbench/storage
 .phpunit.cache
 /workbench/database/database.sqlite
+/tests/Browser/Screenshots
