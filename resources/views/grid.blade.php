@@ -57,7 +57,7 @@
                     <div class="fi-dashboards-item">
                     @if ($editable)
                         <x-filament::section compact :heading="$item['label']" class="fi-dashboards-frame">
-                            @livewire($item['widget'], $item['props'], key('dashboard-item-' . $item['id'] . '-' . $item['version']))
+                            @include('filament-dashboards::widget', ['item' => $item])
 
                             <x-slot name="footer">
                                 <div class="fi-dashboards-item-actions">
@@ -85,7 +85,7 @@
                             </x-slot>
                         </x-filament::section>
                     @else
-                        @livewire($item['widget'], $item['props'], key('dashboard-item-' . $item['id'] . '-' . $item['version']))
+                        @include('filament-dashboards::widget', ['item' => $item])
                     @endif
                     </div>
                 </div>
