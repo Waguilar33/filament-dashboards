@@ -42,10 +42,10 @@ for (const mode of ['light', 'dark']) {
         assert.deepEqual(filament.map((rgb) => familyOf(FILAMENT, rgb)), ['primary', 'info', 'primary', 'info', 'primary', 'info', 'gray'])
         const [first, second] = mode === 'light' ? [1, -1] : [-1, 1]
 
-        lane.forEach((name, index) => {
-            assert.ok(Math.sign(lightness(sortivo[index + 5]) - lightness(sortivo[index])) === first, `${name} first repeat`)
-            assert.ok(Math.sign(lightness(sortivo[index + 10]) - lightness(sortivo[index])) === second, `${name} second repeat`)
-        })
+        const towards = (round, sign) => lane.filter((name, index) => Math.sign(lightness(sortivo[index + round * 5]) - lightness(sortivo[index])) === sign).length
+
+        assert.ok(towards(1, first) >= lane.length - 1, 'the first repeats mostly go the preferred way')
+        assert.ok(towards(2, second) >= lane.length - 1, 'the second repeats mostly go the other way')
     })
 
     test(`repeats stay distinct from their neighbours and readable, on the ${mode} card`, () => {
@@ -96,6 +96,18 @@ test('a palette chosen by the panel is used as given, in its order, without gray
         assert.equal(familyOf(SORTIVO, seriesColors({ kind: 'single', count: 2, chosen: ['earth'] }, SORTIVO, SORTIVO_NAMES, SURFACES[mode], mode)[0]), 'earth')
     }
 })
+
+for (const mode of ['light', 'dark']) {
+    test(`a repeat stands clearly apart from every earlier use of its colour, on the ${mode} card`, () => {
+        for (const lanes of [['primary', 'earth', 'info', 'violet'], ['primary', 'earth', 'info', 'pink', 'violet']]) {
+            const colors = seriesColors({ count: lanes.length * 3, chosen: lanes }, SORTIVO, SORTIVO_NAMES, SURFACES[mode], mode)
+
+            colors.forEach((color, index) => colors.slice(0, index)
+                .filter((earlier) => familyOf(SORTIVO, earlier) === familyOf(SORTIVO, color))
+                .forEach((earlier) => assert.ok(distance(color, earlier) >= 0.15, `series ${index} is too close to an earlier ${familyOf(SORTIVO, color)}`)))
+        }
+    })
+}
 
 test('Other closes the series in gray', () => {
     const colors = seriesColors({ count: 4, other: true }, SORTIVO, SORTIVO_NAMES, SURFACES.light, 'light')

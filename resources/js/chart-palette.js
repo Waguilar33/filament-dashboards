@@ -19,6 +19,8 @@ const LANE_OFFSETS = { light: [0, -0.12], dark: [0.06, -0.08] }
 
 const SNAP_LIGHTNESS = 0.02
 
+const MIN_REPEAT_DISTANCE = 0.15
+
 const SNAP_SHARE_OF_STEP = 0.2
 
 const toLinear = (channel) => {
@@ -51,6 +53,8 @@ function fromOklab([L, a, b]) {
 }
 
 const lightness = (rgb) => oklab(rgb)[0]
+
+const distance = (first, second) => Math.hypot(...oklab(first).map((value, channel) => value - oklab(second)[channel]))
 
 const luminance = ([r, g, b]) => 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
 
@@ -95,7 +99,7 @@ export function anchorColor(family, surface, mode, offset = 0) {
 export const defaultLanes = (names) => [...new Set(['primary', ...names.filter((name) => !RESERVED_COLORS.includes(name))])]
 
 export function variedColors(families, names, surface, mode, count, chosen = null) {
-    const lane = (name, index) => ({ shades: readable(families[name], surface), anchor: anchorColor(families[name], surface, mode, LANE_OFFSETS[mode][index % 2]) })
+    const lane = (name, index) => ({ name, shades: readable(families[name], surface), anchor: anchorColor(families[name], surface, mode, LANE_OFFSETS[mode][index % 2]) })
     const lanes = (chosen ? [...new Set(chosen)] : defaultLanes(names)).map(lane).filter((entry) => entry.anchor)
     const gray = chosen ? {} : lane('gray', lanes.length)
     const shifts = ROUND_SHIFTS[mode]
@@ -108,11 +112,24 @@ export function variedColors(families, names, surface, mode, count, chosen = nul
         return []
     }
 
-    return Array.from({ length: count }, (_, index) => {
-        const { shades, anchor, shift } = sequence[index % sequence.length]
-        const others = shades.filter((rgb) => rgb !== anchor)
+    const used = {}
 
-        return shift === 0 || others.length === 0 ? anchor : nearest(others, lightness(anchor) + shift)
+    return Array.from({ length: count }, (_, index) => {
+        const { name, shades, anchor, shift } = sequence[index % sequence.length]
+        const earlier = (used[name] ??= [])
+        const spread = (rgb) => Math.min(...earlier.map((placed) => distance(rgb, placed)))
+        const apart = shades.filter((rgb) => spread(rgb) >= MIN_REPEAT_DISTANCE)
+        const color = shift === 0 || earlier.length === 0
+            ? anchor
+            : apart.length > 0
+              ? nearest(apart, lightness(anchor) + shift)
+              : shades.reduce((best, rgb) => (spread(rgb) > spread(best) ? rgb : best))
+
+        if (!earlier.includes(color)) {
+            earlier.push(color)
+        }
+
+        return color
     })
 }
 
