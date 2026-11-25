@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Filament\Facades\Filament;
 use Livewire\Livewire;
 use Waguilar\FilamentDashboards\FilamentDashboardsPlugin;
+use Waguilar\FilamentDashboards\Models\BuilderWidget;
+use Waguilar\FilamentDashboards\Resources\Dashboards\Pages\ViewDashboard;
 use Waguilar\FilamentDashboards\Widgets\BuilderChartWidget;
 use Workbench\Database\Factories\DemoOrderFactory;
 
@@ -66,3 +68,18 @@ it('uses the colours the panel sets instead of the theme', function (): void {
         ->and($split)->not->toHaveKey('palette')
         ->and(array_column($split['datasets'], 'borderColor'))->toBe(['#111111', '#222222', '#111111']);
 });
+
+it('saves the colors chosen in the builder', function (string $type, array $data): void {
+    $owner = user();
+    $dashboard = dashboard($owner);
+    $this->actingAs($owner);
+
+    Livewire::test(ViewDashboard::class, ['record' => $dashboard->slug])
+        ->callAction('buildWidget', data: ['name' => 'Sizes', 'source' => 'orders', 'metric' => 'count', 'palette' => 'ordered', ...$data], arguments: ['type' => $type])
+        ->assertHasNoActionErrors();
+
+    expect(BuilderWidget::query()->sole()->config['palette'])->toBe('ordered');
+})->with([
+    'split bar' => ['bar', ['date_field' => 'ordered_at', 'period' => '30d', 'split_field' => 'channel']],
+    'doughnut' => ['doughnut', ['group_field' => 'channel']],
+]);

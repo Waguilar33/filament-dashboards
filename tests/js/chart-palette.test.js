@@ -22,12 +22,14 @@ for (const mode of ['light', 'dark']) {
     test(`ordered series run light to dark in their order, in even steps, readable on the ${mode} card`, () => {
         for (const count of [2, 4, 7, 9]) {
             const colors = seriesColors({ kind: 'ordered', count }, FAMILIES, SURFACES[mode], mode)
+            const edged = seriesColors({ kind: 'ordered', count, edged: true }, FAMILIES, SURFACES[mode], mode)
             const steps = colors.slice(1).map((color, index) => lightness(colors[index]) - lightness(color))
 
             assert.equal(colors.length, count)
             steps.forEach((step, index) => assert.ok(step > 0, `step ${index + 1} of ${count} is not darker`))
             assert.ok(Math.max(...steps) / Math.min(...steps) < 1.6, `uneven steps for ${count}`)
-            colors.forEach((color) => assert.ok(contrast(color, SURFACES[mode]) >= 1.5))
+            colors.forEach((color) => assert.ok(contrast(color, SURFACES[mode]) >= 2))
+            edged.forEach((color) => assert.ok(contrast(color, SURFACES[mode]) >= (mode === 'light' ? 1.5 : 2)))
         }
 
         assert.deepEqual(seriesColors({ kind: 'ordered', count: 2 }, FAMILIES, SURFACES[mode], mode), seriesColors({ kind: 'ordered', count: 2 }, FAMILIES, SURFACES[mode], mode).filter((color) => shadesOf('primary').includes(String(color))))

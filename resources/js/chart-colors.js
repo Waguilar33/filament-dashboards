@@ -82,13 +82,13 @@ export function paint(chart) {
     if (datasets.length === 1 && chart.data.datasets.length === 1 && !LINE_TYPES.includes(type(datasets[0]))) {
         const count = datasets[0].data?.length ?? 0
 
-        paintDataset(datasets[0], type(datasets[0]), Object.assign(seriesColors({ kind, count, other }, families, surface, mode), { perPoint: true }))
+        paintDataset(datasets[0], type(datasets[0]), Object.assign(seriesColors({ kind, count, other, edged: type(datasets[0]) === 'bar' }, families, surface, mode), { perPoint: true }))
 
         return
     }
 
     const all = chart.data.datasets
-    const colors = seriesColors({ kind, count: all.length, other, named: all.map((dataset) => (FAMILIES.includes(dataset.color) ? dataset.color : null)) }, families, surface, mode)
+    const colors = seriesColors({ kind, count: all.length, other, edged: all.every((dataset) => type(dataset) === 'bar'), named: all.map((dataset) => (FAMILIES.includes(dataset.color) ? dataset.color : null)) }, families, surface, mode)
 
     all.forEach((dataset, index) => datasets.includes(dataset) && paintDataset(dataset, type(dataset), [colors[index]]))
 }

@@ -6,8 +6,8 @@ const RAMP_SHADES = SHADES.slice(2, 10)
 
 const MIN_CONTRAST = 2
 
-// Bars get a darker edge, so a ramp may start paler than a line or a lone colour could.
-const RAMP_CONTRAST = 1.5
+// Below the 2:1 floor only for light-mode bars, which Filament outlines in a darker edge.
+const EDGED_RAMP_CONTRAST = 1.5
 
 const SNAP_LIGHTNESS = 0.02
 
@@ -112,8 +112,8 @@ function sample(shades, count) {
     })
 }
 
-export function orderedColors(family, surface, count) {
-    const shades = readable(family, surface, RAMP_SHADES, RAMP_CONTRAST)
+export function orderedColors(family, surface, count, minimum = MIN_CONTRAST) {
+    const shades = readable(family, surface, RAMP_SHADES, minimum)
 
     return shades.length === 0 || count === 0 ? [] : sample(shades, count)
 }
@@ -150,9 +150,9 @@ export function otherColor(families, surface) {
     return shades[0] ?? null
 }
 
-export function seriesColors({ kind, count, other = false, named = [] }, families, surface, mode) {
+export function seriesColors({ kind, count, other = false, named = [], edged = false }, families, surface, mode) {
     const unnamed = Array.from({ length: count }, (_, index) => !named[index] && !(other && index === count - 1)).filter(Boolean).length
-    const base = kind === 'ordered' ? orderedColors(families.primary, surface, unnamed) : variedColors(families, surface, mode, unnamed)
+    const base = kind === 'ordered' ? orderedColors(families.primary, surface, unnamed, edged && mode === 'light' ? EDGED_RAMP_CONTRAST : MIN_CONTRAST) : variedColors(families, surface, mode, unnamed)
     const colors = []
     let next = 0
 
